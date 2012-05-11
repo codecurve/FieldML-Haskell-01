@@ -1,10 +1,5 @@
 import qualified Data.Set as Set
 
-data Label =
-  Integer |
-  String
-  deriving (Show, Eq, Ord)
-
 data SetOfLabels = 
   StringLabels (Set.Set String) | 
   IntegerLabels (Set.Set Integer) 
