@@ -1,19 +1,26 @@
 import qualified Data.Set as Set
+import Text.Show.Functions
 
-data SetOfLabels = 
-  StringLabels (Set.Set String) | 
-  IntegerLabels (Set.Set Integer) 
-  deriving (Show)
-  
+type Label = String
+type SetOfLabels = Set.Set Label
+
 data Manifold = 
-  Reals | 
+  Reals |
   Labels SetOfLabels | 
   Product [Manifold] |
-  DisjointUnion [Manifold] SetOfLabels
+  DisjointUnion SetOfLabels (Label->Manifold)
   deriving (Show)
 
+-- Tests
 real2 = Product [Reals, Reals]
 real3 = Product [Reals, Reals, Reals]
 
-elementIds = Set.fromList ([ 1,3,2,4 ])
+elementIds = Set.fromList ([ "1","3","2","4" ])
 
+f :: Label->Manifold
+f "1" = Reals
+f _ = Reals
+
+m1 = DisjointUnion elementIds f
+
+m2 = Product [real2, Labels elementIds]
