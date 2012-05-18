@@ -2,6 +2,12 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Text.Show.Functions
 
+-- By Randall Britten
+-- Auckland Bioengineering Institute
+-- University of Auckland
+--
+-- The ideas here were strongly influenced by Andrew Miller's "ModML".
+
 type Label = String
 type SetOfLabels = Set.Set Label
 
@@ -9,33 +15,57 @@ labelsFromIntegerRange :: Int->Int->SetOfLabels
 labelsFromIntegerRange a b =
   Set.fromList $ map show [a..b]
 
+data BoolExpression =
+  -- A constant true or false.
+  BoolConstant Bool |
+  -- Logical and of two expressions.
+  And BoolExpression BoolExpression |
+  -- Logical not of an expression.
+  Not BoolExpression |
+  -- Logical or of two expressions.
+  Or BoolExpression BoolExpression |
+  LessThan RealExpression RealExpression |
+  Equal RealExpression RealExpression
+  deriving (Show)
+  
 data RealExpression =
-    Plus RealExpression RealExpression
-  | Minus RealExpression RealExpression
-  | Times RealExpression RealExpression
-  | Divide RealExpression RealExpression
+  RealConstant Double |
+  -- If x {- then -} b {- else -} b
+  If BoolExpression RealExpression RealExpression |
+  Plus RealExpression RealExpression |
+  Minus RealExpression RealExpression |
+  Times RealExpression RealExpression |
+  Divide RealExpression RealExpression
+  deriving (Show)
   -- Etc
 
 data Map = 
-    Map { domain :: Manifold, codomain :: Manifold }
-  | RealExpression
-  | Compose Map Map
-  | Project { factor :: Int, domain :: Manifold, codomain :: Manifold }
-  | BooleanMap { domain :: Manifold }
+  Map { domain :: Manifold, codomain :: Manifold } |
+  -- The domain and codomain are both Reals
+  RealExpression |
+  Compose Map Map |
+  Project { factor :: Int, domain :: Manifold, codomain :: Manifold } |
+  -- The codomain is implicitly BooleanManifold
+  BooleanMap { domain :: Manifold } |
+  -- The domain must be the CartesianProduct of n discrete manifolds, with a total cardinality equal to the number of parameters, 
+  -- and n equal to the dimensionality of the parameter source.
+  FromParameterSource { domain :: Manifold }
   deriving (Show)
 
+-- Used for creating quotient manifolds, the map is required to be a boolean map.
+data EquivalenceRelationship = EquivalenceRelationship Manifold Manifold Map
+  deriving (Show)
+  
 data Manifold = 
-    Reals
-  | Labels SetOfLabels
-  | Product [Manifold]
-  | DisjointUnion SetOfLabels (Label->Manifold) 
-  | SimpleSubset Map
+  Reals |
+  BooleanManifold |
+  Labels SetOfLabels |
+  Product [Manifold] |
+  DisjointUnion SetOfLabels (Label->Manifold) |
+  SimpleSubset Map |
+  Quotient Manifold Manifold EquivalenceRelationship
   deriving (Show)
 
-data FieldmlModel = FieldmlModel {
-  namedManifolds :: Map.Map String Manifold,
-  namedFields    :: Map.Map String Map
-}
 
 -- Tests
 real2 = Product [Reals, Reals]
