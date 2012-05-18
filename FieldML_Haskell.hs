@@ -32,14 +32,11 @@ data BooleanExpression =
   Equal RealExpression RealExpression
   deriving (Show)
   
-data RealVariable = RealVariable String  
-  deriving (Show)
-  
 data RealExpression =
   -- Any real value, as a constant.
   RealConstant Double |
   -- A free variable...
-  RealVariableE RealVariable |  
+  RealVariable String |  
   -- If x {- then -} b {- else -} b
   If BooleanExpression RealExpression RealExpression |
   Plus RealExpression RealExpression |
@@ -57,26 +54,28 @@ data Map =
   Project { factor :: Int, domain :: TopologicalSpace, codomain :: TopologicalSpace } |
   -- The codomain is implicitly BooleanTopologicalSpace
   BooleanMap { domain :: TopologicalSpace, predicate :: BooleanExpression } |
-  FromParameterSource
+  -- The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
+  -- and n equal to the dimensionality of the parameter source.
+  FromParameterSource [Double] TopologicalSpace
   deriving (Show)
 
--- The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
--- and n equal to the dimensionality of the parameter source.
-data ParameterSource = ParameterSource [Double] TopologicalSpace
-  
--- Used for creating quotient TopologicalSpaces, the map is required to be a boolean map.
-data EquivalenceRelationship = EquivalenceRelationship TopologicalSpace TopologicalSpace Map
+-- Place holder in the design for a point located in a topological space.
+data Point = Point
   deriving (Show)
-  
+
 data TopologicalSpace = 
   Reals |
   BooleanTopologicalSpace |
   Labels SetOfLabels |
   Product [TopologicalSpace] |
   DisjointUnion SetOfLabels (Label->TopologicalSpace) |
-  -- The Map must be a BooleanMap, the resulting TopologicalSpace is the subset where the BooleanMap evaluates to True.
+  -- The Map must be a BooleanMap, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
-  Quotient TopologicalSpace TopologicalSpace EquivalenceRelationship
+  -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpace. The map is required to be a boolean map.
+  -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
+  Quotient TopologicalSpace TopologicalSpace Map |
+  -- If the given space is a smooth manifold then this constructs the tangent space at that point.
+  TangetSpaceAtPoint TopologicalSpace Point
   deriving (Show)
 
 -- Tests
@@ -96,12 +95,13 @@ m2 = Product [real2, Labels elementIds]
 map1 = Project { factor=1, domain=m2, codomain=real2}
 
 x = RealVariable "x"
-x' = RealVariableE x
-
 
 expression1 :: BooleanExpression
-expression1 =  (x' `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x')
+expression1 =  (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
+
+-- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 
 map2 = BooleanMap { domain=Reals, predicate=expression1 }
 unitLineSegment = SimpleSubset map2
+
 -- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
