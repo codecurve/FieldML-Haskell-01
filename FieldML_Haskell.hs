@@ -48,15 +48,22 @@ data RealExpression =
 
 data Map = 
   Map { domain :: TopologicalSpace, codomain :: TopologicalSpace } |
+  
   -- The domain and codomain are both Reals
   RealExpression |
+  
   Compose Map Map |
-  Project { factor :: Int, domain :: TopologicalSpace, codomain :: TopologicalSpace } |
+  
   -- The codomain is implicitly BooleanTopologicalSpace
   BooleanMap { domain :: TopologicalSpace, predicate :: BooleanExpression } |
+  
   -- The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
   -- and n equal to the dimensionality of the parameter source.
-  FromParameterSource [Double] TopologicalSpace
+  FromParameterSource [Double] TopologicalSpace |
+  
+  Project { factor :: Int } |
+
+  Tuple [Map]
   deriving (Show)
 
 -- Place holder in the design for a point located in a topological space.
@@ -92,8 +99,6 @@ m1 = DisjointUnion elementIds f
 
 m2 = Product [real2, Labels elementIds]
 
-map1 = Project { factor=1, domain=m2, codomain=real2}
-
 x = RealVariable "x"
 
 expression1 :: BooleanExpression
@@ -104,4 +109,21 @@ expression1 =  (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessTh
 map2 = BooleanMap { domain=Reals, predicate=expression1 }
 unitLineSegment = SimpleSubset map2
 
+-- As above, but all inline:
+unitLineSegment' = 
+  SimpleSubset 
+    BooleanMap { 
+      domain=Reals, 
+      predicate=(x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
+    }
+
+unitSquare = 
+  SimpleSubset
+    BooleanMap {
+      domain =real2,
+      predicate = 
+        ((Project 1) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1)) 
+        `And`
+        ((Project 2) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2))
+    }
 -- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
