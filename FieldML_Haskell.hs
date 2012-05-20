@@ -33,10 +33,16 @@ data BooleanExpression =
   deriving (Show)
   
 data RealExpression =
+
   -- Any real value, as a constant.
   RealConstant Double |
+  
   -- A free variable...
   RealVariable String |  
+  
+  -- Assumes the map's codomain is real
+  FromMap Map |
+  
   -- If x {- then -} b {- else -} b
   If BooleanExpression RealExpression RealExpression |
   Plus RealExpression RealExpression |
@@ -122,8 +128,8 @@ unitSquare =
     BooleanMap {
       domain =real2,
       predicate = 
-        ((Project 1) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1)) 
+        (FromMap (Project 1) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` FromMap (Project 1)) 
         `And`
-        ((Project 2) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2))
+        (FromMap (Project 2) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` FromMap (Project 2))
     }
 -- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
