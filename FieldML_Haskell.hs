@@ -62,43 +62,57 @@ data Map =
   Project { factor :: Int, source :: Map } |
 
   Tuple [Map]
-  deriving (Show)
+  deriving (Show, Eq)
 
 domain :: Map ->TopologicalSpace
-domain (RealConstant _ ) = Reals
+domain (RealConstant _ ) = UnitSpace
 domain (RealVariable _ ) = Reals
-domain (If _ a _ ) = domain a -- Should check somewhere that a and b have same domain, here?
+domain (If x _ _ ) = domain x -- Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
 domain (Plus a _) = domain a
 domain (Minus a _) = domain a
 domain (Times a _) = domain a
 domain (Divide a _) = domain a
 domain (Compose _ g) = domain g
 domain (FromParameterSource _ a) = a
-domain (Project n f) = factor n (domain f)
-domain (Tuple fs) = Product map domain over fs
+domain (Project n f) = domain f
+domain (Tuple fs) = Product (map domain fs)
+domain (BooleanConstant _) = UnitSpace
+domain (And a _) = domain a
+domain (Or a _) = domain a
+domain (Not a) = domain a
+domain (LessThan a _) = domain a
+domain (Equal a _) = domain a
 
-  
+codomain :: Map ->TopologicalSpace
+codomain (Project n f) = getFactor n (domain f)
+
+getFactor :: Int -> TopologicalSpace -> TopologicalSpace
+getFactor n (Product xs) = xs !! n
+
+
+
 -- Place holder in the design for a point located in a topological space.
 data Point = Point
   deriving (Show)
 
 data TopologicalSpace = 
+  UnitSpace |
   Reals |
   Booleans |
   Labels SetOfLabels |
   Product [TopologicalSpace] |
-  DisjointUnion SetOfLabels (Label->TopologicalSpace) |
+--  DisjointUnion SetOfLabels (Label->TopologicalSpace) |
   
   -- The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
   
   -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpace. The map is required to be a boolean map.
   -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
-  Quotient TopologicalSpace TopologicalSpace Map |
+  Quotient TopologicalSpace TopologicalSpace Map 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
-  TangetSpaceAtPoint TopologicalSpace Point
-  deriving (Show)
+--  TangetSpaceAtPoint TopologicalSpace Point
+  deriving (Show, Eq)
 
 -- Tests
 real2 = Product [Reals, Reals]
@@ -110,7 +124,7 @@ f :: Label->TopologicalSpace
 f "1" = Reals
 f _ = Reals
 
-m1 = DisjointUnion elementIds f
+-- m1 = DisjointUnion elementIds f
 
 m2 = Product [real2, Labels elementIds]
 
@@ -129,11 +143,21 @@ unitLineSegment' =
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
   )
 
-unitSquare = 
-  SimpleSubset (
-    ((Project 1) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1)) 
+xx = Tuple [RealVariable "xx", RealVariable "yy"]
+  
+expression2 :: Map
+expression2 =
+    ((Project 1 xx) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 xx)) 
     `And`
-    ((Project 2) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2))
+    ((Project 2 xx) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xx))
+
+testresult = (domain expression2 == Product [Reals,Reals] )
+  
+unitSquare' = 
+  SimpleSubset (
+    ((Project 1 x) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 x)) 
+    `And`
+    ((Project 2 x) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 x))
   )
 
 
