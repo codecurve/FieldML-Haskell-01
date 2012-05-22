@@ -95,7 +95,24 @@ data TopologicalSpace =
 -- Focus here is on processing the "FieldML" data structures.  
 
 listOfFreeRealVariables :: Map -> Set.Set String
+listOfFreeRealVariables (RealConstant _ ) = Set.empty
 listOfFreeRealVariables (RealVariable variableName ) = Set.singleton variableName
+listOfFreeRealVariables (If x a b ) = listOfFreeRealVariables $ Tuple [ x, a, b ]
+listOfFreeRealVariables (Plus a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Minus a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Times a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Divide a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Compose f g) = listOfFreeRealVariables g
+listOfFreeRealVariables (FromParameterSource _ a) = Set.empty -- Todo: Ouch, this is not correct, but Poul and Richard are right, factors have to be named, otherwise, where do the names come from?
+listOfFreeRealVariables (Project n f) = listOfFreeRealVariables f
+listOfFreeRealVariables (Tuple fs) = Set.fromList (foldr Set.union (map listOfFreeRealVariables fs))
+listOfFreeRealVariables (BooleanConstant _) = Set.empty
+listOfFreeRealVariables (And a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Or a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Not a) = listOfFreeRealVariables $ Tuple a
+listOfFreeRealVariables (LessThan a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+
   
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
@@ -199,6 +216,15 @@ expression3c =
 testResult3a = ( domain expression3c == Reals )
 testResult3b = ( codomain expression3c == Product [Reals,Reals] )
 
+
+expression4 :: Map
+expression4 =
+    ( (RealConstant 0) `LessThan` (Project 1 xy) )
+    `And`
+    ( (RealConstant 0) `LessThan` (Project 2 xy) )
+    `And`
+    ( ( (Project 1 xy) `Plus` (Project 2 xy) ) `LessThan` (RealConstant 1)  )
+
 -- Todo: This is really a poor man's way of doing unit testing, must improve this.
 testResults = [
   testResult1,
@@ -206,4 +232,6 @@ testResults = [
   testResult3b
   ]
 
+  
+  
 -- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
