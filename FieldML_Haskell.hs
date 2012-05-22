@@ -105,11 +105,11 @@ listOfFreeRealVariables (Divide a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Compose f g) = listOfFreeRealVariables g
 listOfFreeRealVariables (FromParameterSource _ a) = Set.empty -- Todo: Ouch, this is not correct, but Poul and Richard are right, factors have to be named, otherwise, where do the names come from?
 listOfFreeRealVariables (Project n f) = listOfFreeRealVariables f
-listOfFreeRealVariables (Tuple fs) = Set.fromList (foldr Set.union (map listOfFreeRealVariables fs))
+listOfFreeRealVariables (Tuple fs) = foldr Set.union Set.empty (map listOfFreeRealVariables fs) 
 listOfFreeRealVariables (BooleanConstant _) = Set.empty
 listOfFreeRealVariables (And a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Or a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Not a) = listOfFreeRealVariables $ Tuple a
+listOfFreeRealVariables (Not a) = listOfFreeRealVariables a
 listOfFreeRealVariables (LessThan a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 
@@ -125,7 +125,8 @@ domain (Divide a _) = domain a
 domain (Compose _ g) = domain g
 domain (FromParameterSource _ a) = a
 domain (Project n f) = domain f
-domain (Tuple fs) = Product (map domain fs)
+domain (Tuple []) = UnitSpace
+domain (Tuple fs) = domain (head fs)
 domain (BooleanConstant _) = UnitSpace
 domain (And a _) = domain a
 domain (Or a _) = domain a
@@ -204,7 +205,7 @@ unitSquare' =
 
 expression3a :: Map
 expression3a =
-  RealVariable "x" `Minus` RealConstant 1
+  RealConstant 1 `Minus` RealVariable "x"
 
 expression3b :: Map
 expression3b =
