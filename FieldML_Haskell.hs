@@ -11,6 +11,10 @@ import Text.Show.Functions
 -- The ideas here were strongly influenced by Andrew Miller's open source "ModML", with some code copied directly from ModML.
 
 -- This is under construction
+-- Todo list:
+-- - Validation:
+-- --Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
+
 
 type Label = String
 type SetOfLabels = Set.Set Label
@@ -63,8 +67,37 @@ data Map =
 
   Tuple [Map]
   deriving (Show, Eq)
+  
+-- Place holder in the design for a point located in a topological space.
+data Point = Point
+  deriving (Show, Eq)
 
-domain :: Map ->TopologicalSpace
+data TopologicalSpace = 
+  UnitSpace |
+  Reals |
+  Booleans |
+  Labels SetOfLabels |
+  Product [TopologicalSpace] |
+--  DisjointUnion SetOfLabels (Label->TopologicalSpace) |
+  
+  -- The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
+  SimpleSubset Map |
+  
+  -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpace. The map is required to be a boolean map.
+  -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
+  Quotient TopologicalSpace TopologicalSpace Map 
+  
+  -- If the given space is a smooth manifold then this constructs the tangent space at that point.
+--  TangetSpaceAtPoint TopologicalSpace Point
+  deriving (Show, Eq)
+
+  
+-- Focus here is on processing the "FieldML" data structures.  
+
+listOfFreeRealVariables :: Map -> Set.Set String
+listOfFreeRealVariables (RealVariable variableName ) = Set.singleton variableName
+  
+domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
 domain (RealVariable _ ) = Reals
 domain (If x _ _ ) = domain x -- Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
@@ -105,29 +138,7 @@ codomain (Equal a _) = Booleans
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (Product xs) = xs !! n
 
--- Place holder in the design for a point located in a topological space.
-data Point = Point
-  deriving (Show, Eq)
-
-data TopologicalSpace = 
-  UnitSpace |
-  Reals |
-  Booleans |
-  Labels SetOfLabels |
-  Product [TopologicalSpace] |
---  DisjointUnion SetOfLabels (Label->TopologicalSpace) |
   
-  -- The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
-  SimpleSubset Map |
-  
-  -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpace. The map is required to be a boolean map.
-  -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
-  Quotient TopologicalSpace TopologicalSpace Map 
-  
-  -- If the given space is a smooth manifold then this constructs the tangent space at that point.
---  TangetSpaceAtPoint TopologicalSpace Point
-  deriving (Show, Eq)
-
 -- Tests
 real2 = Product [Reals, Reals]
 real3 = Product [Reals, Reals, Reals]
