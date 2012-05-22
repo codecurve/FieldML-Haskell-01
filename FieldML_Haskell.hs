@@ -84,16 +84,30 @@ domain (LessThan a _) = domain a
 domain (Equal a _) = domain a
 
 codomain :: Map ->TopologicalSpace
+codomain (RealConstant _ ) = Reals
+codomain (RealVariable _ ) = Reals
+codomain (If _ a _ ) = codomain a -- Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
+codomain (Plus a _) = codomain a  -- Should check if Plus is valid operator on codomain. Here?  Similarly for some others that follow.
+codomain (Minus a _) = codomain a
+codomain (Times a _) = codomain a
+codomain (Divide a _) = codomain a
+codomain (Compose f _) = codomain f
+codomain (FromParameterSource _ a) = Reals -- Not sure if vector, matrix (tensor) valued params would be useful?
 codomain (Project n f) = getFactor n (domain f)
+codomain (Tuple fs) = Product (map codomain fs)
+codomain (BooleanConstant _) = Booleans
+codomain (And a _) = Booleans
+codomain (Or a _) = Booleans
+codomain (Not a) = Booleans
+codomain (LessThan a _) = Booleans
+codomain (Equal a _) = Booleans
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (Product xs) = xs !! n
 
-
-
 -- Place holder in the design for a point located in a topological space.
 data Point = Point
-  deriving (Show)
+  deriving (Show, Eq)
 
 data TopologicalSpace = 
   UnitSpace |
@@ -151,7 +165,7 @@ expression2 =
     `And`
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
 
-testresult = (domain expression2 == Product [Reals,Reals] )
+testresult1 = (domain expression2 == Product [Reals,Reals] )
   
 unitSquare' = 
   SimpleSubset (
@@ -160,5 +174,20 @@ unitSquare' =
     ((Project 2 x) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 x))
   )
 
+expression3a :: Map
+expression3a =
+  RealVariable "x" `Minus` RealConstant 1
+
+expression3b :: Map
+expression3b =
+  RealVariable "x"
+  
+expression3c =
+  Tuple [expression3a, expression3b]
+
+testresult3a = ( domain expression3c == Reals )
+testresult3b = ( codomain expression3c == Product [Reals,Reals] )
+
+  
 
 -- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
