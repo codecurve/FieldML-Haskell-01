@@ -165,7 +165,7 @@ expression2 =
     `And`
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
 
-testresult1 = (domain expression2 == Product [Reals,Reals] )
+testResult1 = (domain expression2 == Product [Reals,Reals] )
   
 unitSquare' = 
   SimpleSubset (
@@ -185,9 +185,14 @@ expression3b =
 expression3c =
   Tuple [expression3a, expression3b]
 
-testresult3a = ( domain expression3c == Reals )
-testresult3b = ( codomain expression3c == Product [Reals,Reals] )
+testResult3a = ( domain expression3c == Reals )
+testResult3b = ( codomain expression3c == Product [Reals,Reals] )
 
-  
+-- Todo: This is really a poor man's way of doing unit testing, must improve this.
+testResults = [
+  testResult1,
+  testResult3a,
+  testResult3b
+  ]
 
 -- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
