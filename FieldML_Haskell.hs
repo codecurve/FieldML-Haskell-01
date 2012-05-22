@@ -206,13 +206,6 @@ expression2 =
 
 testResult1 = (domain expression2 == Product [Reals,Reals] )
   
-unitSquare' = 
-  SimpleSubset (
-    ((Project 1 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 xy)) 
-    `And`
-    ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
-  )
-
 expression3a :: Map
 expression3a =
   (Lambda [RealVariable "x"] (RealConstant 1) ) `Minus` RealVariable "x"
@@ -244,6 +237,8 @@ expression5 =
     (RealVariable "y" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "y")
 
 testResult5 = (domain expression5 == Product [Reals,Reals] )
+
+unitSquare = SimpleSubset expression5
     
     
 -- Todo: This is really a poor man's way of doing unit testing, must improve this.
