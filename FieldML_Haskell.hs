@@ -136,8 +136,12 @@ domain (Or a _) = domain a
 domain (Not a) = domain a
 domain (LessThan a _) = domain a
 domain (Equal a _) = domain a
-domain (Lambda fs _) = Product $ map domain fs
+domain (Lambda [] _) = UnitSpace 
+domain (Lambda fs _) 
+  | (length fs > 1) = Product $ map domain fs
+  | otherwise = domain (head fs)
 
+  
 codomain :: Map ->TopologicalSpace
 codomain (RealConstant _ ) = Reals
 codomain (RealVariable _ ) = Reals
@@ -211,7 +215,7 @@ unitSquare' =
 
 expression3a :: Map
 expression3a =
-  RealConstant 1 `Minus` RealVariable "x"
+  (Lambda [RealVariable "x"] (RealConstant 1) ) `Minus` RealVariable "x"
 
 expression3b :: Map
 expression3b =
