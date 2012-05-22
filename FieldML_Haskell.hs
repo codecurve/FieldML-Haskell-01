@@ -143,13 +143,13 @@ unitLineSegment' =
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
   )
 
-xx = Tuple [RealVariable "xx", RealVariable "yy"]
+xy = Tuple [RealVariable "xx", RealVariable "yy"]
   
 expression2 :: Map
 expression2 =
-    ((Project 1 xx) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 xx)) 
+    ((Project 1 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 xy)) 
     `And`
-    ((Project 2 xx) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xx))
+    ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
 
 testresult = (domain expression2 == Product [Reals,Reals] )
   
