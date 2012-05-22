@@ -230,17 +230,28 @@ testResult3b = ( codomain expression3c == Product [Reals,Reals] )
 
 expression4 :: Map
 expression4 =
-    ( (RealConstant 0) `LessThan` (Project 1 xy) )
-    `And`
-    ( (RealConstant 0) `LessThan` (Project 2 xy) )
-    `And`
-    ( ( (Project 1 xy) `Plus` (Project 2 xy) ) `LessThan` (RealConstant 1)  )
+  ( (RealConstant 0) `LessThan` (Project 1 xy) )
+  `And`
+  ( (RealConstant 0) `LessThan` (Project 2 xy) )
+  `And`
+  ( ( (Project 1 xy) `Plus` (Project 2 xy) ) `LessThan` (RealConstant 1)  )
 
+expression5 :: Map
+expression5 =
+  Lambda [RealVariable "x", RealVariable "y"]
+    (RealVariable "x" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "x") 
+    `And`
+    (RealVariable "y" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "y")
+
+testResult5 = (domain expression5 == Product [Reals,Reals] )
+    
+    
 -- Todo: This is really a poor man's way of doing unit testing, must improve this.
 testResults = [
   testResult1,
   testResult3a,
-  testResult3b
+  testResult3b,
+  testResult5
   ]
 
   
