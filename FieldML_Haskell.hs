@@ -14,6 +14,9 @@ import Text.Show.Functions
 -- Todo list:
 -- - Validation:
 -- --Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
+-- - Disjoint Union
+-- - Connectivity
+-- - Tensor product
 
 
 type Label = String
@@ -67,7 +70,9 @@ data Map =
 
   Tuple [Map] |
   
-  Lambda [Map] Map
+  Lambda [Map] Map |
+  
+  Restriction TopologicalSpace Map
   deriving (Show, Eq)
   
 -- Place holder in the design for a point located in a topological space.
@@ -115,6 +120,7 @@ listOfFreeRealVariables (Not a) = listOfFreeRealVariables a
 listOfFreeRealVariables (LessThan a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Lambda fs _) = listOfFreeRealVariables $ Tuple fs
+listOfFreeRealVariables (Restriction _ f ) = listOfFreeRealVariables f -- Todo: What if the restriction fixes one of the variables?
 
   
 domain :: Map -> TopologicalSpace
@@ -139,7 +145,8 @@ domain (Equal a _) = domain a
 domain (Lambda [] _) = UnitSpace 
 domain (Lambda fs _) 
   | (length fs > 1) = Product $ map domain fs
-  | otherwise = domain (head fs)
+  | otherwise = domain (head fs) -- This is just to avoid getting Product[singleFactor]
+domain (Restriction s _ ) = s
 
   
 codomain :: Map ->TopologicalSpace
@@ -161,6 +168,7 @@ codomain (Not a) = Booleans
 codomain (LessThan a _) = Booleans
 codomain (Equal a _) = Booleans
 codomain (Lambda _ f ) = codomain f
+codomain (Restriction _ f ) = codomain f
 
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
@@ -208,30 +216,37 @@ testResult1 = (domain expression2 == Product [Reals,Reals] )
   
 expression3a :: Map
 expression3a =
-  (Lambda [RealVariable "x"] (RealConstant 1) ) `Minus` RealVariable "x"
+  Restriction 
+  unitLineSegment -- A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
+  ( (Lambda [RealVariable "x"] (RealConstant 1) ) `Minus` RealVariable "x" )
 
 expression3b :: Map
 expression3b =
-  RealVariable "x"
+  Restriction 
+  unitLineSegment
+  (RealVariable "x")
   
 expression3c =
   Tuple [expression3a, expression3b]
 
-testResult3a = ( domain expression3c == Reals )
+testResult3a = ( domain expression3c == unitLineSegment )
 testResult3b = ( codomain expression3c == Product [Reals,Reals] )
 
 
 expression4 :: Map
 expression4 =
-  ( (RealConstant 0) `LessThan` (Project 1 xy) )
-  `And`
-  ( (RealConstant 0) `LessThan` (Project 2 xy) )
-  `And`
-  ( ( (Project 1 xy) `Plus` (Project 2 xy) ) `LessThan` (RealConstant 1)  )
+  Lambda [RealVariable "x", RealVariable "y"] $
+    ( (RealConstant 0) `LessThan` RealVariable "x" )
+    `And`
+    ( (RealConstant 0) `LessThan` RealVariable "y" )
+    `And`
+    ( ( RealVariable "x" `Plus` RealVariable "y" ) `LessThan` (RealConstant 1)  )
 
+simplex2d = SimpleSubset expression4
+  
 expression5 :: Map
 expression5 =
-  Lambda [RealVariable "x", RealVariable "y"]
+  Lambda [RealVariable "x", RealVariable "y"] $
     (RealVariable "x" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "x") 
     `And`
     (RealVariable "y" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "y")
