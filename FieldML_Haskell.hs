@@ -65,7 +65,9 @@ data Map =
   
   Project { factor :: Int, source :: Map } |
 
-  Tuple [Map]
+  Tuple [Map] |
+  
+  Lambda [Map] Map
   deriving (Show, Eq)
   
 -- Place holder in the design for a point located in a topological space.
@@ -112,6 +114,7 @@ listOfFreeRealVariables (Or a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Not a) = listOfFreeRealVariables a
 listOfFreeRealVariables (LessThan a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
+listOfFreeRealVariables (Lambda fs _) = listOfFreeRealVariables $ Tuple fs
 
   
 domain :: Map -> TopologicalSpace
@@ -133,6 +136,7 @@ domain (Or a _) = domain a
 domain (Not a) = domain a
 domain (LessThan a _) = domain a
 domain (Equal a _) = domain a
+domain (Lambda fs _) = Product $ map domain fs
 
 codomain :: Map ->TopologicalSpace
 codomain (RealConstant _ ) = Reals
@@ -152,6 +156,8 @@ codomain (Or a _) = Booleans
 codomain (Not a) = Booleans
 codomain (LessThan a _) = Booleans
 codomain (Equal a _) = Booleans
+codomain (Lambda _ f ) = codomain f
+
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (Product xs) = xs !! n
@@ -186,7 +192,7 @@ unitLineSegment' =
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
   )
 
-xy = Tuple [RealVariable "xx", RealVariable "yy"]
+xy = Lambda [RealVariable "xx", RealVariable "yy"] (Tuple [RealVariable "xx", RealVariable "yy"])
   
 expression2 :: Map
 expression2 =
@@ -198,9 +204,9 @@ testResult1 = (domain expression2 == Product [Reals,Reals] )
   
 unitSquare' = 
   SimpleSubset (
-    ((Project 1 x) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 x)) 
+    ((Project 1 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 xy)) 
     `And`
-    ((Project 2 x) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 x))
+    ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
   )
 
 expression3a :: Map
