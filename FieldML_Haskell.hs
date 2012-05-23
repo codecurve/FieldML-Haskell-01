@@ -8,7 +8,7 @@ import Text.Show.Functions
 -- University of Auckland
 -- Permission granted to redistribute in source code or binary form.  No warranty of any kind is given.
 --
--- The ideas here were strongly influenced by Andrew Miller's open source "ModML", with some code copied directly from ModML.
+-- The ideas here were strongly influenced by Andrew Miller's open source "ModML", with some code copied directly from ModML for some of the early versions.
 
 -- This is under construction
 -- Todo list:
@@ -90,8 +90,9 @@ data TopologicalSpace =
   -- The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
   
-  -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpace. The map is required to be a boolean map.
+  -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpaces. The map is required to be a boolean map.
   -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
+  -- It is assumed, and would need validation, that the boolean map meets the requirements of an equivalence relation.
   Quotient TopologicalSpace TopologicalSpace Map 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
