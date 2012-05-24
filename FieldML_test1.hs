@@ -1,4 +1,4 @@
-import FieldML_Haskell
+import FieldML.Core
 
 -- Tests
 real2 = Product [Reals, Reals]

@@ -1,4 +1,4 @@
-module FieldML_Haskell
+module FieldML.Core
 where
 
 import qualified Data.Set as Set
