@@ -1,4 +1,18 @@
+{-# LANGUAGE CPP, TemplateHaskell #-}
+
+module FieldML_test1
+where
+
 import FieldML.Core
+import Control.Monad (unless)
+import Data.List (stripPrefix)
+import System.Exit (exitFailure)
+import Test.QuickCheck.All (quickCheckAll)
+
+testMain = do
+    allPass <- $quickCheckAll -- Run QuickCheck on all prop_ functions
+    unless allPass exitFailure
+
 
 -- Tests
 real2 = Product [Reals, Reals]
@@ -37,7 +51,7 @@ expression2 =
     `And`
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
 
-testResult1 = (domain expression2 == Product [Reals,Reals] )
+prop_testResult1 = (domain expression2 == Product [Reals,Reals] )
   
 expression3a :: Map
 expression3a =
@@ -54,8 +68,8 @@ expression3b =
 expression3c =
   Tuple [expression3a, expression3b]
 
-testResult3a = ( domain expression3c == unitLineSegment )
-testResult3b = ( codomain expression3c == Product [Reals,Reals] )
+prop_testResult3a = ( domain expression3c == unitLineSegment )
+prop_testResult3b = ( codomain expression3c == Product [Reals,Reals] )
 
 
 expression4 :: Map
@@ -76,18 +90,11 @@ expression5 =
     `And`
     (RealVariable "y" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "y")
 
-testResult5 = (domain expression5 == Product [Reals,Reals] )
+prop_testResult5 = (domain expression5 == Product [Reals,Reals] )
 
 unitSquare = SimpleSubset expression5
     
     
--- Todo: This is really a poor man's way of doing unit testing, must improve this.
-testResults = [
-  testResult1,
-  testResult3a,
-  testResult3b,
-  testResult5
-  ]
 
   
   
