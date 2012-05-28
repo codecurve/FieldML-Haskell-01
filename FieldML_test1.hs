@@ -94,6 +94,8 @@ prop_testResult5 = (domain expression5 == Product [Reals,Reals] )
 
 unitSquare = SimpleSubset expression5
     
+
+-- Disjoint union
     
 
   

@@ -69,7 +69,7 @@ data Map =
   Compose Map Map |
   
   -- The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
-  -- and n equal to the dimensionality of the parameter source.
+  -- and n equal to the length of the parameter source.
   FromParameterSource [Double] TopologicalSpace |
   
   Project { factor :: Int, source :: Map } |
@@ -78,6 +78,7 @@ data Map =
   
   Lambda [Map] Map |
   
+  -- The given topological space must be a simple subdomain of the domain of the given map.
   Restriction TopologicalSpace Map
   deriving (Show, Eq)
   
@@ -85,13 +86,15 @@ data Map =
 data Point = Point
   deriving (Show, Eq)
 
+-- Todo: Andrew Miller proposed that we include spaces of functions.
 data TopologicalSpace = 
   UnitSpace |
   Reals |
   Booleans |
   Labels SetOfLabels |
   Product [TopologicalSpace] |
---  DisjointUnion SetOfLabels (Label->TopologicalSpace) |
+
+  DisjointUnion SetOfLabels DomainMap |
   
   -- The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
@@ -102,9 +105,22 @@ data TopologicalSpace =
   Quotient TopologicalSpace TopologicalSpace Map 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
+  -- Todo: perhaps tangent spaces are constructed by a method, rather than being a fundamental constructor.
 --  TangetSpaceAtPoint TopologicalSpace Point
   deriving (Show, Eq)
 
+
+-- Domain Maps are for constructing disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
+-- Todo: need a way to have more general expressions such as integer ranges that are used to select the resulting TopologicalSpace
+data DomainMap =
+
+  -- This maps each label to the same TopologicalSpace
+  ConstantDomainMap TopologicalSpace |
+  
+  -- The given map must have a labelset as its domain, and labels where the map is true are the first DomainMap's value, false are the second.
+  DomainMapIf Map DomainMap DomainMap
+  
+  deriving (Show, Eq)
   
 -- Focus here is on processing the "FieldML" data structures.  
 
@@ -182,3 +198,62 @@ getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (Product xs) = xs !! n
 
   
+validate :: Map -> Bool
+validate (RealConstant _ ) = True
+validate (RealVariable _ ) = True
+validate (If x a b ) = 
+  validate a && 
+  validate b && 
+  validate x && 
+  (domain x == domain a ) &&
+  (domain x == domain b) && 
+  (codomain a == codomain b) &&
+  (codomain x == Booleans)
+
+validate (Plus a b) = 
+  validate a &&
+  validate b &&
+  (domain a == domain b ) &&
+  (codomain a == codomain b ) &&
+  codomain a == Reals
+  
+validate (Minus a b) = validate a
+  validate a &&
+  validate b &&
+  (domain a == domain b ) &&
+  (codomain a == codomain b ) &&
+  codomain a == Reals
+
+validate (Times a b) = validate a
+  validate a &&
+  validate b &&
+  (domain a == domain b ) &&
+  (codomain a == codomain b ) &&
+  codomain a == Reals
+
+validate (Divide a b) = validate a
+  validate a &&
+  validate b &&
+  (domain a == domain b ) &&
+  (codomain a == codomain b ) &&
+  codomain a == Reals
+
+validate (Compose f g) = 
+  validate f &&
+  validate g &&
+  codomain g == domain f
+
+validate (FromParameterSource a b) = True -- Todo: Just taking a shortcut for now, must fix this.
+
+validate (Project n f) = validate f -- Todo: check that codomain of f has at least n factors.
+
+validate (Tuple fs) = foldr (&&) True (map validate fs)
+
+validate (BooleanConstant _) = Booleans
+validate (And a _) = Booleans
+validate (Or a _) = Booleans
+validate (Not a) = Booleans
+validate (LessThan a _) = Booleans
+validate (Equal a _) = Booleans
+validate (Lambda _ f ) = validate f
+validate (Restriction _ f ) = validate f
