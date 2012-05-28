@@ -217,21 +217,21 @@ validate (Plus a b) =
   (codomain a == codomain b ) &&
   codomain a == Reals
   
-validate (Minus a b) = validate a
+validate (Minus a b) =
   validate a &&
   validate b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
 
-validate (Times a b) = validate a
+validate (Times a b) =
   validate a &&
   validate b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
 
-validate (Divide a b) = validate a
+validate (Divide a b) =
   validate a &&
   validate b &&
   (domain a == domain b ) &&
@@ -243,17 +243,51 @@ validate (Compose f g) =
   validate g &&
   codomain g == domain f
 
-validate (FromParameterSource a b) = True -- Todo: Just taking a shortcut for now, must fix this.
+validate (FromParameterSource _ _) = True -- Todo: Just taking a shortcut for now, must fix this.
 
 validate (Project n f) = validate f -- Todo: check that codomain of f has at least n factors.
 
 validate (Tuple fs) = foldr (&&) True (map validate fs)
 
-validate (BooleanConstant _) = Booleans
-validate (And a _) = Booleans
-validate (Or a _) = Booleans
-validate (Not a) = Booleans
-validate (LessThan a _) = Booleans
-validate (Equal a _) = Booleans
-validate (Lambda _ f ) = validate f
-validate (Restriction _ f ) = validate f
+validate (BooleanConstant _) = True
+
+validate (And a b) =
+  validate a &&
+  validate b &&
+  domain a == domain b &&
+  codomain a == Booleans &&
+  codomain b == Booleans
+  
+validate (Or a b) =
+  validate a &&
+  validate b &&
+  domain a == domain b &&
+  codomain a == Booleans &&
+  codomain b == Booleans
+
+validate (Not a) =
+  validate a &&
+  codomain a == Booleans
+
+validate (LessThan a b) = 
+  validate a &&
+  validate b &&
+  (domain a == domain b ) &&
+  (codomain a == codomain b ) &&
+  codomain a == Reals
+
+validate (Equal a b) =
+  validate a &&
+  validate b &&
+  (domain a == domain b ) &&
+  (codomain a == codomain b )
+
+validate (Lambda bs f ) = 
+  foldr (&&) True (map validate bs) &&
+  validate f &&
+  (domain f == Product (map domain bs) )
+
+validate (Restriction (SimpleSubset a) f ) = 
+  validate f &&
+  validate a &&
+  domain a == domain f

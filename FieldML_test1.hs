@@ -20,18 +20,12 @@ real3 = Product [Reals, Reals, Reals]
 
 elementIds = labelsFromIntegerRange 1 4
   
-f :: Label->TopologicalSpace
-f "1" = Reals
-f _ = Reals
-
--- m1 = DisjointUnion elementIds f
-
 m2 = Product [real2, Labels elementIds]
 
 x = RealVariable "x"
 
 expression1 :: Map
-expression1 =  (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
+expression1 =  (x `LessThan` (Lambda [RealVariable "x"] (RealConstant 1) ))  `And` ( (Lambda [RealVariable "x"] (RealConstant 0) ) `LessThan` x)
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 
@@ -95,6 +89,9 @@ prop_testResult5 = (domain expression5 == Product [Reals,Reals] )
 unitSquare = SimpleSubset expression5
     
 
+-- Validate
+prop_testValidate1 = (validate (Lambda [RealVariable "x"] (RealConstant 1)) )
+    
 -- Disjoint union
     
 
