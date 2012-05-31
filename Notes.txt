@@ -2,3 +2,19 @@ ModML aims to create a DSL embedded in Haskell that end users can use.
 
 The current state (as at 24 May 2012) of this FieldML Haskell prototype is not to create an end-user language, but rather, to prototype the FieldML object model.
 Thus, at this stage, there is still heavy reliance on features of Haskell that would need an equivalent in the FieldML object model.
+
+Ideas:
+Domain inference
+Codomain inference
+Validity checking of some degree.
+
+Represent domain connectivity
+FEM example: 
+ - DOF mapping
+ 
+Arbitrary basis function specification using something like MathML
+Tensor product basis functions.
+
+ 
+Issues:
+How is inheritance done in Haskell?
