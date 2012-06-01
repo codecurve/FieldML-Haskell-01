@@ -1,3 +1,5 @@
+This is an attempt at using Haskell to prototype FieldML design ideas.
+
 ModML aims to create a DSL embedded in Haskell that end users can use.
 
 The current state (as at 24 May 2012) of this FieldML Haskell prototype is not to create an end-user language, but rather, to prototype the FieldML object model.
@@ -15,6 +17,50 @@ FEM example:
 Arbitrary basis function specification using something like MathML
 Tensor product basis functions.
 
- 
 Issues:
 How is inheritance done in Haskell?
+Additional structure, e.g. metric, algebraic operations: for some TopologicalSpace constructions, these can be induced.
+Need to be able to recognise massive homogeneity in order to optimise, e.g. for OpenCMISS.
+
+Haskell vs Scala:
+Scala plus factors: has inheritance.  Has case classes.  Nice support in Eclipse.
+Scala minus factors: syntax more verbose than Haskell. Can't neatly combine case classes with inheritance though, messay "unapply".
+Haskell plus factors: terse syntax. 
+Haskell minus factors: data types do not have inheritance. Tools not great.
+
+Want to be able to say things like:
+
+M1 :: TopologicalSpace
+M1 = Reals
+
+M2 :: TopologicalSpace
+M2 = CartesianProduct[Reals, Reals]
+
+f1 :: RealExpression
+f1 = x + y
+domain(f1) == CartesianProduct[Reals, Reals]
+codomain(f1) = Reals
+
+f2 :: Map
+domain(f2) == CartesianProduct[Reals, Reals]
+codomain(f2) = Reals
+f2 x = Project(1, x) + Project(2, x)
+Or
+f2 = lambda x -> Project(1, x) + Project(2, x)
+
+Naming Maps so that we can write point free composition?
+
+Tensor product:
+f3 = Tuple[1-x, x]
+TensorProduct(f3, f3)
+Would hopefully be:
+Tuple[
+ (1-x)(1-y)
+ x(1-y)
+ (1-x)y
+ xy
+]
+
+
+
+

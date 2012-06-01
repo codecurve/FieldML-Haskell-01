@@ -15,12 +15,12 @@ testMain = do
 
 
 -- Tests
-real2 = Product [Reals, Reals]
-real3 = Product [Reals, Reals, Reals]
+real2 = CartesianProduct [Reals, Reals]
+real3 = CartesianProduct [Reals, Reals, Reals]
 
-elementIds = labelsFromIntegerRange 1 4
+elementIds = IntegerRange 1 4
   
-m2 = Product [real2, Labels elementIds]
+m2 = CartesianProduct [real2, Labels elementIds]
 
 x = RealVariable "x"
 
@@ -45,7 +45,7 @@ expression2 =
     `And`
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
 
-prop_testResult1 = (domain expression2 == Product [Reals,Reals] )
+prop_testResult1 = (domain expression2 == CartesianProduct [Reals,Reals] )
   
 expression3a :: Map
 expression3a =
@@ -63,7 +63,7 @@ expression3c =
   Tuple [expression3a, expression3b]
 
 prop_testResult3a = ( domain expression3c == unitLineSegment )
-prop_testResult3b = ( codomain expression3c == Product [Reals,Reals] )
+prop_testResult3b = ( codomain expression3c == CartesianProduct [Reals,Reals] )
 
 
 expression4 :: Map
@@ -84,7 +84,7 @@ expression5 =
     `And`
     (RealVariable "y" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "y")
 
-prop_testResult5 = (domain expression5 == Product [Reals,Reals] )
+prop_testResult5 = (domain expression5 == CartesianProduct [Reals,Reals] )
 
 unitSquare = SimpleSubset expression5
     
@@ -93,8 +93,24 @@ unitSquare = SimpleSubset expression5
 prop_testValidate1 = (validate (Lambda [RealVariable "x"] (RealConstant 1)) )
     
 -- Disjoint union
-    
+labels1to10 = IntegerRange 1 10
+labels1to5 = IntegerRange 1 5
+d1 = DisjointUnion labels1to10 (DomainMapConstant unitSquare)
 
-  
-  
--- Just playing with Haskell Syntax here for convenience.  Will eventually delete everything below this line, and this comment.
+d2 = 
+  DisjointUnion 
+    (IntegerRange 1 10) 
+    (DomainMapIf 
+      (IntegerRange 1 5) 
+      (DomainMapConstant unitSquare) 
+      (DomainMapConstant simplex2d)
+    )
+
+d3 = 
+  DisjointUnion 
+    (IntegerRange 1 10) 
+    (DomainMapIf 
+      (IntegerRange 1 5) 
+      (DomainMapConstant unitSquare) 
+      (DomainMapConstant d2)
+    )
