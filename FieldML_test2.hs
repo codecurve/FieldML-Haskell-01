@@ -33,9 +33,6 @@ fromParametersInt1 dataSource (CartesianProduct [IntegerEnsemble index1, Integer
     \xs -> 
       let 
         index1Value = head xs
+        dropCount = n2 * (index1Value-1)
       in
-        let 
-          dropCount = n2 * (index1Value-1)
-        in
-          take n2  $ drop dropCount dataSource
-
+        take n2  $ drop dropCount dataSource
