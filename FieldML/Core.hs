@@ -17,12 +17,17 @@ import Text.Show.Functions
 -- Todo list:
 -- - Validation:
 -- --Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
--- - Disjoint Union
 -- - Connectivity
 -- - Tensor product basis functions
 -- - Coordinate system transformation
 -- - represent derivative continuity intention at connected points
 -- - "Versions"
+-- - Generate discretised points in a TopologicalSpace.
+-- - Partial evaluation, binding, composition, projection from a general variable.
+
+
+-- Done:
+-- - Disjoint Union
 
 
 type Label = String
@@ -30,8 +35,12 @@ data SetOfLabels =
 
   StringLabels (Set.Set Label) |
   
-  IntegerRange Int Int
+  IntegerRange Int Int |
   
+  Union SetOfLabels SetOfLabels |
+  
+  Intersection SetOfLabels SetOfLabels
+    
   deriving(Show, Eq)
 
 data Map = 
@@ -55,8 +64,11 @@ data Map =
   -- Any real value, as a constant.
   RealConstant Double |
   
-  -- A free variable...
+  -- A free real variable...
   RealVariable String |  
+  
+  -- A variable that can represent any element from any TopologicalSpace
+  GeneralVariable String |
   
   -- Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
   Plus Map Map |
@@ -113,13 +125,15 @@ data TopologicalSpace =
 
 
 -- Domain Maps are for constructing disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
--- Todo: need a way to have more general expressions such as integer ranges that are used to select the resulting TopologicalSpace
 data DomainMap =
 
   -- This maps each label to the same TopologicalSpace
   DomainMapConstant TopologicalSpace |
   
-  -- The given map must have a labelset as its domain, and labels where the map is true are the first DomainMap's value, false are the second.
+  -- DomainMapIf is either embedded in another parent DomainMapIf constructor, or in a DisjointUnion parent constructor.
+  -- Either way, the parent constructor specifies a SetOfLabels, called s1.  This constructor's set of labels is called s2.
+  -- The semantics are that for each x in s1 if it is in s2, then the domain is the one produced by the first domain map else it is the one produced by the 
+  -- second domain map.
   DomainMapIf SetOfLabels DomainMap DomainMap
   
   deriving (Show, Eq)
