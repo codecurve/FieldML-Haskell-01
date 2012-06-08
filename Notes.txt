@@ -22,16 +22,17 @@ How is inheritance done in Haskell?
 Additional structure, e.g. metric, algebraic operations: for some TopologicalSpace constructions, these can be induced.
 Need to be able to recognise massive homogeneity in order to optimise, e.g. for OpenCMISS.
 
--- Todo list:
--- - Validation:
--- --Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
--- - Connectivity
--- - Tensor product basis functions
--- - Coordinate system transformation
--- - represent derivative continuity intention at connected points
--- - "Versions"
--- - Generate discretised points in a TopologicalSpace.
--- - Partial evaluation, binding, composition, projection from a general variable.
+-- Todo list ():
+- FieldML.Core, Haskell
+-- -- Validation:
+-- ---Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
+-- -- Connectivity
+-- -- Tensor product basis functions
+-- -- Coordinate system transformation
+-- -- represent derivative continuity intention at connected points
+-- -- "Versions"
+-- -- Generate discretised points in a TopologicalSpace.
+-- -- Partial application, binding, composition, projection from a general variable.
 
 
 -- Done:
