@@ -81,6 +81,9 @@ data Map =
   -- | If x {- then -} a {- else -} b, assumes codomain of "a" and "b" are the same, and that codomain of x is Booleans
   If Map Map Map |
 
+  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  
+  NamedMap String |
+
   Lambda [Map] Map |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
