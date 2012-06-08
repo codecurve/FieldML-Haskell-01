@@ -9,7 +9,7 @@ import Text.Show.Functions
 -- Auckland Bioengineering Institute
 -- 2012
 -- University of Auckland
--- Permission granted to redistribute in source code or binary form.  No warranty of any kind is given.
+-- Permission granted to redistribute in source code or binary form, attributing the contributors.  No warranty of any kind is given.
 --
 -- The ideas here were strongly influenced by Andrew Miller's open source "ModML", with some code copied directly from ModML for some of the early versions.
 
@@ -76,11 +76,12 @@ data Map =
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
   -- where A is the same as the domain as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
   -- and B is the domain of g as a single slot for the tuple that represents g's domain.
+  -- Since any Map essentially is an expression in some variables, this is equivalent to using the value of g in place of the relevant variable.
   PartialApplication Int Map Map |
   
   -- Compose f g = f(g(x)), assumes f::b->c, g::a->b (i.e. domain/codomain compatibility).
-  -- Todo: some confusion here: most other operators are already compositions, what is this composition?  Decided to hide "Compose" for now.
-  -- Compose Map Map |
+  -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
+  Compose Map Map |
   
   -- | The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
   -- and n equal to the length of the parameter source.
