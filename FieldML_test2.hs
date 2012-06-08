@@ -20,19 +20,31 @@ globalNodes = IntegerEnsemble [1..12]
 
 elements = IntegerEnsemble [1..2]
 
-elementNodes :: [Int]->[Int]
-elementNodes = fromParametersInt1 connectivity (CartesianProduct [elements, cubeLocalNodes])
+-- elementNodes :: [Int]->[Int]
+--elementNodes = fromParametersInt1 connectivity (CartesianProduct [elements, cubeLocalNodes])
 
--- This one is for the case where it is assumed that only the index from index1 will be provided.
-fromParametersInt1 :: [Int]->TopologicalSpace->([Int]->[Int])
-fromParametersInt1 dataSource (CartesianProduct [IntegerEnsemble index1, IntegerEnsemble index2]) =
-  let 
-    n1 = length index1
-    n2 = length index2
-  in
-    \xs -> 
-      let 
-        index1Value = head xs
-        dropCount = n2 * (index1Value-1)
-      in
-        take n2  $ drop dropCount dataSource
+data Cardinality =
+  Discrete Int |
+  Continuous
+  deriving (Show)
+
+cardinality :: TopologicalSpace -> Cardinality
+cardinality (IntegerEnsemble xs) = Discrete $ length xs
+-- cardinality ((CartesianProduct xs)) =
+  -- a * b
+  -- where
+    -- Discrete a = (cardinality $ head xs) 
+    -- Discrete b = (cardinality $ CartesianProduct xs)
+
+-- fromParametersInt :: [Int]->TopologicalSpace->([Int]->[Int])
+-- fromParametersInt dataSource (CartesianProduct headEnsemble:listOfEnsembles ) =
+  -- let 
+    -- n1 = length index1
+    -- n2 = length index2
+  -- in
+    -- \xs -> 
+      -- let 
+        -- index1Value = head xs
+        -- dropCount = n2 * (index1Value-1)
+      -- in
+        -- take n2  $ drop dropCount dataSource
