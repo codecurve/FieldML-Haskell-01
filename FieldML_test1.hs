@@ -114,3 +114,18 @@ d3 =
       (DomainMapConstant unitSquare) 
       (DomainMapConstant d2)
     )
+
+-- Partial application
+polarToCartesian =
+  Tuple
+    [
+      Times
+        (CSymbol "openmath cd transc1 cos" (RealVariable "theta"))
+        (RealVariable "radius")
+      ,
+      Times
+        (CSymbol "openmath cd transc1 sin" (RealVariable "theta"))
+        (RealVariable "radius")
+    ]
+
+prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)

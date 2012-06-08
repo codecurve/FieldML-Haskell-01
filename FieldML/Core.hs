@@ -63,6 +63,11 @@ data Map =
   Times Map Map |
   Divide Map Map |
 
+  -- | The string refers to the relevant entry in an OpenMath content dictionary by URL.
+  -- The Map provided must either be a real variable for OpenMath functions that are a function of a real variable, 
+  -- or a Tuple for functions of more than one variable.
+  CSymbol String Map |
+
   Tuple [Map] |
 
   -- | If x {- then -} a {- else -} b, assumes codomain of "a" and "b" are the same, and that codomain of x is Booleans
@@ -160,6 +165,8 @@ listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Lambda fs _) = listOfFreeRealVariables $ Tuple fs
 listOfFreeRealVariables (Restriction _ f ) = listOfFreeRealVariables f -- Todo: What if the restriction fixes one of the variables?
 
+listOfFreeRealVariables (CSymbol _ f) = listOfFreeRealVariables f
+
   
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
@@ -192,6 +199,10 @@ domain (LessThan a _) = domain a
 domain (Equal a _) = domain a
 domain (Restriction s _ ) = s
 
+-- Todo: We will need to comprehensively go through OpenMath CDs that we want to support and fill this out.
+domain (CSymbol "openmath cd transc1 cos" _) = Reals
+domain (CSymbol "openmath cd transc1 sin" _) = Reals
+
   
 codomain :: Map ->TopologicalSpace
 codomain (RealConstant _ ) = Reals
@@ -213,6 +224,8 @@ codomain (Not a) = Booleans
 codomain (LessThan a _) = Booleans
 codomain (Equal a _) = Booleans
 codomain (Restriction _ f ) = codomain f
+codomain (CSymbol "openmath cd transc1 cos" _) = Reals
+codomain (CSymbol "openmath cd transc1 sin" _) = Reals
 
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
@@ -311,3 +324,6 @@ validateMap (Restriction (SimpleSubset a) f ) =
   validateMap f &&
   validateMap a &&
   domain a == domain f
+
+validateMap (CSymbol "openmath cd transc1 cos" f) = codomain f == Reals
+validateMap (CSymbol "openmath cd transc1 sin" f) = codomain f == Reals
