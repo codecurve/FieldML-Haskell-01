@@ -14,20 +14,7 @@ import Text.Show.Functions
 -- The ideas here were strongly influenced by Andrew Miller's open source "ModML", with some code copied directly from ModML for some of the early versions.
 
 -- This is under construction
--- Todo list:
--- - Validation:
--- --Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
--- - Connectivity
--- - Tensor product basis functions
--- - Coordinate system transformation
--- - represent derivative continuity intention at connected points
--- - "Versions"
--- - Generate discretised points in a TopologicalSpace.
--- - Partial evaluation, binding, composition, projection from a general variable.
 
-
--- Done:
--- - Disjoint Union
 
 
 type Label = String
