@@ -37,7 +37,7 @@ data SetOfLabels =
   
   IntegerRange Int Int |
   
-  Union SetOfLabels SetOfLabels |
+  DiscreteSetUnion SetOfLabels SetOfLabels |
   
   Intersection SetOfLabels SetOfLabels
     
@@ -121,6 +121,9 @@ data TopologicalSpace =
   -- | The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
   
+  -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.
+  SubsetReUnion [TopologicalSpace] |
+  
   -- | Used for creating the quotient TopologicalSpace from the provided TopologicalSpaces. The map is required to be a boolean map.
   -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
   -- It is assumed, and would need validation, that the boolean map meets the requirements of an equivalence relation.
@@ -174,11 +177,13 @@ domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
 domain (RealVariable _ ) = Reals
 domain (Tuple []) = UnitSpace
-domain (t@(Tuple _)) = 
-  let 
+domain (Tuple [f]) = domain f
+domain (t@(Tuple _)) 
+  | n > 1 = CartesianPower n Reals
+  | otherwise = Reals
+  where 
     varSet = listOfFreeRealVariables t
     n = Set.size varSet 
-  in CartesianPower n Reals
 domain (Lambda [] _) = UnitSpace 
 domain (Lambda fs _) 
   | (length fs > 1) = CartesianProduct $ map domain fs
@@ -226,95 +231,95 @@ getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (CartesianProduct xs) = xs !! n
 
 
-validate :: Map -> Bool
-validate (RealConstant _ ) = True
-validate (RealVariable _ ) = True
-validate (If x a b ) = 
-  validate a && 
-  validate b && 
-  validate x && 
+validateMap :: Map -> Bool
+validateMap (RealConstant _ ) = True
+validateMap (RealVariable _ ) = True
+validateMap (If x a b ) = 
+  validateMap a && 
+  validateMap b && 
+  validateMap x && 
   (domain x == domain a ) &&
   (domain x == domain b) && 
   (codomain a == codomain b) &&
   (codomain x == Booleans)
 
-validate (Plus a b) = 
-  validate a &&
-  validate b &&
+validateMap (Plus a b) = 
+  validateMap a &&
+  validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
   
-validate (Minus a b) =
-  validate a &&
-  validate b &&
+validateMap (Minus a b) =
+  validateMap a &&
+  validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
 
-validate (Times a b) =
-  validate a &&
-  validate b &&
+validateMap (Times a b) =
+  validateMap a &&
+  validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
 
-validate (Divide a b) =
-  validate a &&
-  validate b &&
+validateMap (Divide a b) =
+  validateMap a &&
+  validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
 
--- validate (Compose f g) = 
---  validate f &&
---  validate g &&
+-- validateMap (Compose f g) = 
+--  validateMap f &&
+--  validateMap g &&
 --  codomain g == domain f
 
-validate (FromParameterSource _ _) = True -- Todo: Just taking a shortcut for now, must fix this.
+validateMap (FromParameterSource _ _) = True -- Todo: Just taking a shortcut for now, must fix this.
 
-validate (Project n f) = validate f -- Todo: check that codomain of f has at least n factors.
+validateMap (Project n f) = validateMap f -- Todo: check that codomain of f has at least n factors.
 
-validate (Tuple fs) = foldr (&&) True (map validate fs)
+validateMap (Tuple fs) = foldr (&&) True (map validateMap fs)
 
-validate (BooleanConstant _) = True
+validateMap (BooleanConstant _) = True
 
-validate (And a b) =
-  validate a &&
-  validate b &&
+validateMap (And a b) =
+  validateMap a &&
+  validateMap b &&
   domain a == domain b &&
   codomain a == Booleans &&
   codomain b == Booleans
   
-validate (Or a b) =
-  validate a &&
-  validate b &&
+validateMap (Or a b) =
+  validateMap a &&
+  validateMap b &&
   domain a == domain b &&
   codomain a == Booleans &&
   codomain b == Booleans
 
-validate (Not a) =
-  validate a &&
+validateMap (Not a) =
+  validateMap a &&
   codomain a == Booleans
 
-validate (LessThan a b) = 
-  validate a &&
-  validate b &&
+validateMap (LessThan a b) = 
+  validateMap a &&
+  validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b ) &&
   codomain a == Reals
 
-validate (Equal a b) =
-  validate a &&
-  validate b &&
+validateMap (Equal a b) =
+  validateMap a &&
+  validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b )
 
-validate (Lambda bs f ) = 
-  foldr (&&) True (map validate bs) &&
-  validate f
+validateMap (Lambda bs f ) = 
+  foldr (&&) True (map validateMap bs) &&
+  validateMap f
 
-validate (Restriction (SimpleSubset a) f ) = 
-  validate f &&
-  validate a &&
+validateMap (Restriction (SimpleSubset a) f ) = 
+  validateMap f &&
+  validateMap a &&
   domain a == domain f

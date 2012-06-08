@@ -90,7 +90,7 @@ unitSquare = SimpleSubset expression5
     
 
 -- Validate
-prop_testValidate1 = (validate (Lambda [RealVariable "x"] (RealConstant 1)) )
+prop_testValidate1 = (validateMap (Lambda [RealVariable "x"] (RealConstant 1)) )
     
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
