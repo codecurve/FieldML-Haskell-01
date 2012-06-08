@@ -45,55 +45,60 @@ data SetOfLabels =
 
 data Map = 
 
-  -- A constant true or false.
+  -- | A constant true or false.
   BooleanConstant Bool |
 
-  -- Logical and of two expressions.
+  -- | Logical and of two expressions.
   And Map Map |
 
-  -- Logical not of an expression.
+  -- | Logical not of an expression.
   Not Map |
 
-  -- Logical or of two expressions.
+  -- | Logical or of two expressions.
   Or Map Map |
 
   LessThan Map Map |
 
   Equal Map Map |
 
-  -- Any real value, as a constant.
+  -- | Any real value, as a constant.
   RealConstant Double |
   
-  -- A free real variable...
+  -- | A free real variable...
   RealVariable String |  
   
-  -- A variable that can represent any element from any TopologicalSpace
+  -- | A variable that can represent any element from any TopologicalSpace
   GeneralVariable String |
   
-  -- Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
+  -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
   Plus Map Map |
   Minus Map Map |
   Times Map Map |
   Divide Map Map |
 
   Tuple [Map] |
-  
+
+  -- | If x {- then -} a {- else -} b, assumes codomain of "a" and "b" are the same, and that codomain of x is Booleans
+  If Map Map Map |
+
   Lambda [Map] Map |
   
-  -- If x {- then -} a {- else -} b, assumes codomain of "a" and "b" are the same, and that codomain of x is Booleans
-  If Map Map Map |
+  -- | PartialApplication n f g results in a map h whose domain A cross B, 
+  -- where A is the same as the domain as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
+  -- and B is the domain of g as a single slot for the tuple that represents g's domain.
+  PartialApplication Int Map Map |
   
   -- Compose f g = f(g(x)), assumes f::b->c, g::a->b (i.e. domain/codomain compatibility).
   -- Todo: some confusion here: most other operators are already compositions, what is this composition?  Decided to hide "Compose" for now.
   -- Compose Map Map |
   
-  -- The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
+  -- | The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
   -- and n equal to the length of the parameter source.
   FromParameterSource [Double] TopologicalSpace |
   
   Project { factor :: Int, source :: Map } |
 
-  -- The given topological space must be a simple subdomain of the domain of the given map.
+  -- | The given topological space must be a simple subdomain of the domain of the given map.
   Restriction TopologicalSpace Map
   deriving (Show, Eq)
   
@@ -110,10 +115,10 @@ data TopologicalSpace =
   -- Todo: unit tests of DisjointUnion, and the design though here is probably incomplete.
   DisjointUnion SetOfLabels DomainMap |
   
-  -- The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
+  -- | The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
   
-  -- Used for creating the quotient TopologicalSpace from the provided TopologicalSpaces. The map is required to be a boolean map.
+  -- | Used for creating the quotient TopologicalSpace from the provided TopologicalSpaces. The map is required to be a boolean map.
   -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
   -- It is assumed, and would need validation, that the boolean map meets the requirements of an equivalence relation.
   Quotient TopologicalSpace TopologicalSpace Map 
@@ -124,13 +129,13 @@ data TopologicalSpace =
   deriving (Show, Eq)
 
 
--- Domain Maps are for constructing disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
+-- | Domain Maps are for constructing disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
 data DomainMap =
 
-  -- This maps each label to the same TopologicalSpace
+  -- | This maps each label to the same TopologicalSpace
   DomainMapConstant TopologicalSpace |
   
-  -- DomainMapIf is either embedded in another parent DomainMapIf constructor, or in a DisjointUnion parent constructor.
+  -- | DomainMapIf is either embedded in another parent DomainMapIf constructor, or in a DisjointUnion parent constructor.
   -- Either way, the parent constructor specifies a SetOfLabels, called s1.  This constructor's set of labels is called s2.
   -- The semantics are that for each x in s1 if it is in s2, then the domain is the one produced by the first domain map else it is the one produced by the 
   -- second domain map.
