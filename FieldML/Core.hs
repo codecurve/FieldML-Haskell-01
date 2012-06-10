@@ -107,6 +107,9 @@ data TopologicalSpace =
   Labels SetOfLabels |
   CartesianProduct [TopologicalSpace] |
   CartesianPower Int TopologicalSpace |
+  
+  -- | Factors xs m creates the a topological space from a cartesian product m, omitting factors of m that are not in xs.
+  Factors [Int] TopologicalSpace |
 
   -- Todo: unit tests of DisjointUnion, and the design though here is probably incomplete.
   DisjointUnion SetOfLabels DomainMap |
@@ -117,10 +120,12 @@ data TopologicalSpace =
   -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.
   SubsetReUnion [TopologicalSpace] |
   
-  -- | Used for creating the quotient TopologicalSpace from the provided TopologicalSpaces. The map is required to be a boolean map.
-  -- The resulting space is like the original space, but with points where the boolean map evaluates to True treated as a single point.
-  -- It is assumed, and would need validation, that the boolean map meets the requirements of an equivalence relation.
-  Quotient TopologicalSpace TopologicalSpace Map 
+  -- | Quotient ms fs creates the quotient of the TopologicalSpaces, ms.  The equivalence operator for the quotient is induced from
+  -- the maps in fs.  For each space in ms there must be a corresponding map in fs.
+  -- The domain of each map must correspond to each of the ms.
+  -- All the maps in fs must have the same codomain.
+  -- The Equivalence operator is induced as follows: all points in any of the ms that map to the same point in the codomain are deemed equivalent.
+  Quotient [TopologicalSpace] [Map] 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a method, rather than being a fundamental constructor.
@@ -144,6 +149,10 @@ data DomainMap =
   
 -- Focus here is on *processing* the "FieldML" data structures.  
 
+-- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.
+simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
+simplifyTopologicalSpace (Factors (xs (CartesianProduct ys))) = CartesianProduct ys using xs as indices
+
 listOfFreeRealVariables :: Map -> Set.Set String
 listOfFreeRealVariables (RealConstant _ ) = Set.empty
 listOfFreeRealVariables (RealVariable variableName ) = Set.singleton variableName
@@ -163,7 +172,15 @@ listOfFreeRealVariables (Not a) = listOfFreeRealVariables a
 listOfFreeRealVariables (LessThan a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
 listOfFreeRealVariables (Lambda fs _) = listOfFreeRealVariables $ Tuple fs
-listOfFreeRealVariables (Restriction _ f ) = listOfFreeRealVariables f -- Todo: What if the restriction fixes one of the variables?
+listOfFreeRealVariables (Restriction _ f ) = listOfFreeRealVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
+
+listOfFreeRealVariables (PartialApplication n f g) = 
+ Set.union fvars gvars
+ where
+   (front, back) = (splitAt (n-1) (drop 1 (Set.elems (listOfFreeRealVariables f))))
+   newList = front ++ back
+   fvars = Set.fromList newList
+   gvars = (listOfFreeRealVariables g)
 
 listOfFreeRealVariables (CSymbol _ f) = listOfFreeRealVariables f
 
@@ -199,7 +216,7 @@ domain (LessThan a _) = domain a
 domain (Equal a _) = domain a
 domain (Restriction s _ ) = s
 
--- Todo: We will need to comprehensively go through OpenMath CDs that we want to support and fill this out.
+-- Todo: We will need to comprehensively go through OpenMath CDs that we want to support and fill this out. Likewise for codomain.
 domain (CSymbol "openmath cd transc1 cos" _) = Reals
 domain (CSymbol "openmath cd transc1 sin" _) = Reals
 

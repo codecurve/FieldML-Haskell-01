@@ -129,3 +129,8 @@ polarToCartesian =
     ]
 
 prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)
+
+polarToCartesianFixedRadius = 
+  PartialApplication 1 (RealConstant 1) (polarToCartesian)
+
+    
