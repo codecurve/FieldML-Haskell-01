@@ -125,6 +125,7 @@ data TopologicalSpace =
   -- The domain of each map must correspond to each of the ms.
   -- All the maps in fs must have the same codomain.
   -- The Equivalence operator is induced as follows: all points in any of the ms that map to the same point in the codomain are deemed equivalent.
+  -- Todo: this seems to implicitly create a disjoint union, could alternatively just always insist that the disjoint union is formed first, which is how Richard did it.
   Quotient [TopologicalSpace] [Map] 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
