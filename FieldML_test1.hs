@@ -133,4 +133,9 @@ prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)
 polarToCartesianFixedRadius = 
   PartialApplication 1 (RealConstant 1) (polarToCartesian)
 
-    
+-- Circle from unit line    
+pi = CSymbol "openmath cd ? PI" UnitElement
+circleConnectionMap =
+    CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", pi] )
+
+circle = Connect unitLineSegment circleConnectionMap
