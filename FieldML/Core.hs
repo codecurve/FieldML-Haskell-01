@@ -32,6 +32,9 @@ data SetOfLabels =
 
 data Map = 
 
+  -- | The sole element of the UnitSpace
+  UnitElement |
+
   -- | A constant true or false.
   BooleanConstant Bool |
 
