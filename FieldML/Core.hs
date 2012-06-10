@@ -120,13 +120,11 @@ data TopologicalSpace =
   -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.
   SubsetReUnion [TopologicalSpace] |
   
-  -- | Quotient ms fs creates the quotient of the TopologicalSpaces, ms.  The equivalence operator for the quotient is induced from
-  -- the maps in fs.  For each space in ms there must be a corresponding map in fs.
-  -- The domain of each map must correspond to each of the ms.
-  -- All the maps in fs must have the same codomain.
-  -- The Equivalence operator is induced as follows: all points in any of the ms that map to the same point in the codomain are deemed equivalent.
-  -- Todo: this seems to implicitly create a disjoint union, could alternatively just always insist that the disjoint union is formed first, which is how Richard did it.
-  Quotient [TopologicalSpace] [Map] 
+  -- | Quotient m f creates the quotient of the TopologicalSpaces, m.  The equivalence operator for the quotient is induced from
+  -- the maps in f.  
+  -- The m must be a subset of the domain of f.
+  -- The Equivalence operator is induced as follows: all points in m that map to the same point in the codomain are deemed equivalent.
+  Quotient TopologicalSpace Map 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a method, rather than being a fundamental constructor.
