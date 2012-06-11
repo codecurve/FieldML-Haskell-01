@@ -134,8 +134,11 @@ polarToCartesianFixedRadius =
   PartialApplication 1 (RealConstant 1) (polarToCartesian)
 
 -- Circle from unit line    
+-- Todo: get CD, and add to known lists.
 pi = CSymbol "openmath cd ? PI" UnitElement
+
 circleConnectionMap =
-    CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", pi] )
+-- Todo: get CD, and add to known lists.
+  CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", pi] )
 
 circle = Connect unitLineSegment circleConnectionMap
