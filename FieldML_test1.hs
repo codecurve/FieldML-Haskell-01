@@ -6,6 +6,7 @@ where
 import FieldML.Core
 import Control.Monad (unless)
 import Data.List (stripPrefix)
+import qualified Data.Set as Set
 import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
 
@@ -131,8 +132,10 @@ polarToCartesian =
 prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)
 
 polarToCartesianFixedRadius = 
-  PartialApplication 1 (RealConstant 1) (polarToCartesian)
+  PartialApplication 1 (polarToCartesian) (RealConstant 1)
 
+prop_testResult7 = ((listOfFreeRealVariables polarToCartesianFixedRadius) == (Set.fromList ["theta"]))
+  
 -- Circle from unit line    
 -- Todo: get CD, and add to known lists.
 fieldml_pi = CSymbol "openmath cd ? PI" UnitElement
