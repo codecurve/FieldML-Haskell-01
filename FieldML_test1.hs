@@ -135,10 +135,10 @@ polarToCartesianFixedRadius =
 
 -- Circle from unit line    
 -- Todo: get CD, and add to known lists.
-pi = CSymbol "openmath cd ? PI" UnitElement
+fieldml_pi = CSymbol "openmath cd ? PI" UnitElement
 
 circleConnectionMap =
 -- Todo: get CD, and add to known lists.
-  CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", pi] )
+  CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", fieldml_pi] )
 
-circle = Connect unitLineSegment circleConnectionMap
+circle = Quotient unitLineSegment circleConnectionMap

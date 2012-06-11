@@ -157,9 +157,9 @@ data DomainMap =
 
 -- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.
 simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
-simplifyTopologicalSpace (Factors (xs (CartesianProduct ys))) = CartesianProduct ys using xs as indices
-simplifyTopologicalSpace CartesianProduct [] = UnitSpace
-simplifyTopologicalSpace CartesianProduct [m] = m
+-- simplifyTopologicalSpace (Factors (xs (CartesianProduct ys))) = CartesianProduct ys using xs as indices
+simplifyTopologicalSpace (CartesianProduct []) = UnitSpace
+simplifyTopologicalSpace (CartesianProduct [m]) = m
 
 listOfFreeRealVariables :: Map -> Set.Set String
 listOfFreeRealVariables (RealConstant _ ) = Set.empty
