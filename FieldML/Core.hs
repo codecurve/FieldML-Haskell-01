@@ -32,7 +32,8 @@ data SetOfLabels =
 
 data Map = 
 
-  -- | The sole element of the UnitSpace
+  -- | The sole element of the UnitSpace.
+  -- Note that this is equivalent to Tuple []
   UnitElement |
 
   -- | A constant true or false.
@@ -104,7 +105,10 @@ data Map =
 
 -- Todo: Andrew Miller proposed that we include spaces of functions.
 data TopologicalSpace = 
+
+  -- | Note that this is equivalent to CartesianProduct []
   UnitSpace |
+  
   Reals |
   Booleans |
   Labels SetOfLabels |
@@ -154,6 +158,8 @@ data DomainMap =
 -- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.
 simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
 simplifyTopologicalSpace (Factors (xs (CartesianProduct ys))) = CartesianProduct ys using xs as indices
+simplifyTopologicalSpace CartesianProduct [] = UnitSpace
+simplifyTopologicalSpace CartesianProduct [m] = m
 
 listOfFreeRealVariables :: Map -> Set.Set String
 listOfFreeRealVariables (RealConstant _ ) = Set.empty
