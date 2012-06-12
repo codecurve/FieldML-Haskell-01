@@ -49,20 +49,16 @@ expression2 =
 prop_testResult1 = (domain expression2 == CartesianProduct [Reals,Reals] )
   
 expression3a :: Map
-expression3a =
-  Restriction 
-  unitLineSegment -- A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
-  ( (Lambda [RealVariable "x"] (RealConstant 1) ) `Minus` RealVariable "x" )
+expression3a = Lambda [RealVariable "x"] ((RealConstant 1) `Minus` (RealVariable "x"))
 
 expression3b :: Map
-expression3b =
-  Restriction 
-  unitLineSegment
-  (RealVariable "x")
+expression3b = RealVariable "x"
   
 -- By the way, this is a 1D linear lagrange interpolation basis.
 expression3c =
-  Tuple [expression3a, expression3b]
+  Restriction
+    unitLineSegment -- A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
+    (Tuple [expression3a, expression3b])
 
 prop_testResult3a = ( domain expression3c == unitLineSegment )
 prop_testResult3b = ( codomain expression3c == CartesianProduct [Reals,Reals] )
