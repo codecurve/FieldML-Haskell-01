@@ -160,6 +160,7 @@ simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
 simplifyTopologicalSpace (Factors xs (CartesianProduct ys)) = CartesianProduct (map ((!!) ys) xs)
 simplifyTopologicalSpace (CartesianProduct []) = UnitSpace
 simplifyTopologicalSpace (CartesianProduct [m]) = m
+simplifyTopologicalSpace m = m
 
 listOfFreeRealVariables :: Map -> Set.Set String
 listOfFreeRealVariables (RealConstant _ ) = Set.empty
