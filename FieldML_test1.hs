@@ -145,3 +145,9 @@ circleConnectionMap =
   CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", fieldml_pi] )
 
 circle = Quotient unitLineSegment circleConnectionMap
+
+-- Some simplification
+prop_testResult8 =
+  ( CartesianProduct [Reals, Reals] ==
+    simplifyTopologicalSpace  (Factors  ([0,2]) (CartesianProduct  [Reals, Booleans, Reals]))
+  )
