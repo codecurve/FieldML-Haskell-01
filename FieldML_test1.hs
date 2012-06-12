@@ -60,6 +60,7 @@ expression3b =
   unitLineSegment
   (RealVariable "x")
   
+-- By the way, this is a 1D linear lagrange interpolation basis.
 expression3c =
   Tuple [expression3a, expression3b]
 
