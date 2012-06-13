@@ -56,10 +56,10 @@ data Map =
   RealConstant Double |
   
   -- | A free real variable...
-  RealVariable String |  
+--  RealVariable String |  
   
-  -- | A variable that can represent any element from any TopologicalSpace
-  GeneralVariable String |
+  -- | A variable that can represent any element from the specified TopologicalSpace
+  GeneralVariable String TopologicalSpace|
   
   -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
   Plus Map Map |
@@ -116,6 +116,8 @@ data TopologicalSpace =
   CartesianPower Int TopologicalSpace |
   
   -- | Factors xs m creates the a topological space from a cartesian product m, omitting factors of m that are not in xs.
+  -- Todo: xs is ordered, and can contain duplicates, thus this allows for repeating of a factor, and reordering of the factors, which are 
+  -- more complex behaviours than are intended.  Reordering seems OK, but repitition is preferably done using CartesianProduct or CartesianPower.
   Factors [Int] TopologicalSpace |
 
   -- Todo: unit tests of DisjointUnion, and the design though here is probably incomplete.
@@ -164,7 +166,7 @@ simplifyTopologicalSpace m = m
 
 listOfFreeRealVariables :: Map -> Set.Set String
 listOfFreeRealVariables (RealConstant _ ) = Set.empty
-listOfFreeRealVariables (RealVariable variableName ) = Set.singleton variableName
+listOfFreeRealVariables (GeneralVariable variableName ) = Set.singleton variableName
 listOfFreeRealVariables (Tuple fs) = foldr Set.union Set.empty (map listOfFreeRealVariables fs) 
 listOfFreeRealVariables (If x a b ) = listOfFreeRealVariables $ Tuple [ x, a, b ]
 listOfFreeRealVariables (Plus a b) = listOfFreeRealVariables $ Tuple [ a, b ]
