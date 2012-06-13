@@ -59,7 +59,7 @@ data Map =
 --  RealVariable String |  
   
   -- | A variable that can represent any element from the specified TopologicalSpace
-  GeneralVariable String TopologicalSpace|
+  GeneralVariable String TopologicalSpace |
   
   -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
   Plus Map Map |
@@ -164,67 +164,59 @@ simplifyTopologicalSpace (CartesianProduct []) = UnitSpace
 simplifyTopologicalSpace (CartesianProduct [m]) = m
 simplifyTopologicalSpace m = m
 
-listOfFreeRealVariables :: Map -> Set.Set String
-listOfFreeRealVariables (RealConstant _ ) = Set.empty
-listOfFreeRealVariables (GeneralVariable variableName ) = Set.singleton variableName
-listOfFreeRealVariables (Tuple fs) = foldr Set.union Set.empty (map listOfFreeRealVariables fs) 
-listOfFreeRealVariables (If x a b ) = listOfFreeRealVariables $ Tuple [ x, a, b ]
-listOfFreeRealVariables (Plus a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Minus a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Times a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Divide a b) = listOfFreeRealVariables $ Tuple [ a, b ]
--- listOfFreeRealVariables (Compose f g) = listOfFreeRealVariables g
-listOfFreeRealVariables (FromParameterSource _ a) = Set.empty -- Todo: Ouch, this is not correct, but it seems Poul and Richard are right, factors have to be named, otherwise, where do the names come from?
-listOfFreeRealVariables (Project n f) = listOfFreeRealVariables f
-listOfFreeRealVariables (BooleanConstant _) = Set.empty
-listOfFreeRealVariables (And a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Or a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Not a) = listOfFreeRealVariables a
-listOfFreeRealVariables (LessThan a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Equal a b) = listOfFreeRealVariables $ Tuple [ a, b ]
-listOfFreeRealVariables (Lambda fs _) = listOfFreeRealVariables $ Tuple fs
-listOfFreeRealVariables (Restriction _ f ) = listOfFreeRealVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
+listOfFreeGeneralVariables :: Map -> [Map]
+listOfFreeGeneralVariables (RealConstant _ ) = []
+listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
+listOfFreeGeneralVariables (Tuple fs) = nub (map listOfFreeGeneralVariables fs) 
+listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
+listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Times a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Divide a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+-- listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables g
+listOfFreeGeneralVariables (FromParameterSource _ a) = [] -- Todo: Ouch, this is not correct, but it seems Poul and Richard are right, factors have to be named, otherwise, where do the names come from? Actually, I think I know what to do here: name the variables as part of the FromParameterSource constructor, in fact, just provide a list of GeneralVariables.
+listOfFreeGeneralVariables (Project n f) = listOfFreeGeneralVariables f
+listOfFreeGeneralVariables (BooleanConstant _) = []
+listOfFreeGeneralVariables (And a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Or a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
+listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ Tuple fs
+listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 
-listOfFreeRealVariables (PartialApplication n f g) = 
- Set.union fvars gvars
+listOfFreeGeneralVariables (PartialApplication n f g) = 
+ nub ( fvars ++ gvars )
  where
-   (front, back) = (splitAt (n-1) (drop 1 (Set.elems (listOfFreeRealVariables f))))
+   (front, back) = (splitAt (n-1) (drop 1 (listOfFreeGeneralVariables f)))
    newList = front ++ back
-   fvars = Set.fromList newList
-   gvars = (listOfFreeRealVariables g)
+   fvars = newList
+   gvars = (listOfFreeGeneralVariables g)
 
-listOfFreeRealVariables (CSymbol _ f) = listOfFreeRealVariables f
+listOfFreeGeneralVariables (CSymbol _ f) = listOfFreeGeneralVariables f
 
-  
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
-domain (RealVariable _ ) = Reals
+domain (GeneralVariable _ m) = m
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (t@(Tuple _)) 
-  | n > 1 = CartesianPower n Reals
-  | otherwise = Reals
-  where 
-    varSet = listOfFreeRealVariables t
-    n = Set.size varSet 
+domain (Tuple fs) = CartesianProduct $ nub (concatMap listOfFreeGeneralVariables fs)
 domain (Lambda [] _) = UnitSpace 
-domain (Lambda fs _) 
-  | (length fs > 1) = CartesianProduct $ map domain fs
-  | otherwise = domain (head fs) -- This is just to avoid getting Product[singleFactor]
-domain (If x _ _ ) = domain x -- Todo: Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
-domain (Plus a _) = domain a
-domain (Minus a _) = domain a
-domain (Times a _) = domain a
-domain (Divide a _) = domain a
+domain (Lambda (Tuple fs) _) = domain (Tuple fs)
+domain (If x a b ) = domain (Tuple [x,a,b]) 
+domain (Plus a b) = domain (Tuple [a,b])
+domain (Minus a b) = domain (Tuple [a,b])
+domain (Times a b) = domain (Tuple [a,b])
+domain (Divide a b) = domain (Tuple [a,b])
 -- domain (Compose _ g) = domain g
 domain (FromParameterSource _ a) = a
 domain (Project n f) = domain f
 domain (BooleanConstant _) = UnitSpace
-domain (And a _) = domain a
-domain (Or a _) = domain a
+domain (And a b) = domain (Tuple [a,b])
+domain (Or a b) = domain (Tuple [a,b])
 domain (Not a) = domain a
-domain (LessThan a _) = domain a
-domain (Equal a _) = domain a
+domain (LessThan a b) = domain (Tuple [a,b])
+domain (Equal a b) = domain (Tuple [a,b])
 domain (Restriction s _ ) = s
 
 -- Todo: We will need to comprehensively go through OpenMath CDs that we want to support and fill this out. Likewise for codomain.
@@ -234,7 +226,7 @@ domain (CSymbol "openmath cd transc1 sin" _) = Reals
   
 codomain :: Map ->TopologicalSpace
 codomain (RealConstant _ ) = Reals
-codomain (RealVariable _ ) = Reals
+codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
 codomain (Lambda _ f ) = codomain f
 codomain (If _ a _ ) = codomain a -- Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
@@ -243,8 +235,8 @@ codomain (Minus a _) = codomain a
 codomain (Times a _) = codomain a
 codomain (Divide a _) = codomain a
 -- codomain (Compose f _) = codomain f
-codomain (FromParameterSource _ a) = Reals -- Not sure if vector, matrix (tensor) valued params would be useful?
-codomain (Project n f) = getFactor n (domain f)
+codomain (FromParameterSource _ a) = Reals
+codomain (Project n f) = getFactor n (codomain f)
 codomain (BooleanConstant _) = Booleans
 codomain (And a _) = Booleans
 codomain (Or a _) = Booleans
@@ -262,7 +254,7 @@ getFactor n (CartesianProduct xs) = xs !! n
 
 validateMap :: Map -> Bool
 validateMap (RealConstant _ ) = True
-validateMap (RealVariable _ ) = True
+validateMap (GeneralVariable _ _) = True
 validateMap (If x a b ) = 
   validateMap a && 
   validateMap b && 

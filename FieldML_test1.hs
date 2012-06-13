@@ -23,7 +23,7 @@ elementIds = IntegerRange 1 4
   
 m2 = CartesianProduct [real2, Labels elementIds]
 
-x = RealVariable "x"
+x = GeneralVariable "x" Reals
 
 expression1 :: Map
 expression1 =  (x `LessThan` (Lambda [RealVariable "x"] (RealConstant 1) ))  `And` ( (Lambda [RealVariable "x"] (RealConstant 0) ) `LessThan` x)
@@ -38,7 +38,7 @@ unitLineSegment' =
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
   )
 
-xy = Lambda [RealVariable "xx", RealVariable "yy"] (Tuple [RealVariable "xx", RealVariable "yy"])
+xy = Lambda [GeneralVariable "xx" Reals, GeneralVariable "yy" Reals] (Tuple [GeneralVariable "xx" Reals, GeneralVariable "yy" Reals])
   
 expression2 :: Map
 expression2 =
@@ -49,10 +49,10 @@ expression2 =
 prop_testResult1 = (domain expression2 == CartesianProduct [Reals,Reals] )
   
 expression3a :: Map
-expression3a = Lambda [RealVariable "x"] ((RealConstant 1) `Minus` (RealVariable "x"))
+expression3a = Lambda [GeneralVariable "x" Reals] ((RealConstant 1) `Minus` (GeneralVariable "x" Reals))
 
 expression3b :: Map
-expression3b = RealVariable "x"
+expression3b = GeneralVariable "x" Reals
   
 -- By the way, this is a 1D linear lagrange interpolation basis.
 expression3c =
@@ -66,21 +66,21 @@ prop_testResult3b = ( codomain expression3c == CartesianProduct [Reals,Reals] )
 
 expression4 :: Map
 expression4 =
-  Lambda [RealVariable "x", RealVariable "y"] $
-    ( (RealConstant 0) `LessThan` RealVariable "x" )
+  Lambda [GeneralVariable "x" Reals, GeneralVariable "y" Reals] $
+    ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals )
     `And`
-    ( (RealConstant 0) `LessThan` RealVariable "y" )
+    ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals )
     `And`
-    ( ( RealVariable "x" `Plus` RealVariable "y" ) `LessThan` (RealConstant 1)  )
+    ( ( GeneralVariable "x" Reals `Plus` GeneralVariable "y" Reals ) `LessThan` (RealConstant 1)  )
 
 simplex2d = SimpleSubset expression4
   
 expression5 :: Map
 expression5 =
-  Lambda [RealVariable "x", RealVariable "y"] $
-    (RealVariable "x" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "x") 
+  Lambda [GeneralVariable "x" Reals, GeneralVariable "y" Reals] $
+    (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
     `And`
-    (RealVariable "y" `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` RealVariable "y")
+    (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
 
 prop_testResult5 = (domain expression5 == CartesianProduct [Reals,Reals] )
 
@@ -88,7 +88,7 @@ unitSquare = SimpleSubset expression5
     
 
 -- Validate
-prop_testValidate1 = (validateMap (Lambda [RealVariable "x"] (RealConstant 1)) )
+prop_testValidate1 = (validateMap (Lambda [GeneralVariable "x" Reals] (RealConstant 1)) )
     
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
@@ -118,12 +118,12 @@ polarToCartesian =
   Tuple
     [
       Times
-        (CSymbol "openmath cd transc1 cos" (RealVariable "theta"))
-        (RealVariable "radius")
+        (CSymbol "openmath cd transc1 cos" (GeneralVariable "theta" Reals))
+        (GeneralVariable "radius" Reals)
       ,
       Times
-        (CSymbol "openmath cd transc1 sin" (RealVariable "theta"))
-        (RealVariable "radius")
+        (CSymbol "openmath cd transc1 sin" (GeneralVariable "theta" Reals))
+        (GeneralVariable "radius" Reals)
     ]
 
 prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)
@@ -139,7 +139,7 @@ fieldml_pi = CSymbol "openmath cd ? PI" UnitElement
 
 circleConnectionMap =
 -- Todo: get CD, and add to known lists.
-  CSymbol "openmath cd ? modulus" (Tuple [RealVariable "theta", fieldml_pi] )
+  CSymbol "openmath cd ? modulus" (Tuple [GeneralVariable "theta" Reals, fieldml_pi] )
 
 circle = Quotient unitLineSegment circleConnectionMap
 
