@@ -85,4 +85,5 @@ Tuple[
 
 
 
+Note: Currently Maps and Values are treated as the same thing, a value is just a map whose domain is the UnitSpace.
 
