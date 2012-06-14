@@ -150,3 +150,18 @@ circle = Quotient circleConnectionMap
 
 -- Some simplification
 prop_testResult8 = ( simplifyTopologicalSpace (Factor 2 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
+
+-- Parameter map test
+-- 4 5 6
+-- 1 2 3
+
+localNode = GeneralVariable "localNode" (Labels (IntegerRange 1 4))
+elementId = GeneralVariable "elementId" (Labels (IntegerRange 1 2))
+
+localToGlobalNodes = 
+  FromIntegerParameterSource
+    [ 1, 2, 4, 5, 
+      2, 3, 5, 6 ]
+    (Tuple [ elementId, localNode ])
+
+prop_testResult9 = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
