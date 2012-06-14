@@ -75,7 +75,11 @@ data TopologicalSpace =
   -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
   -- Hint: for the image of a subset, use a restricted map.
   -- Todo: test.
-  Image Map
+  -- Todo: Consider rather using SimpleSubset.
+  Image Map |
+  
+  -- | Interior f represents the subset of the codomain of f which is the interior of the image of f.
+  Interior Map |
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
@@ -335,6 +339,8 @@ validateMap (Divide a b) =
 validateMap (FromRealParameterSource _ (Tuple [GeneralVariable _ _])) = True
 validateMap (FromRealParameterSource _ (GeneralVariable _ _)) = True
 validateMap (FromRealParameterSource _ _) = False
+
+validateMap (FromIntegerParameterSource _ f) = validateMap (FromRealParameterSource [] f)
 
 validateMap (Project n f) = validateMap f -- Todo: check that codomain of f has at least n factors.
 
