@@ -12,7 +12,7 @@ import Text.Show.Functions
 -- University of Auckland
 -- Permission granted to redistribute in source code or binary form, attributing the contributors.  No warranty of any kind is given.
 --
--- The ideas here were strongly influenced by Andrew Miller's open source "ModML". 
+-- The ideas here were strongly influenced by Andrew Miller's open source ModML. 
 
 -- This is under construction
 
@@ -66,7 +66,7 @@ data TopologicalSpace =
   -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
   -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
   -- In other words, points in the codomain are deemed to be the equivalence classes.
-  -- Points that map to "Unspecified" in the codomain are treated as if they are not connected to any other points in the new Quotient space.
+  -- Points that map to Unspecified in the codomain are treated as if they are not connected to any other points in the new Quotient space.
   Quotient Map |
   
   -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
@@ -129,7 +129,7 @@ data Map =
 
   Tuple [Map] |
 
-  -- | If x {- then -} a {- else -} b, assumes codomain of "a" and "b" are the same, and that codomain of x is Booleans
+  -- | If x {- then -} a {- else -} b, assumes codomain of a and b are the same, and that codomain of x is Booleans
   If Map Map Map |
 
   -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  
@@ -180,9 +180,9 @@ data DomainMap =
 
 
 
--- Focus here is on *processing* the "FieldML" data structures.  
+-- Focus here is on *processing* the FieldML data structures.  
 
--- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a "simpler" definition.
+-- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.
 simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
 simplifyTopologicalSpace (Factor n (CartesianProduct ys)) = ys !! n
 simplifyTopologicalSpace (CartesianProduct []) = UnitSpace
