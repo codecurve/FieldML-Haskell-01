@@ -79,7 +79,7 @@ data TopologicalSpace =
   Image Map |
   
   -- | Interior f represents the subset of the codomain of f which is the interior of the image of f.
-  Interior Map |
+  Interior Map
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
