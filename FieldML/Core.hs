@@ -56,9 +56,6 @@ data Map =
   -- | Any real value, as a constant.
   RealConstant Double |
   
-  -- | A free real variable...
---  RealVariable String |  
-  
   -- | A variable that can represent any element from the specified TopologicalSpace
   GeneralVariable String TopologicalSpace |
   
@@ -141,7 +138,7 @@ data TopologicalSpace =
   -- The Equivalence operator is induced as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
   -- In other words, points in the codomain are deemed to be the equivalence classes.
   -- Points that map to "Unspecified" in the codomain are treated as if they are not connected to any other points in the new Quotient space.
-  Quotient TopologicalSpace Map 
+  Quotient Map 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a method, rather than being a fundamental constructor.

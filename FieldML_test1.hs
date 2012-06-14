@@ -141,10 +141,12 @@ prop_testResult7 = ((listOfFreeGeneralVariables polarToCartesianFixedRadius) == 
 fieldml_pi = CSymbol "openmath cd ? PI" UnitElement
 
 circleConnectionMap =
+  Restriction
+  unitLineSegment
 -- Todo: get CD, and add to known lists.
-  CSymbol "openmath cd ? modulus" (Tuple [GeneralVariable "theta" Reals, fieldml_pi] )
+  (CSymbol "openmath cd ? modulus" (Tuple [GeneralVariable "theta" Reals, fieldml_pi] ) )
 
-circle = Quotient unitLineSegment circleConnectionMap
+circle = Quotient circleConnectionMap
 
 -- Some simplification
 prop_testResult8 =
