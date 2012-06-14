@@ -62,7 +62,8 @@ data Map =
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
   Unspecified TopologicalSpace |
   
-  -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
+  -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  Similarly for Minus, Times, Divide.
+  -- Todo: use OpenMath csymbols for these.
   Plus Map Map |
   Minus Map Map |
   Times Map Map |
@@ -100,14 +101,17 @@ data Map =
   -- and n equal to the length of the parameter source.
   FromParameterSource [Double] TopologicalSpace |
   
-  Project { factor :: Int, source :: Map } |
+  -- | Project n f assumes f is a Tuple, and represents the n'th factor of the tuple.
+  Project Int Map |
 
   -- | The given topological space must be a simple subdomain of the domain of the given map.
   Restriction TopologicalSpace Map
+
   deriving (Show, Eq)
   
 
 -- Todo: Andrew Miller proposed that we include spaces of functions.
+-- | A topological space is more general than a topological manifold.  FieldML domains qualify as topological spaces.
 data TopologicalSpace = 
 
   -- | Note that this is equivalent to CartesianProduct []
@@ -119,34 +123,32 @@ data TopologicalSpace =
   CartesianProduct [TopologicalSpace] |
   CartesianPower Int TopologicalSpace |
   
-  -- | Factors xs m creates the a topological space from a cartesian product m, omitting factors of m that are not in xs.
-  -- Todo: xs is ordered, and can contain duplicates, thus this allows for repeating of a factor, and reordering of the factors, which are 
-  -- more complex behaviours than are intended.  Reordering seems OK, but repitition is preferably done using CartesianProduct or CartesianPower.
-  Factors [Int] TopologicalSpace |
+  -- | Factor n m creates the a topological space from a cartesian product m, consisting of the n'th factor, n=1 means the first factor.
+  Factor Int TopologicalSpace |
 
-  -- Todo: unit tests of DisjointUnion, and the design though here is probably incomplete.
+  -- Todo: unit testing of DisjointUnion, and the design thinking here is probably incomplete.
   DisjointUnion SetOfLabels DomainMap |
-  
+
   -- | The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
   
-  -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.
+  -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.  For topological spaces, there are two types of unions, and a traditional set union only makes sense if there was an original subset relationship, so that intersections make sense.  An alternative is to use the original predicates and a Boolean Or, which is equivalent.
   SubsetReUnion [TopologicalSpace] |
   
   -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
-  -- The equivalence operator for the quotient is induced from f.
-  -- The Equivalence operator is induced as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
+  -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
   -- In other words, points in the codomain are deemed to be the equivalence classes.
   -- Points that map to "Unspecified" in the codomain are treated as if they are not connected to any other points in the new Quotient space.
   Quotient Map 
   
+  --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a method, rather than being a fundamental constructor.
---  TangetSpaceAtPoint TopologicalSpace Point
+
   deriving (Show, Eq)
 
 
--- | Domain Maps are for constructing disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
+-- | Domain Maps are for the construction of disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
 data DomainMap =
 
   -- | This maps each label to the same TopologicalSpace
@@ -162,9 +164,9 @@ data DomainMap =
   
 -- Focus here is on *processing* the "FieldML" data structures.  
 
--- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.
+-- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a "simpler" definition.
 simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
-simplifyTopologicalSpace (Factors xs (CartesianProduct ys)) = CartesianProduct (map ((!!) ys) xs)
+simplifyTopologicalSpace (Factor n (CartesianProduct ys)) = ys !! n
 simplifyTopologicalSpace (CartesianProduct []) = UnitSpace
 simplifyTopologicalSpace (CartesianProduct [m]) = m
 simplifyTopologicalSpace m = m

@@ -149,7 +149,4 @@ circleConnectionMap =
 circle = Quotient circleConnectionMap
 
 -- Some simplification
-prop_testResult8 =
-  ( CartesianProduct [Reals, Reals] ==
-    simplifyTopologicalSpace  (Factors  ([0,2]) (CartesianProduct  [Reals, Booleans, Reals]))
-  )
+prop_testResult8 = ( simplifyTopologicalSpace (Factor 2 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
