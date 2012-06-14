@@ -12,7 +12,7 @@ import Text.Show.Functions
 -- University of Auckland
 -- Permission granted to redistribute in source code or binary form, attributing the contributors.  No warranty of any kind is given.
 --
--- The ideas here were strongly influenced by Andrew Miller's open source "ModML", with some code copied directly from ModML for some of the early versions.
+-- The ideas here were strongly influenced by Andrew Miller's open source "ModML". 
 
 -- This is under construction
 
