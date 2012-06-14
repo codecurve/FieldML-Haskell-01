@@ -31,6 +31,10 @@ data SetOfLabels =
     
   deriving(Show, Eq)
 
+  
+-- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
+-- Note that values themselves are sometimes treated as maps whose domain is the UnitSpace.
+-- Todo: How to handle inverse of a Map, since it may be multi-valued, and hence isn't a Map, since maps are single valued?
 data Map = 
 
   -- | The sole element of the UnitSpace.
@@ -108,7 +112,7 @@ data Map =
   Restriction TopologicalSpace Map
 
   deriving (Show, Eq)
-  
+
 
 -- Todo: Andrew Miller proposed that we include spaces of functions.
 -- | A topological space is more general than a topological manifold.  FieldML domains qualify as topological spaces.
@@ -129,7 +133,7 @@ data TopologicalSpace =
   -- Todo: unit testing of DisjointUnion, and the design thinking here is probably incomplete.
   DisjointUnion SetOfLabels DomainMap |
 
-  -- | The Map have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
+  -- | The Map must have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
   SimpleSubset Map |
   
   -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.  For topological spaces, there are two types of unions, and a traditional set union only makes sense if there was an original subset relationship, so that intersections make sense.  An alternative is to use the original predicates and a Boolean Or, which is equivalent.
@@ -139,7 +143,12 @@ data TopologicalSpace =
   -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
   -- In other words, points in the codomain are deemed to be the equivalence classes.
   -- Points that map to "Unspecified" in the codomain are treated as if they are not connected to any other points in the new Quotient space.
-  Quotient Map 
+  Quotient Map |
+  
+  -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
+  -- Hint: for the image of a subset, use a restricted map.
+  -- Todo: test.
+  Image Map
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
@@ -162,6 +171,9 @@ data DomainMap =
   
   deriving (Show, Eq)
   
+
+
+
 -- Focus here is on *processing* the "FieldML" data structures.  
 
 -- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a "simpler" definition.
