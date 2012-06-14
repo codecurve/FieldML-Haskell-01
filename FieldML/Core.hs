@@ -29,6 +29,9 @@ data SetOfLabels =
   -- | IntegerRange a b represents a discrete set whose elements consist of the range of integers from a to b, inclusive.
   IntegerRange Int Int |
   
+  -- | All Integers
+  Integers |
+  
   -- | Traditional union of discrete set.
   DiscreteSetUnion SetOfLabels SetOfLabels |
   
@@ -150,10 +153,12 @@ data Map =
   -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
   Compose Map Map |
   
-  -- | The domain must be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to the number of parameters, 
-  -- and n equal to the length of the parameter source.
-  FromParameterSource [Double] TopologicalSpace |
+  -- | FromRealParameterSource xs f assumes that f is a Tuple of GeneralVariable, such that each GeneralVariable's TopologicalSpace is Labels. The codomain of f must thus be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to length xs.
+  FromRealParameterSource [Double] Map |
   
+  -- | FromIntegerParameterSource xs f assumes that f is a Tuple of GeneralVariable, such that each GeneralVariable's TopologicalSpace is Labels. The codomain of f must thus be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to length xs.
+  FromIntegerParameterSource [Int] Map |
+
   -- | Project n f assumes f is a Tuple, and represents the n'th factor of the tuple.
   Project Int Map |
 
@@ -199,7 +204,8 @@ listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a,
 listOfFreeGeneralVariables (Times a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Divide a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 -- listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables g
-listOfFreeGeneralVariables (FromParameterSource _ a) = [] -- Todo: Ouch, this is not correct, but it seems Poul and Richard are right, factors have to be named, otherwise, where do the names come from? Actually, I think I know what to do here: name the variables as part of the FromParameterSource constructor, in fact, just provide a list of GeneralVariables.
+listOfFreeGeneralVariables (FromRealParameterSource _ a) = listOfFreeGeneralVariables a
+listOfFreeGeneralVariables (FromIntegerParameterSource _ a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (Project n f) = listOfFreeGeneralVariables f
 listOfFreeGeneralVariables (BooleanConstant _) = []
 listOfFreeGeneralVariables (And a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
@@ -225,8 +231,8 @@ domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (Tuple fs) = CartesianProduct $ map mapOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
-  where mapOfVariable (GeneralVariable _ a) = a
+domain (Tuple fs) = CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
+  where spaceOfVariable (GeneralVariable _ a) = a
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda (GeneralVariable _ m) _ ) = m
 domain (Lambda (Tuple fs) _ ) = domain (Tuple fs)
@@ -236,7 +242,8 @@ domain (Minus a b) = domain (Tuple [a,b])
 domain (Times a b) = domain (Tuple [a,b])
 domain (Divide a b) = domain (Tuple [a,b])
 -- domain (Compose _ g) = domain g
-domain (FromParameterSource _ a) = a
+domain (FromRealParameterSource _ f) = codomain f 
+domain (FromIntegerParameterSource _ f) = codomain f
 domain (Project n f) = domain f
 domain (BooleanConstant _) = UnitSpace
 domain (And a b) = domain (Tuple [a,b])
@@ -262,7 +269,8 @@ codomain (Minus a _) = codomain a
 codomain (Times a _) = codomain a
 codomain (Divide a _) = codomain a
 -- codomain (Compose f _) = codomain f
-codomain (FromParameterSource _ a) = Reals
+codomain (FromRealParameterSource _ _) = Reals
+codomain (FromIntegerParameterSource _ _) = Labels Integers
 codomain (Project n f) = getFactor n (codomain f)
 codomain (BooleanConstant _) = Booleans
 codomain (And a _) = Booleans
@@ -324,7 +332,9 @@ validateMap (Divide a b) =
 --  validateMap g &&
 --  codomain g == domain f
 
-validateMap (FromParameterSource _ _) = True -- Todo: Just taking a shortcut for now, must fix this.
+validateMap (FromRealParameterSource _ (Tuple [GeneralVariable _ _])) = True
+validateMap (FromRealParameterSource _ (GeneralVariable _ _)) = True
+validateMap (FromRealParameterSource _ _) = False
 
 validateMap (Project n f) = validateMap f -- Todo: check that codomain of f has at least n factors.
 
