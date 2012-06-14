@@ -129,10 +129,10 @@ polarToCartesian =
         (GeneralVariable "radius" Reals)
     ]
 
-prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)
+prop_testResult6 = (domain polarToCartesian == CartesianProduct [Reals, Reals])
 
 polarToCartesianFixedRadius = 
-  PartialApplication 1 (polarToCartesian) (RealConstant 1)
+  PartialApplication 2 (polarToCartesian) (RealConstant 1)
 
 prop_testResult7 = ((listOfFreeGeneralVariables polarToCartesianFixedRadius) == [ GeneralVariable "theta" Reals ])
   

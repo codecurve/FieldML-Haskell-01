@@ -196,8 +196,8 @@ listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- 
 listOfFreeGeneralVariables (PartialApplication n f g) = 
  List.nub ( fvars ++ gvars )
  where
-   (front, back) = (splitAt (n-1) (drop 1 (listOfFreeGeneralVariables f)))
-   newList = front ++ back
+   (front, back) = (splitAt (n-1) (listOfFreeGeneralVariables f) )
+   newList = front ++ (drop 1 back)
    fvars = newList
    gvars = (listOfFreeGeneralVariables g)
 
@@ -208,7 +208,7 @@ domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (Tuple fs) = CartesianProduct $ List.nub (map mapOfVariable (concatMap listOfFreeGeneralVariables fs))
+domain (Tuple fs) = CartesianProduct $ map mapOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
   where mapOfVariable (GeneralVariable _ a) = a
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda (GeneralVariable _ m) _ ) = m
