@@ -26,7 +26,10 @@ m2 = CartesianProduct [real2, Labels elementIds]
 x = GeneralVariable "x" Reals
 
 expression1 :: Map
-expression1 =  (x `LessThan` (Lambda [RealVariable "x"] (RealConstant 1) ))  `And` ( (Lambda [RealVariable "x"] (RealConstant 0) ) `LessThan` x)
+expression1 =  
+  (x `LessThan` (RealConstant 1) )
+  `And` 
+  ( (RealConstant 0) `LessThan` x)
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 
@@ -38,7 +41,7 @@ unitLineSegment' =
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
   )
 
-xy = Lambda [GeneralVariable "xx" Reals, GeneralVariable "yy" Reals] (Tuple [GeneralVariable "xx" Reals, GeneralVariable "yy" Reals])
+xy = Tuple [GeneralVariable "xx" Reals, GeneralVariable "yy" Reals]
   
 expression2 :: Map
 expression2 =
@@ -49,7 +52,7 @@ expression2 =
 prop_testResult1 = (domain expression2 == CartesianProduct [Reals,Reals] )
   
 expression3a :: Map
-expression3a = Lambda [GeneralVariable "x" Reals] ((RealConstant 1) `Minus` (GeneralVariable "x" Reals))
+expression3a = Lambda (Tuple [GeneralVariable "x" Reals]) ((RealConstant 1) `Minus` (GeneralVariable "x" Reals))
 
 expression3b :: Map
 expression3b = GeneralVariable "x" Reals
@@ -66,7 +69,7 @@ prop_testResult3b = ( codomain expression3c == CartesianProduct [Reals,Reals] )
 
 expression4 :: Map
 expression4 =
-  Lambda [GeneralVariable "x" Reals, GeneralVariable "y" Reals] $
+  Lambda (Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]) $
     ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals )
     `And`
     ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals )
@@ -77,7 +80,7 @@ simplex2d = SimpleSubset expression4
   
 expression5 :: Map
 expression5 =
-  Lambda [GeneralVariable "x" Reals, GeneralVariable "y" Reals] $
+  Lambda (Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]) $
     (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
     `And`
     (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
@@ -88,7 +91,7 @@ unitSquare = SimpleSubset expression5
     
 
 -- Validate
-prop_testValidate1 = (validateMap (Lambda [GeneralVariable "x" Reals] (RealConstant 1)) )
+prop_testValidate1 = (validateMap (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
     
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
@@ -131,7 +134,7 @@ prop_testResult6 = (domain polarToCartesian == CartesianPower 2 Reals)
 polarToCartesianFixedRadius = 
   PartialApplication 1 (polarToCartesian) (RealConstant 1)
 
-prop_testResult7 = ((listOfFreeRealVariables polarToCartesianFixedRadius) == (Set.fromList ["theta"]))
+prop_testResult7 = ((listOfFreeGeneralVariables polarToCartesianFixedRadius) == [ GeneralVariable "theta" Reals ])
   
 -- Circle from unit line    
 -- Todo: get CD, and add to known lists.
