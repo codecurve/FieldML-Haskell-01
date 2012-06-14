@@ -2,6 +2,7 @@ module FieldML.Core
 where
 
 import qualified Data.Set as Set
+import qualified Data.List as List
 import qualified Data.Map as Map
 import Text.Show.Functions
 
@@ -61,6 +62,9 @@ data Map =
   -- | A variable that can represent any element from the specified TopologicalSpace
   GeneralVariable String TopologicalSpace |
   
+  -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
+  Unspecified TopologicalSpace |
+  
   -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  
   Plus Map Map |
   Minus Map Map |
@@ -80,7 +84,10 @@ data Map =
   -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  
   NamedMap String |
 
-  Lambda [Map] Map |
+  -- | Lambda x f declares an anonymous function. x is intended to be an instance of Tuple or a GeneralVariable.
+  -- f is intended to be a Map expressed only in terms of the GeneralVariabls that are in the Tuple, or if x is a GeneralVariable, then in
+  -- terms of that GeneralVariable.
+  Lambda Map Map |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
   -- where A is the same as the domain as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
@@ -129,10 +136,11 @@ data TopologicalSpace =
   -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.
   SubsetReUnion [TopologicalSpace] |
   
-  -- | Quotient m f creates the quotient of the TopologicalSpaces, m.  The equivalence operator for the quotient is induced from
-  -- the maps in f.  
-  -- The m must be a subset of the domain of f.
-  -- The Equivalence operator is induced as follows: all points in m that map to the same point in the codomain are deemed equivalent.
+  -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
+  -- The equivalence operator for the quotient is induced from f.
+  -- The Equivalence operator is induced as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
+  -- In other words, points in the codomain are deemed to be the equivalence classes.
+  -- Points that map to "Unspecified" in the codomain are treated as if they are not connected to any other points in the new Quotient space.
   Quotient TopologicalSpace Map 
   
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
@@ -167,7 +175,7 @@ simplifyTopologicalSpace m = m
 listOfFreeGeneralVariables :: Map -> [Map]
 listOfFreeGeneralVariables (RealConstant _ ) = []
 listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
-listOfFreeGeneralVariables (Tuple fs) = nub (map listOfFreeGeneralVariables fs) 
+listOfFreeGeneralVariables (Tuple fs) = List.nub (concatMap listOfFreeGeneralVariables fs) 
 listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
 listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
@@ -186,7 +194,7 @@ listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ 
 listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 
 listOfFreeGeneralVariables (PartialApplication n f g) = 
- nub ( fvars ++ gvars )
+ List.nub ( fvars ++ gvars )
  where
    (front, back) = (splitAt (n-1) (drop 1 (listOfFreeGeneralVariables f)))
    newList = front ++ back
@@ -200,9 +208,11 @@ domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (Tuple fs) = CartesianProduct $ nub (concatMap listOfFreeGeneralVariables fs)
-domain (Lambda [] _) = UnitSpace 
-domain (Lambda (Tuple fs) _) = domain (Tuple fs)
+domain (Tuple fs) = CartesianProduct $ List.nub (map mapOfVariable (concatMap listOfFreeGeneralVariables fs))
+  where mapOfVariable (GeneralVariable _ a) = a
+domain (Lambda UnitElement _) = UnitSpace 
+domain (Lambda (GeneralVariable _ m) _ ) = m
+domain (Lambda (Tuple fs) _ ) = domain (Tuple fs)
 domain (If x a b ) = domain (Tuple [x,a,b]) 
 domain (Plus a b) = domain (Tuple [a,b])
 domain (Minus a b) = domain (Tuple [a,b])
@@ -336,9 +346,11 @@ validateMap (Equal a b) =
   (domain a == domain b ) &&
   (codomain a == codomain b )
 
-validateMap (Lambda bs f ) = 
-  foldr (&&) True (map validateMap bs) &&
-  validateMap f
+validateMap (Lambda a f ) = (validateMap' a) && (validateMap f)
+  where 
+    validateMap' (GeneralVariable _ b) = True
+    validateMap' (Tuple fs) = validateMap (Tuple fs)
+    validateMap' _ = False
 
 validateMap (Restriction (SimpleSubset a) f ) = 
   validateMap f &&
