@@ -157,10 +157,10 @@ data Map =
   -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
   Compose Map Map |
   
-  -- | FromRealParameterSource xs f assumes that f is a Tuple of GeneralVariable, such that each GeneralVariable's TopologicalSpace is Labels. The codomain of f must thus be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to length xs.
+  -- | FromRealParameterSource xs f assumes that f is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's TopologicalSpace is Labels. The codomain of f must thus be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to length xs.
   FromRealParameterSource [Double] Map |
   
-  -- | FromIntegerParameterSource xs f assumes that f is a Tuple of GeneralVariable, such that each GeneralVariable's TopologicalSpace is Labels. The codomain of f must thus be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to length xs.
+  -- | See documentation for FromRealParameter source.
   FromIntegerParameterSource [Int] Map |
 
   -- | Project n f assumes f is a Tuple, and represents the n'th factor of the tuple.
@@ -336,8 +336,12 @@ validateMap (Divide a b) =
 --  validateMap g &&
 --  codomain g == domain f
 
-validateMap (FromRealParameterSource _ (Tuple [GeneralVariable _ _])) = True
-validateMap (FromRealParameterSource _ (GeneralVariable _ _)) = True
+validateMap (FromRealParameterSource _ (Tuple fs)) = all isAGeneralVariable fs
+  where
+    isAGeneralVariable (GeneralVariable _ _) = True
+    isAGeneralVariable _ = False
+
+validateMap (FromRealParameterSource _ (GeneralVariable _ (Labels _))) = True
 validateMap (FromRealParameterSource _ _) = False
 
 validateMap (FromIntegerParameterSource _ f) = validateMap (FromRealParameterSource [] f)

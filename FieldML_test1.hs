@@ -164,4 +164,6 @@ localToGlobalNodes =
       2, 3, 5, 6 ]
     (Tuple [ elementId, localNode ])
 
-prop_testResult9 = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
+prop_testResult_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
+
+prop_testResult_IntParam_01b = (validateMap localToGlobalNodes)
