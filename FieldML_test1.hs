@@ -173,4 +173,4 @@ brokenParamTest =
     [ 1, 2, 3, 4, 5 ]
     (Tuple [ elementId, localNode ])
 
-prop_testResult_IntParam_01c = ( not (validateMap localToGlobalNodes))
+prop_testResult_IntParam_01c = ( not (validateMap brokenParamTest))
