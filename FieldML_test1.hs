@@ -174,3 +174,15 @@ brokenParamTest =
     (Tuple [ elementId, localNode ])
 
 prop_testResult_IntParam_01c = ( not (validateMap brokenParamTest))
+
+-- Todo: don't we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types?
+globalNode = GeneralVariable "globalNode" (Labels (IntegerRange 1 6))
+
+pressureAtNodes = 
+  FromRealParameterSource 
+    [  0.1,      0.5,  55.9, 
+      -0.4,   -100.9,  19.0 ] 
+    globalNode
+
+prop_testResult_IntParam_01d = ( validateMap pressureAtNodes )
+
