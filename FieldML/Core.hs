@@ -74,6 +74,7 @@ data TopologicalSpace =
   
   -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
   -- Hint: for the image of a subset, use a restricted map.
+  
   -- Todo: test.
   -- Todo: Consider rather using SimpleSubset.
   Image Map |
@@ -90,6 +91,7 @@ data TopologicalSpace =
 
 -- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
 -- Note that values themselves are sometimes treated as maps whose domain is the UnitSpace.
+
 -- Todo: How to handle inverse of a Map, since it may be multi-valued, and hence isn't a Map, since maps are single valued?
 data Map = 
 
@@ -123,6 +125,7 @@ data Map =
   Unspecified TopologicalSpace |
   
   -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  Similarly for Minus, Times, Divide.
+  
   -- Todo: use OpenMath csymbols for these.
   Plus Map Map |
   Minus Map Map |
@@ -291,6 +294,16 @@ getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (CartesianProduct xs) = xs !! n
 
 
+-- | Cardinality of discrete space. Zero if can't be easily determined, or has continuous components.
+
+-- Todo: only some cases have been covered, i.e. only the bare minimum as required by existing unit tests.
+cardinality :: TopologicalSpace -> Int
+cardinality UnitSpace = 1
+cardinality (Labels (IntegerRange a b) ) = b - a + 1
+cardinality (CartesianProduct fs) = product (map cardinality fs)
+cardinality _ = 0
+
+
 validateMap :: Map -> Bool
 validateMap (RealConstant _ ) = True
 validateMap (GeneralVariable _ _) = True
@@ -336,15 +349,18 @@ validateMap (Divide a b) =
 --  validateMap g &&
 --  codomain g == domain f
 
-validateMap (FromRealParameterSource _ (Tuple fs)) = all isAGeneralVariable fs
+
+
+
+validateMap (FromRealParameterSource xs f) = (isAGeneralVariableTuple f) && (validateCardinality xs f)
   where
-    isAGeneralVariable (GeneralVariable _ _) = True
-    isAGeneralVariable _ = False
+    isAGeneralVariableTuple :: Map -> Bool
+    isAGeneralVariableTuple (Tuple (f1:fs) ) = (isAGeneralVariableTuple f1) && (isAGeneralVariableTuple (Tuple fs) )
+    isAGeneralVariableTuple (GeneralVariable _ _) = True
+    isAGeneralVariableTuple _ = False
+    validateCardinality xs f = (cardinality (codomain f) == length xs)    
 
-validateMap (FromRealParameterSource _ (GeneralVariable _ (Labels _))) = True
-validateMap (FromRealParameterSource _ _) = False
-
-validateMap (FromIntegerParameterSource _ f) = validateMap (FromRealParameterSource [] f)
+validateMap (FromIntegerParameterSource xs f) = validateMap (FromRealParameterSource (replicate (length xs) 0.1) f)
 
 validateMap (Project n f) = validateMap f -- Todo: check that codomain of f has at least n factors.
 
