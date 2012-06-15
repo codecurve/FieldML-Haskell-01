@@ -167,3 +167,10 @@ localToGlobalNodes =
 prop_testResult_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
 
 prop_testResult_IntParam_01b = (validateMap localToGlobalNodes)
+
+brokenParamTest = 
+  FromIntegerParameterSource
+    [ 1, 2, 3, 4, 5 ]
+    (Tuple [ elementId, localNode ])
+
+prop_testResult_IntParam_01c = ( not (validateMap localToGlobalNodes))
