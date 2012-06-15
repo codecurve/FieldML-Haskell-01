@@ -349,13 +349,13 @@ validateMap (Divide a b) =
 --  validateMap g &&
 --  codomain g == domain f
 
-validateMap (FromRealParameterSource xs f) = ((isGvTuple f) || (isGv f))  && (validateCardinality xs f)
+validateMap (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscreteGv f))  && (validateCardinality xs f)
   where
     validateCardinality xs f = (cardinality (codomain f) == length xs)    
-    isGvTuple (Tuple fs) = all isGv fs
-    isGvTuple _ = False    
-    isGv (GeneralVariable _ _) = True
-    isGv _ = False
+    isDiscreteGvTuple (Tuple fs) = all isDiscreteGv fs
+    isDiscreteGvTuple _ = False    
+    isDiscreteGv (GeneralVariable _ (Labels _)) = True
+    isDiscreteGv _ = False
 
 validateMap (FromIntegerParameterSource xs f) = validateMap (FromRealParameterSource (replicate (length xs) 0.1) f)
 
