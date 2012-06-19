@@ -36,7 +36,7 @@ expression1 =
 
 unitLineSegment = SimpleSubset expression1
 
--- As above, but all inline:
+-- As above, but more inline:
 unitLineSegment' = 
   SimpleSubset (
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
@@ -50,7 +50,9 @@ expression2 =
     `And`
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
 
-prop_testResult1 = (domain expression2 == CartesianProduct [Reals,Reals] )
+prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Reals] )
+
+prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "xx" Reals,GeneralVariable "yy" Reals] )
   
 expression3a :: Map
 expression3a = Lambda (Tuple [GeneralVariable "x" Reals]) ((RealConstant 1) `Minus` (GeneralVariable "x" Reals))
