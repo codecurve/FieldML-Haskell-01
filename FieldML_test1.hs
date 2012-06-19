@@ -55,7 +55,7 @@ prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Re
 prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "xx" Reals,GeneralVariable "yy" Reals] )
   
 expression3a :: Map
-expression3a = Lambda (Tuple [GeneralVariable "x" Reals]) ((RealConstant 1) `Minus` (GeneralVariable "x" Reals))
+expression3a = (RealConstant 1) `Minus` (GeneralVariable "x" Reals)
 
 expression3b :: Map
 expression3b = GeneralVariable "x" Reals
