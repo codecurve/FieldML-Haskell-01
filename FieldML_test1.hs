@@ -32,6 +32,7 @@ expression1 =
   ( (RealConstant 0) `LessThan` x)
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
+-- But perhaps the chart is just the tuple that represents a value in the topological space?  Tuples can consist of named variables.
 
 unitLineSegment = SimpleSubset expression1
 
