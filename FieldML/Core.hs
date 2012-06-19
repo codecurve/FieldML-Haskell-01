@@ -183,7 +183,13 @@ data Map =
   Project Int Map |
 
   -- | The given topological space must be a simple subdomain of the domain of the given map.
-  Restriction TopologicalSpace Map
+  Restriction TopologicalSpace Map |
+  
+  -- | Max f Assumes codomain of f is Reals, and evaluates to maximum value that f attains over the domain of f.
+  Max Map |
+  
+  -- | Same as Max, but evaluates to minimum value.
+  Min Map
 
   deriving (Show, Eq)
 
@@ -246,6 +252,9 @@ listOfFreeGeneralVariables (PartialApplication n f g) =
 
 listOfFreeGeneralVariables (CSymbol _ f) = listOfFreeGeneralVariables f
 
+listOfFreeGeneralVariables (Max _) = []
+listOfFreeGeneralVariables (Min _) = []
+
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
@@ -272,6 +281,8 @@ domain (Not a) = domain a
 domain (LessThan a b) = domain (Tuple [a,b])
 domain (Equal a b) = domain (Tuple [a,b])
 domain (Restriction s _ ) = s
+domain (Max _) = UnitSpace
+domain (Min _) = UnitSpace
 
 -- Todo: We will need to comprehensively go through OpenMath CDs that we want to support and fill this out. Likewise for codomain.
 domain (CSymbol "openmath cd transc1 cos" _) = Reals
@@ -301,6 +312,8 @@ codomain (Equal a _) = Booleans
 codomain (Restriction _ f ) = codomain f
 codomain (CSymbol "openmath cd transc1 cos" _) = Reals
 codomain (CSymbol "openmath cd transc1 sin" _) = Reals
+codomain (Max _) = Reals
+codomain (Min _) = Reals
 
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
@@ -422,3 +435,6 @@ validateMap (Restriction (SimpleSubset a) f ) =
 
 validateMap (CSymbol "openmath cd transc1 cos" f) = codomain f == Reals
 validateMap (CSymbol "openmath cd transc1 sin" f) = codomain f == Reals
+
+validateMap (Max f) = codomain f == Reals
+validateMap (Min f) = codomain f == Reals
