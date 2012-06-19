@@ -137,6 +137,8 @@ data Map =
   -- | The string refers to the relevant entry in an OpenMath content dictionary by URL.
   -- The Map provided must either be a real variable for OpenMath functions that are a function of a real variable, 
   -- or a Tuple for functions of more than one variable.
+  
+  -- Todo: I think that this prototype is at a layer where the meaning of all tokens should be "known", so I think that CSymbol should be removed.
   CSymbol String Map |
 
   Tuple [Map] |
@@ -147,9 +149,15 @@ data Map =
   -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  
   NamedMap String |
 
-  -- | Lambda x f declares an anonymous function. x is intended to be an instance of Tuple or a GeneralVariable.
-  -- f is intended to be a Map expressed only in terms of the GeneralVariabls that are in the Tuple, or if x is a GeneralVariable, then in
-  -- terms of that GeneralVariable.
+  -- | Lambda f g declares explicitly the free variables of a Map.  
+  -- x is either a free variable or a variable tuple.  
+  -- A variable tuple is a tuple whose members are either free variables or variable tuples (note the recursive definition).
+  -- The value produced by the map when a value for x is provided is described by g.   
+  -- g must not have free variables that are not present in x
+  --
+  -- Note that the free variables of a map can be inferred, but a Lambda is useful for at least two reasons:
+  --  1) It allows the order of the free variables and the variable tuple structure to be explicitly specified.
+  --  2) It allows for free variables to be specified that may not be present in g, for example Lambda x 1.
   
   -- Todo: Not sure if Lambda's make sense in this current design, since all variables in any expression at the moment are considered to be free variables.
   -- Lambda's can be used in other languages to create closures, which would be like partial application here.

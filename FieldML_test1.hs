@@ -63,7 +63,7 @@ expression3b = GeneralVariable "x" Reals
 -- By the way, this is a 1D linear lagrange interpolation basis.
 expression3c =
   Restriction
-    unitLineSegment -- A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
+    unitLineSegment -- Todo: A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
     (Tuple [expression3a, expression3b])
 
 prop_testResult3a = ( domain expression3c == unitLineSegment )
@@ -72,7 +72,6 @@ prop_testResult3b = ( codomain expression3c == CartesianProduct [Reals,Reals] )
 
 expression4 :: Map
 expression4 =
-  Lambda (Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]) $
     ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals )
     `And`
     ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals )
@@ -80,15 +79,16 @@ expression4 =
     ( ( GeneralVariable "x" Reals `Plus` GeneralVariable "y" Reals ) `LessThan` (RealConstant 1)  )
 
 simplex2d = SimpleSubset expression4
+
+prop_test_Simplex2dPredicate = (domain expression4 == CartesianProduct[Reals, Reals])
   
 expression5 :: Map
 expression5 =
-  Lambda (Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]) $
     (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
     `And`
     (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
 
-prop_testResult5 = (domain expression5 == CartesianProduct [Reals,Reals] )
+prop_testResult_UnitSquarePredicate = (domain expression5 == CartesianProduct [Reals,Reals] )
 
 unitSquare = SimpleSubset expression5
     
