@@ -6,6 +6,8 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import Text.Show.Functions
 
+-- Todo: put a more sensible license terms etc. statement.
+--
 -- By Randall Britten
 -- Auckland Bioengineering Institute
 -- 2012
