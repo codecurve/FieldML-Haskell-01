@@ -150,6 +150,9 @@ data Map =
   -- | Lambda x f declares an anonymous function. x is intended to be an instance of Tuple or a GeneralVariable.
   -- f is intended to be a Map expressed only in terms of the GeneralVariabls that are in the Tuple, or if x is a GeneralVariable, then in
   -- terms of that GeneralVariable.
+  
+  -- Todo: Not sure if Lambda's make sense in this current design, since all variables in any expression at the moment are considered to be free variables.
+  -- Lambda's can be used in other languages to create closures, which would be like partial application here.
   Lambda Map Map |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
