@@ -209,13 +209,6 @@ data DomainMap =
   deriving (Show, Eq)
 
 
--- | Equation f g Asserts that f == g.  
-
--- Todo: clarify how this relates to the boolean Map Equal f g, which may evaluate to True or False.
--- Could just have a collection somewhere of equal maps that are asserted to be true.
-data Equation = Equation Map Map
-
-
 -- Focus here is on *processing* the FieldML data structures.  
 
 -- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.

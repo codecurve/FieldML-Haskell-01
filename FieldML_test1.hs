@@ -189,12 +189,10 @@ pressureAtNodes =
 
 prop_testResult_IntParam_01d = ( validateMap pressureAtNodes )
 
--- Demonstrating equations: And raises the question as to whether to just have Equals.  Note: ModML essentially has both Equals and Equation.
+-- Demonstrating equations.  For now, this is just a Map to Boolean, but an extra construct could be added that means that this is asserted to be true.
 xy1 = GeneralVariable "xy" (CartesianProduct [Reals, Reals])
 g1 = Tuple [ GeneralVariable "x" Reals, RealConstant 1.93 ]
 
 -- - This one has free variables xy and x, and whether it is true depends on values for xy and x. If there were a way of asserting that it must be true, then that constrains what valid values of xy and x are.
 equation1Style1 = xy1 `Equal` g1
 
--- - This one just 
-equation1Style2 = Equation xy1 g1
