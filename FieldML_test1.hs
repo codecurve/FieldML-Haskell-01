@@ -196,3 +196,17 @@ g1 = Tuple [ GeneralVariable "x" Reals, RealConstant 1.93 ]
 -- - This one has free variables xy and x, and whether it is true depends on values for xy and x. If there were a way of asserting that it must be true, then that constrains what valid values of xy and x are.
 equation1Style1 = xy1 `Equal` g1
 
+-- Demonstrating function space
+f1 = GeneralVariable "f" (SignatureSpace unitSquare Reals)
+
+-- Inverse of non-invertible function produces a set.
+y = GeneralVariable "y" Reals
+
+f2 = x `Times` x
+
+predicate2a = ( y `Equal` f2 )
+
+predicate2b = PartialApplication 1 predicate2a (RealConstant 1.0)
+
+levelSet1 = SimpleSubset predicate2b
+

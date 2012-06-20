@@ -43,7 +43,6 @@ data SetOfLabels =
   deriving(Show, Eq)
 
 
--- Todo: Andrew Miller proposed that we include spaces of functions.
 -- | A topological space is more general than a topological manifold.  FieldML domains qualify as topological spaces.
 data TopologicalSpace = 
 
@@ -54,7 +53,7 @@ data TopologicalSpace =
   Booleans |
   Labels SetOfLabels |
   CartesianProduct [TopologicalSpace] |
-  CartesianPower Int TopologicalSpace |
+  
   
   -- | Factor n m creates the a topological space from a cartesian product m, consisting of the n'th factor, n=1 means the first factor.
   Factor Int TopologicalSpace |
@@ -82,7 +81,12 @@ data TopologicalSpace =
   Image Map |
   
   -- | Interior f represents the subset of the codomain of f which is the interior of the image of f.
-  Interior Map
+  Interior Map |
+  
+  -- | SignatureSpace m n represents the set of all functions f such that f::m->n
+  -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
+  -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
+  SignatureSpace TopologicalSpace TopologicalSpace
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
@@ -93,8 +97,6 @@ data TopologicalSpace =
 
 -- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
 -- Note that values themselves are sometimes treated as maps whose domain is the UnitSpace.
-
--- Todo: How to handle inverse of a Map, since it may be multi-valued, and hence isn't a Map, since maps are single valued?
 data Map = 
 
   -- | The sole element of the UnitSpace.
@@ -189,7 +191,10 @@ data Map =
   Max Map |
   
   -- | Same as Max, but evaluates to minimum value.
-  Min Map
+  Min Map |
+  
+  -- | Inverse f assumes that f is invertable, and represents the inverse function.
+  Inverse Map
 
   deriving (Show, Eq)
 
