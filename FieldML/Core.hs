@@ -160,13 +160,10 @@ data Map =
   -- Note that the free variables of a map can be inferred, but a Lambda is useful for at least two reasons:
   --  1) It allows the order of the free variables and the variable tuple structure to be explicitly specified.
   --  2) It allows for free variables to be specified that may not be present in g, for example Lambda x 1.
-  
-  -- Todo: Not sure if Lambda's make sense in this current design, since all variables in any expression at the moment are considered to be free variables.
-  -- Lambda's can be used in other languages to create closures, which would be like partial application here.
   Lambda Map Map |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
-  -- where A is the same as the domain as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
+  -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
   -- and B is the domain of g as a single slot for the tuple that represents g's domain.
   -- Since any Map essentially is an expression in some variables, this is equivalent to using the value of g in place of the relevant variable.
   PartialApplication Int Map Map |
@@ -194,7 +191,12 @@ data Map =
   Min Map |
   
   -- | Inverse f assumes that f is invertable, and represents the inverse function.
-  Inverse Map
+  Inverse Map |
+  
+  -- | h = KroneckerProduct f g requires f and g to be 'Tuple's of reals, i.e. each member of the Tuple must have Reals as its codomain.
+  -- The result is a Tuple whose length is n times m, where n is the length of f and m is the length of g.
+  -- h_i is f_j * g_k, where i = (j-1) * m + k, j=1..n, k=1..m and asterisk means scalar real multiplication).
+  KroneckerProduct Map Map
 
   deriving (Show, Eq)
 
@@ -243,6 +245,7 @@ listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ Tuple fs
+listOfFreeGeneralVariables (Lambda g@(GeneralVariable _ _) _ ) = [g]
 listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 
 listOfFreeGeneralVariables (PartialApplication n f g) = 
@@ -257,6 +260,9 @@ listOfFreeGeneralVariables (CSymbol _ f) = listOfFreeGeneralVariables f
 
 listOfFreeGeneralVariables (Max _) = []
 listOfFreeGeneralVariables (Min _) = []
+
+listOfFreeGeneralVariables (KroneckerProduct f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
+
 
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
@@ -286,8 +292,9 @@ domain (Equal a b) = domain (Tuple [a,b])
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
+domain (KroneckerProduct f g) = domain (Tuple [f,g])
 
--- Todo: We will need to comprehensively go through OpenMath CDs that we want to support and fill this out. Likewise for codomain.
+-- Todo: Change to explicitly having Sin and Cos constructor.  Noted elsewhere as well.
 domain (CSymbol "openmath cd transc1 cos" _) = Reals
 domain (CSymbol "openmath cd transc1 sin" _) = Reals
 
@@ -317,10 +324,11 @@ codomain (CSymbol "openmath cd transc1 cos" _) = Reals
 codomain (CSymbol "openmath cd transc1 sin" _) = Reals
 codomain (Max _) = Reals
 codomain (Min _) = Reals
-
+codomain (KroneckerProduct (Tuple fs) (Tuple gs) ) = CartesianProduct (replicate mn Reals) where mn = (length fs) * (length gs)
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (CartesianProduct xs) = xs !! n
+getFactor 1 m = m
 
 
 -- | Cardinality of discrete space. Zero if can't be easily determined, or has continuous components.
@@ -425,11 +433,11 @@ validateMap (Equal a b) =
   (domain a == domain b ) &&
   (codomain a == codomain b )
 
-validateMap (Lambda a f ) = (validateMap' a) && (validateMap f)
+validateMap (Lambda a f ) = (isVariableTuple a) && (validateMap f)
   where 
-    validateMap' (GeneralVariable _ b) = True
-    validateMap' (Tuple fs) = validateMap (Tuple fs)
-    validateMap' _ = False
+    isVariableTuple (GeneralVariable _ _) = True
+    isVariableTuple (Tuple fs) = all isVariableTuple fs
+    isVariableTuple _ = False
 
 validateMap (Restriction (SimpleSubset a) f ) = 
   validateMap f &&
@@ -441,3 +449,12 @@ validateMap (CSymbol "openmath cd transc1 sin" f) = codomain f == Reals
 
 validateMap (Max f) = codomain f == Reals
 validateMap (Min f) = codomain f == Reals
+
+validateMap (KroneckerProduct (Tuple fs) (Tuple gs) ) = 
+  all realCodomain fs && all realCodomain gs 
+  where realCodomain = (\x -> (codomain x) == Reals)
+
+validateMap (PartialApplication n f g) =
+  validateMap f &&
+  validateMap g &&
+  codomain g == getFactor n (domain f)

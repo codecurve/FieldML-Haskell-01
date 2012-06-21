@@ -27,9 +27,9 @@ x = GeneralVariable "x" Reals
 
 expression1 :: Map
 expression1 =  
-  (x `LessThan` (RealConstant 1) )
+  (x `LessThan` (Lambda x (RealConstant 1)) )
   `And` 
-  ( (RealConstant 0) `LessThan` x)
+  ( (Lambda x (RealConstant 0)) `LessThan` x)
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 -- But perhaps the chart is just the tuple that represents a value in the topological space?  Tuples can consist of named variables.
@@ -55,7 +55,7 @@ prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Re
 prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "xx" Reals,GeneralVariable "yy" Reals] )
   
 expression3a :: Map
-expression3a = (RealConstant 1) `Minus` (GeneralVariable "x" Reals)
+expression3a = Lambda (GeneralVariable "x" Reals) (RealConstant 1) `Minus` (GeneralVariable "x" Reals)
 
 expression3b :: Map
 expression3b = GeneralVariable "x" Reals
@@ -66,9 +66,9 @@ expression3c =
     unitLineSegment -- Todo: A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
     (Tuple [expression3a, expression3b])
 
-prop_testResult3a = ( domain expression3c == unitLineSegment )
-prop_testResult3b = ( codomain expression3c == CartesianProduct [Reals,Reals] )
-
+prop_test_Tuple_domain = ( domain expression3c == unitLineSegment )
+prop_test_Tuple_codomain = ( codomain expression3c == CartesianProduct [Reals,Reals] )
+prop_test_Tuple_freeVariables = ( listOfFreeGeneralVariables expression3c == [ GeneralVariable "x" Reals ] )
 
 expression4 :: Map
 expression4 =
@@ -123,13 +123,13 @@ d3 =
 polarToCartesian =
   Tuple
     [
-      Times
-        (CSymbol "openmath cd transc1 cos" (GeneralVariable "theta" Reals))
-        (GeneralVariable "radius" Reals)
+      (CSymbol "openmath cd transc1 cos" (GeneralVariable "theta" Reals))
+      `Times`
+      (GeneralVariable "radius" Reals)
       ,
-      Times
-        (CSymbol "openmath cd transc1 sin" (GeneralVariable "theta" Reals))
-        (GeneralVariable "radius" Reals)
+      (CSymbol "openmath cd transc1 sin" (GeneralVariable "theta" Reals))
+      `Times`        
+      (GeneralVariable "radius" Reals)
     ]
 
 prop_testResult6 = (domain polarToCartesian == CartesianProduct [Reals, Reals])
@@ -178,7 +178,7 @@ brokenParamTest =
 
 prop_testResult_IntParam_01c = ( not (validateMap brokenParamTest))
 
--- Todo: don't we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types?
+-- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
 globalNode = GeneralVariable "globalNode" (Labels (IntegerRange 1 6))
 
 pressureAtNodes = 
@@ -209,4 +209,10 @@ predicate2a = ( y `Equal` f2 )
 predicate2b = PartialApplication 1 predicate2a (RealConstant 1.0)
 
 levelSet1 = SimpleSubset predicate2b
+
+-- Tensor like product
+basis1dLinearLagrange_xi1 = PartialApplication 1 expression3c (GeneralVariable "xi1" Reals)
+basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "xi2" Reals)
+
+basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLinearLagrange_xi2
 
