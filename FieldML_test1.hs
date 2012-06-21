@@ -176,7 +176,7 @@ brokenParamTest =
     [ 1, 2, 3, 4, 5 ]
     (Tuple [ elementId, localNode ])
 
-prop_testResult_IntParam_01c = ( not (validateMap brokenParamTest))
+prop_test_IntParam_01c = ( not (validateMap brokenParamTest))
 
 -- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
 globalNode = GeneralVariable "globalNode" (Labels (IntegerRange 1 6))
@@ -187,7 +187,7 @@ pressureAtNodes =
       -0.4,   -100.9,  19.0 ] 
     globalNode
 
-prop_testResult_IntParam_01d = ( validateMap pressureAtNodes )
+prop_test_IntParam_01d = ( validateMap pressureAtNodes )
 
 -- Demonstrating equations.  For now, this is just a Map to Boolean, but an extra construct could be added that means that this is asserted to be true.
 xy1 = GeneralVariable "xy" (CartesianProduct [Reals, Reals])
@@ -216,3 +216,4 @@ basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "
 
 basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLinearLagrange_xi2
 
+prop_test_KroneckerProduct = (validateMap basis2dLinearLagrange_a)
