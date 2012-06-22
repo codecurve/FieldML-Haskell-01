@@ -61,27 +61,17 @@ data TopologicalSpace =
   -- Todo: unit testing of DisjointUnion, and the design thinking here is probably incomplete.
   DisjointUnion SetOfLabels DomainMap |
 
-  -- | The Map must have codomain = Booleans, the resulting TopologicalSpace is the subset of the BooleanMap's domain where the BooleanMap evaluates to True.
-  SimpleSubset Map |
+  -- | SimpleSubset p represents set-builder notation to create a set which consists of all x in the domain of the predicate, p,  
+  -- such that the predicate p x is True. 
+  -- p must have codomain = Booleans.
+  SimpleSubset Map Map |
   
-  -- | SubsetReUnion xs requires that each x in xs is directly or indirectly a subset of one common set.  For topological spaces, there are two types of unions, and a traditional set union only makes sense if there was an original subset relationship, so that intersections make sense.  An alternative is to use the original predicates and a Boolean Or, which is equivalent.
-  SubsetReUnion [TopologicalSpace] |
-  
+
   -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
   -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
   -- In other words, points in the codomain are deemed to be the equivalence classes.
   -- Points that map to Unspecified in the codomain are treated as if they are not connected to any other points in the new Quotient space.
   Quotient Map |
-  
-  -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
-  -- Hint: for the image of a subset, use a restricted map.
-  
-  -- Todo: test.
-  -- Todo: Consider rather using SimpleSubset.
-  Image Map |
-  
-  -- | Interior f represents the subset of the codomain of f which is the interior of the image of f.
-  Interior Map |
   
   -- | SignatureSpace m n represents the set of all functions f such that f::m->n
   -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
@@ -119,6 +109,13 @@ data Map =
 
   Equal Map Map |
 
+  -- | ElementOf x m is True if x is in the set m, otherwise it is false.
+  ElementOf Map TopologicalSpace |
+
+  -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
+  -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
+  Interior TopologicalSpace |
+  
   -- | Any real value, as a constant.
   RealConstant Double |
   

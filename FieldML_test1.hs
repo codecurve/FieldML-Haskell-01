@@ -42,7 +42,7 @@ unitLineSegment' =
     (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
   )
 
-xy = Tuple [GeneralVariable "xx" Reals, GeneralVariable "yy" Reals]
+xy = Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]
   
 expression2 :: Map
 expression2 =
@@ -52,7 +52,7 @@ expression2 =
 
 prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Reals] )
 
-prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "xx" Reals,GeneralVariable "yy" Reals] )
+prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "x" Reals,GeneralVariable "y" Reals] )
   
 expression3a :: Map
 expression3a = Lambda (GeneralVariable "x" Reals) (RealConstant 1) `Minus` (GeneralVariable "x" Reals)
@@ -217,3 +217,34 @@ basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "
 basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLinearLagrange_xi2
 
 prop_test_KroneckerProduct = (validateMap basis2dLinearLagrange_a)
+
+-- Interior. Todo: Use FEM to describe boundary mesh.
+xi1 = GeneralVariable "xi1" Reals
+l1Map = Restriction unitLineSegment $
+  Tuple [
+    xi1, 
+    RealConstant 0 ]
+l2Map = Restriction unitLineSegment $
+  Tuple [ 
+    RealConstant 1, 
+    xi1 ]
+l3Map = Restriction unitLineSegment $
+  Tuple [ 
+    (RealConstant 1 ) `Minus` xi1, 
+    RealConstant 1 ]
+l4Map = Restriction unitLineSegment $
+  Tuple [ 
+    RealConstant 0, 
+    (RealConstant 1 ) `Minus` xi1 ]
+
+imageL1Predicate = xy `Equal` l1Map
+imageL2Predicate = xy `Equal` l2Map
+imageL3Predicate = xy `Equal` l3Map
+imageL4Predicate = xy `Equal` l4Map
+
+l1SpaceXYXi1 = SimpleSubset imageL1Predicate
+l2SpaceXYXi1 = SimpleSubset imageL2Predicate
+l3SpaceXYXi1 = SimpleSubset imageL3Predicate
+l4SpaceXYXi1 = SimpleSubset imageL4Predicate
+
+l1SpaceXY = Tuple [x,y] 
