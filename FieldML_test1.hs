@@ -237,14 +237,7 @@ l4Map = Restriction unitLineSegment $
     RealConstant 0, 
     (RealConstant 1 ) `Minus` xi1 ]
 
-imageL1Predicate = xy `Equal` l1Map
-imageL2Predicate = xy `Equal` l2Map
-imageL3Predicate = xy `Equal` l3Map
-imageL4Predicate = xy `Equal` l4Map
-
-l1SpaceXYXi1 = SimpleSubset imageL1Predicate
-l2SpaceXYXi1 = SimpleSubset imageL2Predicate
-l3SpaceXYXi1 = SimpleSubset imageL3Predicate
-l4SpaceXYXi1 = SimpleSubset imageL4Predicate
-
-l1SpaceXY = Tuple [x,y] 
+l1SpaceXY = Image l1Map
+l2SpaceXY = Image l1Map
+l3SpaceXY = Image l1Map
+l4SpaceXY = Image l1Map

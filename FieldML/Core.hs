@@ -64,8 +64,15 @@ data TopologicalSpace =
   -- | SimpleSubset p represents set-builder notation to create a set which consists of all x in the domain of the predicate, p,  
   -- such that the predicate p x is True. 
   -- p must have codomain = Booleans.
-  SimpleSubset Map Map |
+  SimpleSubset Map |
   
+  -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
+  -- Hint: for the image of a subset, use a restricted map.
+
+
+  -- Todo: Considerered omitting Image, and relying just on SimpleSubset, but found it convoluted.  Might try again some time.
+  Image Map |
+
 
   -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
   -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
