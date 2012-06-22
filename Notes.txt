@@ -87,3 +87,4 @@ Tuple[
 
 Note: Currently Maps and Values are treated as the same thing, a value is just a map whose domain is the UnitSpace.
 
+What about 'TopologicalSpace's where the definition of the space leaves some variables free? Is that like a closure, or is it invalid, or can it be represented, but formally, e.g. if is is such an object, then s::x->TopologicalSpace, where x is the free variable.
