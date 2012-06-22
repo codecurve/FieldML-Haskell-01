@@ -69,8 +69,7 @@ data TopologicalSpace =
   -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
   -- Hint: for the image of a subset, use a restricted map.
 
-
-  -- Todo: Considerered omitting Image, and relying just on SimpleSubset, but found it convoluted.  Might try again some time.
+  -- Todo: Considerered omitting Image, and relying just on SimpleSubset, but found it convoluted.  Might try again some time - hint: use exists (MathML: <csymbol cd="quant1">exists</csymbol> to bind so that Exists x p(x,y) binds x.  p(x,y) is a boolean valued map: p(x,y) = (y == f(x) )
   Image Map |
 
 
