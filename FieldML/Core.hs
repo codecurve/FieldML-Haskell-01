@@ -116,7 +116,7 @@ data Map =
 
   Equal Map Map |
 
-  -- | ElementOf x m is True if x is in the set m, otherwise it is false.
+  -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
   ElementOf Map TopologicalSpace |
 
   -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
@@ -232,6 +232,7 @@ simplifyTopologicalSpace m = m
 listOfFreeGeneralVariables :: Map -> [Map]
 listOfFreeGeneralVariables (RealConstant _ ) = []
 listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
+listOfFreeGeneralVariables (Unspecified m) = []
 listOfFreeGeneralVariables (Tuple fs) = List.nub (concatMap listOfFreeGeneralVariables fs) 
 listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
 listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
@@ -248,6 +249,7 @@ listOfFreeGeneralVariables (Or a b) = listOfFreeGeneralVariables $ Tuple [ a, b 
 listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not.
 listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ Tuple fs
 listOfFreeGeneralVariables (Lambda g@(GeneralVariable _ _) _ ) = [g]
 listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
@@ -271,6 +273,7 @@ listOfFreeGeneralVariables (KroneckerProduct f g) = listOfFreeGeneralVariables $
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
+domain (Unspecified _) = UnitSpace
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
 domain (Tuple fs) = CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
@@ -293,6 +296,7 @@ domain (Or a b) = domain (Tuple [a,b])
 domain (Not a) = domain a
 domain (LessThan a b) = domain (Tuple [a,b])
 domain (Equal a b) = domain (Tuple [a,b])
+domain (ElementOf x _) = domain x
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
@@ -306,6 +310,7 @@ domain (CSymbol "openmath cd transc1 sin" _) = Reals
 codomain :: Map ->TopologicalSpace
 codomain (RealConstant _ ) = Reals
 codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
+codomain (Unspecified m) = m
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
 codomain (Lambda _ f ) = codomain f
 codomain (If _ a _ ) = codomain a -- Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
@@ -323,6 +328,7 @@ codomain (Or a _) = Booleans
 codomain (Not a) = Booleans
 codomain (LessThan a _) = Booleans
 codomain (Equal a _) = Booleans
+codomain (ElementOf _ _) = Booleans
 codomain (Restriction _ f ) = codomain f
 codomain (CSymbol "openmath cd transc1 cos" _) = Reals
 codomain (CSymbol "openmath cd transc1 sin" _) = Reals
@@ -436,6 +442,8 @@ validateMap (Equal a b) =
   validateMap b &&
   (domain a == domain b ) &&
   (codomain a == codomain b )
+
+validateMap (ElementOf _ _) = True
 
 validateMap (Lambda a f ) = (isVariableTuple a) && (validateMap f)
   where 

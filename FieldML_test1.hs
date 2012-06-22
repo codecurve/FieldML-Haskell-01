@@ -241,3 +241,13 @@ l1SpaceXY = Image l1Map
 l2SpaceXY = Image l1Map
 l3SpaceXY = Image l1Map
 l4SpaceXY = Image l1Map
+
+unionPredicate = 
+  (xy `ElementOf` l1SpaceXY) `Or`
+  (xy `ElementOf` l2SpaceXY) `Or`
+  (xy `ElementOf` l3SpaceXY) `Or`
+  (xy `ElementOf` l4SpaceXY)
+
+squareBoundary = SimpleSubset unionPredicate
+
+squareFromBoundary = Interior squareBoundary
