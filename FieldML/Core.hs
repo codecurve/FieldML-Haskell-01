@@ -68,10 +68,8 @@ data TopologicalSpace =
   
   -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
   -- Hint: for the image of a subset, use a restricted map.
-
-  -- Todo: Considerered omitting Image, and relying just on SimpleSubset, but found it convoluted.  Might try again some time - hint: use exists (MathML: <csymbol cd="quant1">exists</csymbol> to bind so that Exists x p(x,y) binds x.  p(x,y) is a boolean valued map: p(x,y) = (y == f(x) )
+  -- Equivalent: Exists x p(x,y).  p(x,y) is a boolean valued map: p(x,y) = (y == f(x) )
   Image Map |
-
 
   -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
   -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
@@ -118,6 +116,11 @@ data Map =
   -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
   ElementOf Map TopologicalSpace |
 
+  -- | Exists x f means "there exists x such that f is true".  x must be a general variable, and it must also be one of the free variables of f.  
+  -- The codomain of f must be booleans.
+  -- Equivalent: MathML/OpenMath: <csymbol cd="quant1">exists</csymbol> 
+  Exists Map Map |
+  
   -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
   Interior TopologicalSpace |
@@ -249,6 +252,7 @@ listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not.
+listOfFreeGeneralVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (listOfFreeGeneralVariables f)
 listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ Tuple fs
 listOfFreeGeneralVariables (Lambda g@(GeneralVariable _ _) _ ) = [g]
 listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
@@ -269,6 +273,7 @@ listOfFreeGeneralVariables (Min _) = []
 listOfFreeGeneralVariables (KroneckerProduct f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
 
 
+-- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.
 domain :: Map -> TopologicalSpace
 domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
@@ -278,24 +283,26 @@ domain (Tuple [f]) = domain f
 domain (Tuple fs) = CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
   where spaceOfVariable (GeneralVariable _ a) = a
 domain (Lambda UnitElement _) = UnitSpace 
-domain (Lambda (GeneralVariable _ m) _ ) = m
-domain (Lambda (Tuple fs) _ ) = domain (Tuple fs)
-domain (If x a b ) = domain (Tuple [x,a,b]) 
-domain (Plus a b) = domain (Tuple [a,b])
-domain (Minus a b) = domain (Tuple [a,b])
-domain (Times a b) = domain (Tuple [a,b])
-domain (Divide a b) = domain (Tuple [a,b])
+domain (Lambda (GeneralVariable _ m) _ ) = m -- Todo: assumes that there are no free variables in the lambda definition, since we aren't handling closures.
+domain (Lambda t@(Tuple fs) _ ) = domain t
+domain (If x _ _ ) = domain x 
+domain (Plus a _) = domain a
+domain (Minus a _) = domain a
+domain (Times a _) = domain a
+domain (Divide a _) = domain a
 -- domain (Compose _ g) = domain g
 domain (FromRealParameterSource _ f) = codomain f 
 domain (FromIntegerParameterSource _ f) = codomain f
 domain (Project n f) = domain f
 domain (BooleanConstant _) = UnitSpace
-domain (And a b) = domain (Tuple [a,b])
-domain (Or a b) = domain (Tuple [a,b])
+domain (And a _) = domain a
+domain (Or a _) = domain a
 domain (Not a) = domain a
-domain (LessThan a b) = domain (Tuple [a,b])
-domain (Equal a b) = domain (Tuple [a,b])
+domain (LessThan a _) = domain a
+domain (Equal a _) = domain a
 domain (ElementOf x _) = domain x
+domain ex@(Exists _ _) = CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables ex))
+  where spaceOfVariable (GeneralVariable _ a) = a
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
@@ -305,7 +312,7 @@ domain (KroneckerProduct f g) = domain (Tuple [f,g])
 domain (CSymbol "openmath cd transc1 cos" _) = Reals
 domain (CSymbol "openmath cd transc1 sin" _) = Reals
 
-  
+-- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.  
 codomain :: Map ->TopologicalSpace
 codomain (RealConstant _ ) = Reals
 codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
@@ -328,6 +335,7 @@ codomain (Not a) = Booleans
 codomain (LessThan a _) = Booleans
 codomain (Equal a _) = Booleans
 codomain (ElementOf _ _) = Booleans
+codomain (Exists _ _) = Booleans
 codomain (Restriction _ f ) = codomain f
 codomain (CSymbol "openmath cd transc1 cos" _) = Reals
 codomain (CSymbol "openmath cd transc1 sin" _) = Reals
@@ -443,6 +451,8 @@ validateMap (Equal a b) =
   (codomain a == codomain b )
 
 validateMap (ElementOf _ _) = True
+
+validateMap (Exists (GeneralVariable _ _) f) = codomain f ==  Booleans
 
 validateMap (Lambda a f ) = (isVariableTuple a) && (validateMap f)
   where 

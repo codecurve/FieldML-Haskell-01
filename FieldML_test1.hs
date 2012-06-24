@@ -251,3 +251,10 @@ unionPredicate =
 squareBoundary = SimpleSubset unionPredicate
 
 squareFromBoundary = Interior squareBoundary
+
+-- Equivalent of Image
+l1SpaceXY' = SimpleSubset (Exists xi1 (xy `Equal` l1Map))
+
+SimpleSubset p1 = l1SpaceXY'
+
+prop_test_Exists1 = (validateMap p1)
