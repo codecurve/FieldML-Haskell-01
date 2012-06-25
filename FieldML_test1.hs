@@ -27,14 +27,19 @@ x = GeneralVariable "x" Reals
 
 expression1 :: Map
 expression1 =  
-  (x `LessThan` (Lambda x (RealConstant 1)) )
+  (x `LessThan` (RealConstant 1) )
   `And` 
-  ( (Lambda x (RealConstant 0)) `LessThan` x)
+  ( (RealConstant 0) `LessThan` x)
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 -- But perhaps the chart is just the tuple that represents a value in the topological space?  Tuples can consist of named variables.
 
 unitLineSegment = SimpleSubset expression1
+
+prop_test_BooleanExpression1a = (validateMap expression1)
+prop_test_BooleanExpression1b = (listOfFreeGeneralVariables expression1 == [GeneralVariable "x" Reals])
+prop_test_BooleanExpression1c = (domain expression1 == Reals)
+prop_test_BooleanExpression1d = (codomain expression1 == Booleans)
 
 -- As above, but more inline:
 unitLineSegment' = 
@@ -54,6 +59,8 @@ prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Re
 
 prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "x" Reals,GeneralVariable "y" Reals] )
   
+prop_test_2dTupleMapDomain1c = (validateMap expression2)
+
 expression3a :: Map
 expression3a = Lambda (GeneralVariable "x" Reals) (RealConstant 1) `Minus` (GeneralVariable "x" Reals)
 
@@ -219,7 +226,8 @@ basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLine
 prop_test_KroneckerProduct = (validateMap basis2dLinearLagrange_a)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
-xi1 = GeneralVariable "xi1" Reals
+xi1 = GeneralVariable "xi1" unitLineSegment
+
 l1Map = Restriction unitLineSegment $
   Tuple [
     xi1, 
@@ -238,9 +246,9 @@ l4Map = Restriction unitLineSegment $
     (RealConstant 1 ) `Minus` xi1 ]
 
 l1SpaceXY = Image l1Map
-l2SpaceXY = Image l1Map
-l3SpaceXY = Image l1Map
-l4SpaceXY = Image l1Map
+l2SpaceXY = Image l2Map
+l3SpaceXY = Image l3Map
+l4SpaceXY = Image l4Map
 
 unionPredicate = 
   (xy `ElementOf` l1SpaceXY) `Or`
@@ -255,6 +263,16 @@ squareFromBoundary = Interior squareBoundary
 -- Equivalent of Image
 l1SpaceXY' = SimpleSubset (Exists xi1 (xy1 `Equal` l1Map))
 
-SimpleSubset p1 = l1SpaceXY'
+SimpleSubset p1a = l1SpaceXY'
 
-prop_test_Exists1 = (validateMap p1)
+prop_test_Exists1a = (validateMap p1a)
+
+prop_test_Exists1b = (listOfFreeGeneralVariables p1a == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
+
+prop_test_Exists1c = (domain p1a == CartesianProduct[Reals, Reals])
+
+Exists _ p1b = p1a
+
+prop_test_Exists1d = (listOfFreeGeneralVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals]),GeneralVariable "xi1" Reals] )
+
+prop_test_Exists1e = (domain p1b == CartesianProduct [ CartesianProduct [Reals,Reals], unitLineSegment ] )

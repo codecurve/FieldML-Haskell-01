@@ -280,28 +280,28 @@ domain (GeneralVariable _ m) = m
 domain (Unspecified _) = UnitSpace
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (Tuple fs) = CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
+domain (Tuple fs) = simplifyTopologicalSpace $ CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
   where spaceOfVariable (GeneralVariable _ a) = a
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda (GeneralVariable _ m) _ ) = m -- Todo: assumes that there are no free variables in the lambda definition, since we aren't handling closures.
 domain (Lambda t@(Tuple fs) _ ) = domain t
-domain (If x _ _ ) = domain x 
-domain (Plus a _) = domain a
-domain (Minus a _) = domain a
-domain (Times a _) = domain a
-domain (Divide a _) = domain a
+domain (If x a b ) = domain (Tuple [x, a, b])
+domain (Plus a b) = domain (Tuple [ a, b ])
+domain (Minus a b) = domain (Tuple [ a, b ])
+domain (Times a b) = domain (Tuple [ a, b ])
+domain (Divide a b) = domain (Tuple [ a, b ])
 -- domain (Compose _ g) = domain g
 domain (FromRealParameterSource _ f) = codomain f 
 domain (FromIntegerParameterSource _ f) = codomain f
 domain (Project n f) = domain f
 domain (BooleanConstant _) = UnitSpace
-domain (And a _) = domain a
-domain (Or a _) = domain a
+domain (And a b) = domain (Tuple [ a, b ])
+domain (Or a b) = domain (Tuple [ a, b ])
 domain (Not a) = domain a
-domain (LessThan a _) = domain a
-domain (Equal a _) = domain a
+domain (LessThan a b) = domain (Tuple [ a, b ])
+domain (Equal a b) = domain (Tuple [ a, b ])
 domain (ElementOf x _) = domain x
-domain ex@(Exists _ _) = CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables ex))
+domain ex@(Exists _ _) = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables ex))
   where spaceOfVariable (GeneralVariable _ a) = a
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
@@ -344,7 +344,7 @@ codomain (Min _) = Reals
 codomain (KroneckerProduct (Tuple fs) (Tuple gs) ) = CartesianProduct (replicate mn Reals) where mn = (length fs) * (length gs)
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
-getFactor n (CartesianProduct xs) = xs !! n
+getFactor n (CartesianProduct xs) = xs !! (n-1)
 getFactor 1 m = m
 
 
@@ -365,37 +365,31 @@ validateMap (If x a b ) =
   validateMap a && 
   validateMap b && 
   validateMap x && 
-  (domain x == domain a ) &&
-  (domain x == domain b) && 
-  (codomain a == codomain b) &&
-  (codomain x == Booleans)
+  codomain a == codomain b &&
+  codomain x == Booleans
 
 validateMap (Plus a b) = 
   validateMap a &&
   validateMap b &&
-  (domain a == domain b ) &&
-  (codomain a == codomain b ) &&
+  codomain a == codomain b &&
   codomain a == Reals
   
 validateMap (Minus a b) =
   validateMap a &&
   validateMap b &&
-  (domain a == domain b ) &&
-  (codomain a == codomain b ) &&
+  codomain a == codomain b &&
   codomain a == Reals
 
 validateMap (Times a b) =
   validateMap a &&
   validateMap b &&
-  (domain a == domain b ) &&
-  (codomain a == codomain b ) &&
+  codomain a == codomain b &&
   codomain a == Reals
 
 validateMap (Divide a b) =
   validateMap a &&
   validateMap b &&
-  (domain a == domain b ) &&
-  (codomain a == codomain b ) &&
+  codomain a == codomain b &&
   codomain a == Reals
 
 -- validateMap (Compose f g) = 
@@ -422,14 +416,12 @@ validateMap (BooleanConstant _) = True
 validateMap (And a b) =
   validateMap a &&
   validateMap b &&
-  domain a == domain b &&
   codomain a == Booleans &&
   codomain b == Booleans
   
 validateMap (Or a b) =
   validateMap a &&
   validateMap b &&
-  domain a == domain b &&
   codomain a == Booleans &&
   codomain b == Booleans
 
@@ -440,19 +432,19 @@ validateMap (Not a) =
 validateMap (LessThan a b) = 
   validateMap a &&
   validateMap b &&
-  (domain a == domain b ) &&
-  (codomain a == codomain b ) &&
+  codomain a == codomain b &&
   codomain a == Reals
 
 validateMap (Equal a b) =
   validateMap a &&
   validateMap b &&
-  (domain a == domain b ) &&
-  (codomain a == codomain b )
+  codomain a == codomain b
 
 validateMap (ElementOf _ _) = True
 
-validateMap (Exists (GeneralVariable _ _) f) = codomain f ==  Booleans
+validateMap (Exists (GeneralVariable _ _) f) = 
+  codomain f ==  Booleans &&
+  validateMap f
 
 validateMap (Lambda a f ) = (isVariableTuple a) && (validateMap f)
   where 
