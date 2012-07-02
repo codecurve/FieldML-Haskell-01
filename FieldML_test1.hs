@@ -228,19 +228,19 @@ prop_test_KroneckerProduct = (validateMap basis2dLinearLagrange_a)
 -- Interior. Todo: Use FEM to describe boundary mesh.
 xi1 = GeneralVariable "xi1" unitLineSegment
 
-l1Map = Restriction unitLineSegment $
+l1Map =
   Tuple [
     xi1, 
     RealConstant 0 ]
-l2Map = Restriction unitLineSegment $
+l2Map =
   Tuple [ 
     RealConstant 1, 
     xi1 ]
-l3Map = Restriction unitLineSegment $
+l3Map =
   Tuple [ 
     (RealConstant 1 ) `Minus` xi1, 
     RealConstant 1 ]
-l4Map = Restriction unitLineSegment $
+l4Map =
   Tuple [ 
     RealConstant 0, 
     (RealConstant 1 ) `Minus` xi1 ]
@@ -273,6 +273,14 @@ prop_test_Exists1c = (domain p1a == CartesianProduct[Reals, Reals])
 
 Exists _ p1b = p1a
 
-prop_test_Exists1d = (listOfFreeGeneralVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals]),GeneralVariable "xi1" Reals] )
+prop_test_Exists1d = (listOfFreeGeneralVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals]),GeneralVariable "xi1" unitLineSegment] )
 
 prop_test_Exists1e = (domain p1b == CartesianProduct [ CartesianProduct [Reals,Reals], unitLineSegment ] )
+
+-- Todo: validation is too strict, and not correct. Currently validation of Equal requires that both operands have the same codomain, whereas what should be checked is that there is a conversion that allows values from one to be compared with the other, even if the codomains are not identical.
+prop_test_Exists1f = (validateMap p1b)
+
+Equal p1c1 p1c2 = p1b
+
+prop_test_Exists1g1 = (validateMap p1c1)
+prop_test_Exists1g2 = (validateMap p1c2)
