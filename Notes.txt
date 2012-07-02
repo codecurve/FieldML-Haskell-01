@@ -24,24 +24,27 @@ Need to be able to recognise massive homogeneity in order to optimise, e.g. for 
 
 -- Todo list ():
 FieldML.Core, Haskell
--- Validation:
----Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
--- Connectivity
--- Tensor product basis functions
--- Coordinate system transformation
--- represent derivative continuity intention at connected points
--- "Versions"
--- Generate discretised points in a TopologicalSpace.
--- Partial application, binding, composition, projection from a general variable.
+- Change to using HUnit rather than QuickTest
+- Validation:
+-- Other validation
+- Connectivity
+- Tensor product basis functions
+- Coordinate system transformation
+- represent derivative continuity intention at connected points
+- "Versions"
+- Generate discretised points in a TopologicalSpace.
+- Partial application, binding, composition, projection from a general variable.
 
--- Try use classes for each type of TopologicalSpace, each type of Map etc.
--- Try use OpenMath/MathML CSymbol to CD entries almost everywhere.
+- Try use classes for each type of TopologicalSpace, each type of Map etc.
+- Try use OpenMath/MathML CSymbol to CD entries almost everywhere.
 
 
 
 -- Done:
 -- - Disjoint Union
 -- - Read a bit about f5 (fibrebundle.net).
+- Validation:
+-- Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
 
 
 Haskell vs Scala:
