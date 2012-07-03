@@ -83,7 +83,7 @@ data TopologicalSpace =
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
-  -- Todo: perhaps tangent spaces are constructed by a method, rather than being a fundamental constructor.
+  -- Todo: perhaps tangent spaces are constructed by a function, rather than being a fundamental constructor.
 
   deriving (Show, Eq)
 
@@ -271,6 +271,8 @@ listOfFreeGeneralVariables (Min _) = []
 
 listOfFreeGeneralVariables (KroneckerProduct f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
 
+spaceOfVariable :: Map -> TopologicalSpace
+spaceOfVariable (GeneralVariable _ a) = a
 
 -- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.
 domain :: Map -> TopologicalSpace
@@ -280,7 +282,6 @@ domain (Unspecified _) = UnitSpace
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
 domain (Tuple fs) = simplifyTopologicalSpace $ CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
-  where spaceOfVariable (GeneralVariable _ a) = a
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda (GeneralVariable _ m) _ ) = m -- Todo: assumes that there are no free variables in the lambda definition, since we aren't handling closures.
 domain (Lambda t@(Tuple fs) _ ) = domain t
@@ -300,16 +301,17 @@ domain (Not a) = domain a
 domain (LessThan a b) = domain (Tuple [ a, b ])
 domain (Equal a b) = domain (Tuple [ a, b ])
 domain (ElementOf x _) = domain x
-domain ex@(Exists _ _) = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables ex))
-  where spaceOfVariable (GeneralVariable _ a) = a
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
 domain (KroneckerProduct f g) = domain (Tuple [f,g])
+domain f@(Exists _ _)               = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
+domain f@(PartialApplication _ _ _) = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
 
 -- Todo: Change to explicitly having Sin and Cos constructor.  Noted elsewhere as well.
 domain (CSymbol "openmath cd transc1 cos" _) = Reals
 domain (CSymbol "openmath cd transc1 sin" _) = Reals
+
 
 -- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.  
 codomain :: Map ->TopologicalSpace
@@ -341,6 +343,7 @@ codomain (CSymbol "openmath cd transc1 sin" _) = Reals
 codomain (Max _) = Reals
 codomain (Min _) = Reals
 codomain (KroneckerProduct (Tuple fs) (Tuple gs) ) = CartesianProduct (replicate mn Reals) where mn = (length fs) * (length gs)
+codomain (PartialApplication _ f _) = codomain f
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (CartesianProduct xs) = xs !! (n-1)

@@ -61,21 +61,20 @@ prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [Gener
   
 prop_test_2dTupleMapDomain1c = (validateMap expression2)
 
+xi1 = GeneralVariable "xi1" unitLineSegment
+
 expression3a :: Map
-expression3a = Lambda (GeneralVariable "x" Reals) (RealConstant 1) `Minus` (GeneralVariable "x" Reals)
+expression3a = (RealConstant 1) `Minus` xi1
 
 expression3b :: Map
-expression3b = GeneralVariable "x" Reals
+expression3b =  xi1
   
 -- By the way, this is a 1D linear lagrange interpolation basis.
-expression3c =
-  Restriction
-    unitLineSegment -- Todo: A validator would have to check that uniLineSegment is a sensible restriction of the original domain of the map.
-    (Tuple [expression3a, expression3b])
+expression3c = (Tuple [expression3a, expression3b])
 
 prop_test_Tuple_domain = ( domain expression3c == unitLineSegment )
-prop_test_Tuple_codomain = ( codomain expression3c == CartesianProduct [Reals,Reals] )
-prop_test_Tuple_freeVariables = ( listOfFreeGeneralVariables expression3c == [ GeneralVariable "x" Reals ] )
+prop_test_Tuple_codomain = ( canonicalSuperset (codomain expression3c) == CartesianProduct [Reals,Reals] )
+prop_test_Tuple_freeVariables = ( listOfFreeGeneralVariables expression3c == [ xi1 ] )
 
 expression4 :: Map
 expression4 =
@@ -226,7 +225,7 @@ basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLine
 prop_test_KroneckerProduct = (validateMap basis2dLinearLagrange_a)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
-xi1 = GeneralVariable "xi1" unitLineSegment
+
 
 l1Map =
   Tuple [
