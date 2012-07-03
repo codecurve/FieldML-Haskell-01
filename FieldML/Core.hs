@@ -54,7 +54,6 @@ data TopologicalSpace =
   Labels SetOfLabels |
   CartesianProduct [TopologicalSpace] |
   
-  
   -- | Factor n m creates the a topological space from a cartesian product m, consisting of the n'th factor, n=1 means the first factor.
   Factor Int TopologicalSpace |
 
@@ -371,26 +370,26 @@ validateMap (If x a b ) =
 validateMap (Plus a b) = 
   validateMap a &&
   validateMap b &&
-  codomain a == codomain b &&
-  codomain a == Reals
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain a) == Reals
   
 validateMap (Minus a b) =
   validateMap a &&
   validateMap b &&
-  codomain a == codomain b &&
-  codomain a == Reals
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain a) == Reals
 
 validateMap (Times a b) =
   validateMap a &&
   validateMap b &&
-  codomain a == codomain b &&
-  codomain a == Reals
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain a) == Reals
 
 validateMap (Divide a b) =
   validateMap a &&
   validateMap b &&
-  codomain a == codomain b &&
-  codomain a == Reals
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain a) == Reals
 
 -- validateMap (Compose f g) = 
 --  validateMap f &&
@@ -432,13 +431,13 @@ validateMap (Not a) =
 validateMap (LessThan a b) = 
   validateMap a &&
   validateMap b &&
-  codomain a == codomain b &&
-  codomain a == Reals
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain a) == Reals
 
 validateMap (Equal a b) =
   validateMap a &&
   validateMap b &&
-  codomain a == codomain b
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b)
 
 validateMap (ElementOf _ _) = True
 
@@ -471,3 +470,13 @@ validateMap (PartialApplication n f g) =
   validateMap f &&
   validateMap g &&
   codomain g == getFactor n (domain f)
+
+
+-- | canonicalSuperset m returns n where m is a simple subset of n, or factors of m are subsets of factors of n.
+canonicalSuperset :: TopologicalSpace -> TopologicalSpace
+
+canonicalSuperset (CartesianProduct ms) = CartesianProduct (map canonicalSuperset ms)
+canonicalSuperset (SimpleSubset f) = canonicalSuperset (domain f)
+canonicalSuperset (Image f) = canonicalSuperset (codomain f)
+canonicalSuperset (Factor n (CartesianProduct ms)) = canonicalSuperset (ms!!n)
+canonicalSuperset m = m
