@@ -70,7 +70,7 @@ expression3b :: Map
 expression3b =  xi1
   
 -- By the way, this is a 1D linear lagrange interpolation basis.
-expression3c = (Tuple [expression3a, expression3b])
+expression3c = Tuple [expression3a, expression3b]
 
 prop_test_Tuple_domain = ( domain expression3c == unitLineSegment )
 prop_test_Tuple_codomain = ( canonicalSuperset (codomain expression3c) == CartesianProduct [Reals,Reals] )
