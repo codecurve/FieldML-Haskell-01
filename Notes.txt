@@ -40,6 +40,11 @@ FieldML.Core, Haskell
 
 - Validation of TopologicalSpace definitions, and improve validation of Map's to include validating TopologicalSpaces that are part of definition, and vice versa.
 
+- Consider using type classes rather than just different constructors.  Might help ensuring that validate, codomain, domain and listOfFreeGeneralVariables are always implemented when new types are introduced.
+
+- Separate processing of structure (e.g. validate, domain, codomain, listOfFreeGeneralVariables) from Structure constructors.
+
+- Consider making "Apply" explicit, as in MathML and OpenMath. For most maps, it is implicit, e.g. Plus f g.
 
 
 -- Done:
