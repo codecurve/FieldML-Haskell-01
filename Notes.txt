@@ -38,6 +38,8 @@ FieldML.Core, Haskell
 - Try use classes for each type of TopologicalSpace, each type of Map etc.
 - Try use OpenMath/MathML CSymbol to CD entries almost everywhere.
 
+- Validation of TopologicalSpace definitions, and improve validation of Map's to include validating TopologicalSpaces that are part of definition, and vice versa.
+
 
 
 -- Done:

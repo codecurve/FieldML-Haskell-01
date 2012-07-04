@@ -79,11 +79,17 @@ data TopologicalSpace =
   -- | SignatureSpace m n represents the set of all functions f such that f::m->n
   -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
   -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
-  SignatureSpace TopologicalSpace TopologicalSpace
+  SignatureSpace TopologicalSpace TopologicalSpace |
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a function, rather than being a fundamental constructor.
+  
+  -- | Represents the domain of the given map.
+  Domain Map |
+  
+  -- | Represents the codomain of the given map.
+  Codomain Map 
 
   deriving (Show, Eq)
 
