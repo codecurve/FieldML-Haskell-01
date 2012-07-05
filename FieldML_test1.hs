@@ -217,8 +217,10 @@ predicate2b = PartialApplication 1 predicate2a (RealConstant 1.0)
 levelSet1 = SimpleSubset predicate2b
 
 -- Tensor like product
-basis1dLinearLagrange_xi1 = PartialApplication 1 expression3c (GeneralVariable "xi1" Reals)
-basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "xi2" Reals)
+basis1dLinearLagrange_xi1 = PartialApplication 1 expression3c (GeneralVariable "xi1" unitLineSegment)
+basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "xi2" unitLineSegment)
+
+prop_test_PartialApplication = (validateMap basis1dLinearLagrange_xi1)
 
 basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLinearLagrange_xi2
 

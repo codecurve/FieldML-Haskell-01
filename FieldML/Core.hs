@@ -478,6 +478,8 @@ validateMap (Max f) = codomain f == Reals
 validateMap (Min f) = codomain f == Reals
 
 validateMap ( KroneckerProduct f g ) = 
+  validateMap f &&
+  validateMap g &&
   all realCodomain fs && all realCodomain gs 
   where 
     realCodomain = (\x -> (canonicalSuperset . codomain) x  == Reals)
