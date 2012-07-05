@@ -177,6 +177,12 @@ data Map =
   -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
   -- and B is the domain of g as a single slot for the tuple that represents g's domain.
   -- Since any Map essentially is an expression in some variables, this is equivalent to using the value of g in place of the relevant variable.
+  -- Note that this equivalent to function composition if f's domain is a single factor domain.
+  
+  -- Todo: consider using the name of a general variable that is part of the expression for f, rather than specifying the n'th slot. 
+  -- Note however that would allow "deeper" binding, whereas the current approach only allows binding to any of the members of the top level
+  -- tuple structure of the domain of f.
+  -- Todo: contrast this style of partial application with function application in general, function composition, and variable substitution. Clarify apparent confusion.
   PartialApplication Int Map Map |
   
   -- Compose f g = f(g(x)), assumes f::b->c, g::a->b (i.e. domain/codomain compatibility).
@@ -471,9 +477,12 @@ validateMap (CSymbol "openmath cd transc1 sin" f) = codomain f == Reals
 validateMap (Max f) = codomain f == Reals
 validateMap (Min f) = codomain f == Reals
 
-validateMap (KroneckerProduct (Tuple fs) (Tuple gs) ) = 
+validateMap ( KroneckerProduct f g ) = 
   all realCodomain fs && all realCodomain gs 
-  where realCodomain = (\x -> (codomain x) == Reals)
+  where 
+    realCodomain = (\x -> (canonicalSuperset . codomain) x  == Reals)
+    Tuple fs = unwrapTuple f
+    Tuple gs = unwrapTuple g    
 
 validateMap (PartialApplication n f g) =
   validateMap f &&
@@ -489,3 +498,13 @@ canonicalSuperset (SimpleSubset f) = canonicalSuperset (domain f)
 canonicalSuperset (Image f) = canonicalSuperset (codomain f)
 canonicalSuperset (Factor n (CartesianProduct ms)) = canonicalSuperset (ms!!n)
 canonicalSuperset m = m
+
+
+-- | unwrapTuple f is used to extract the tuple structure, since some maps wrap around a tuple but the result retains the underlying tuple structure.
+-- Currently useful for validation of KroneckerProduct. 
+
+-- Todo: comprehensively match patterns for all Map constructors, currently only sufficient for existing tests.
+unwrapTuple :: Map -> Map
+unwrapTuple t@(Tuple _) = t
+unwrapTuple (PartialApplication _ f _ ) = unwrapTuple f
+
