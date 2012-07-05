@@ -209,11 +209,12 @@ data Map =
   
   -- | Inverse f assumes that f is invertable, and represents the inverse function.
   Inverse Map |
-  
-  -- | h = KroneckerProduct f g requires f and g to be 'Tuple's of reals, i.e. each member of the Tuple must have Reals as its codomain.
-  -- The result is a Tuple whose length is n times m, where n is the length of f and m is the length of g.
-  -- h_i is f_j * g_k, where i = (j-1) * m + k, j=1..n, k=1..m and asterisk means scalar real multiplication).
-  KroneckerProduct Map Map
+
+  -- | h = KroneckerProduct fs requires each f in fs to be a 'Tuple's of reals, i.e. each member of the Tuple must have Reals as its codomain.
+  -- The result is a Tuple whose length is the product of the lengths of of each f.
+  -- For example, for the case where fs = [f,g], 
+  -- h_i is f_j * g_k, where i = (j-1) * m + k, j=1..n, k=1..m and asterisk means scalar real multiplication.
+  KroneckerProduct [Map]
 
   deriving (Show, Eq)
 
@@ -281,7 +282,7 @@ listOfFreeGeneralVariables (CSymbol _ f) = listOfFreeGeneralVariables f
 listOfFreeGeneralVariables (Max _) = []
 listOfFreeGeneralVariables (Min _) = []
 
-listOfFreeGeneralVariables (KroneckerProduct f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
+listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ Tuple fs
 
 spaceOfVariable :: Map -> TopologicalSpace
 spaceOfVariable (GeneralVariable _ a) = a
@@ -316,7 +317,7 @@ domain (ElementOf x _) = domain x
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
-domain (KroneckerProduct f g) = domain (Tuple [f,g])
+domain (KroneckerProduct fs) = domain (Tuple fs)
 domain f@(Exists _ _)               = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
 domain f@(PartialApplication _ _ _) = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
 
@@ -354,7 +355,11 @@ codomain (CSymbol "openmath cd transc1 cos" _) = Reals
 codomain (CSymbol "openmath cd transc1 sin" _) = Reals
 codomain (Max _) = Reals
 codomain (Min _) = Reals
-codomain (KroneckerProduct (Tuple fs) (Tuple gs) ) = CartesianProduct (replicate mn Reals) where mn = (length fs) * (length gs)
+codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
+  where
+    m = product ( map tupleLength fs )
+    tupleLength (Tuple gs) = length gs
+
 codomain (PartialApplication _ f _) = codomain f
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
@@ -477,14 +482,14 @@ validateMap (CSymbol "openmath cd transc1 sin" f) = codomain f == Reals
 validateMap (Max f) = codomain f == Reals
 validateMap (Min f) = codomain f == Reals
 
-validateMap ( KroneckerProduct f g ) = 
-  validateMap f &&
-  validateMap g &&
-  all realCodomain fs && all realCodomain gs 
+validateMap ( KroneckerProduct fs ) = 
+  all validateMap fs &&
+  all essentiallyTupleOfReals fs  
   where 
-    realCodomain = (\x -> (canonicalSuperset . codomain) x  == Reals)
-    Tuple fs = unwrapTuple f
-    Tuple gs = unwrapTuple g    
+    essentiallyTupleOfReals g = all realCodomain gs
+      where
+        Tuple gs = unwrapTuple g        
+        realCodomain = (\x -> (canonicalSuperset . codomain) x  == Reals)
 
 validateMap (PartialApplication n f g) =
   validateMap f &&

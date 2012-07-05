@@ -219,12 +219,17 @@ levelSet1 = SimpleSubset predicate2b
 -- Tensor like product
 basis1dLinearLagrange_xi1 = PartialApplication 1 expression3c (GeneralVariable "xi1" unitLineSegment)
 basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "xi2" unitLineSegment)
+basis1dLinearLagrange_xi3 = PartialApplication 1 expression3c (GeneralVariable "xi3" unitLineSegment)
 
 prop_test_PartialApplication = (validateMap basis1dLinearLagrange_xi1)
 
-basis2dLinearLagrange_a = KroneckerProduct basis1dLinearLagrange_xi1 basis1dLinearLagrange_xi2
+basis2dLinearLagrange_a = KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2]
 
 prop_test_KroneckerProduct = (validateMap basis2dLinearLagrange_a)
+
+basis3dLinearLagrange_a = KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2, basis1dLinearLagrange_xi3 ]
+
+prop_test_KroneckerProduct3 = (validateMap basis3dLinearLagrange_a)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
 
