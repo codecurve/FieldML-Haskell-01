@@ -129,11 +129,11 @@ d3 =
 polarToCartesian =
   Tuple
     [
-      (CSymbol "openmath cd transc1 cos" (GeneralVariable "theta" Reals))
+      (Cos (GeneralVariable "theta" Reals))
       `Times`
       (GeneralVariable "radius" Reals)
       ,
-      (CSymbol "openmath cd transc1 sin" (GeneralVariable "theta" Reals))
+      (Sin (GeneralVariable "theta" Reals))
       `Times`        
       (GeneralVariable "radius" Reals)
     ]
@@ -146,14 +146,12 @@ polarToCartesianFixedRadius =
 prop_testResult7 = ((listOfFreeGeneralVariables polarToCartesianFixedRadius) == [ GeneralVariable "theta" Reals ])
   
 -- Circle from unit line    
--- Todo: get CD, and add to known lists.
-fieldml_pi = CSymbol "openmath cd ? PI" UnitElement
 
 circleConnectionMap =
   Restriction
   unitLineSegment
 -- Todo: get CD, and add to known lists.
-  (CSymbol "openmath cd ? modulus" (Tuple [GeneralVariable "theta" Reals, fieldml_pi] ) )
+  (Modulus (GeneralVariable "theta" Reals) Pi )
 
 circle = Quotient circleConnectionMap
 
@@ -292,3 +290,34 @@ Equal p1c1 p1c2 = p1b
 
 prop_test_Exists1g1 = (validateMap p1c1)
 prop_test_Exists1g2 = (validateMap p1c2)
+
+-- Uncertainty 
+normalDistribution = 
+  Lambda 
+  (GeneralVariable "x" Reals)
+  (
+    (
+      (RealConstant 1.0) 
+      `Divide` 
+      ( (GeneralVariable "variance" Reals) 
+        `Times` 
+        ( ((RealConstant 2.0) `Times` Pi) `Power` ((RealConstant 1.0) `Divide` (RealConstant 2.0)) )
+      )
+    )
+    `Times`
+    ( Exp  
+      ( (Negate ((RealConstant 1) `Divide` (RealConstant 2)) )
+        `Times`
+        (Power 
+          (
+            ((GeneralVariable "x" Reals) `Minus` (GeneralVariable "mean" Reals))
+            `Divide`
+            (GeneralVariable "variance" Reals)
+          )
+          (RealConstant 2)
+        ) 
+      )
+    )
+  )
+  
+-- statement1 = (GeneralVariable "xr" Reals) `DistributedAccordingTo` normalDistribution 

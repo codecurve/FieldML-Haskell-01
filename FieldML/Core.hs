@@ -142,14 +142,16 @@ data Map =
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
   Unspecified TopologicalSpace |
   
-  -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  Similarly for Minus, Times, Divide, and for subsequent
-  -- standard elementary functions (Power) and transcendental functions: Sin, Cos, Exp.  Usually the operands are Real.
-  
-  -- Todo: figure out how to tighten this up so that it is clear in which contexts these standard functions are meaningful.
+  -- | Assumes codomains of the two maps are both Reals.  Similarly for Minus, Times, Divide, and for subsequent
+  -- standard elementary functions (Power) and transcendental functions: Sin, Cos, Exp.  
+  -- Note, this restriction might be relaxed in future, allowing for suitable algebras to be valid codomains of operands, and perhaps
+  -- for vectorisation.
   Plus Map Map |
   Minus Map Map |
+  Negate Map |
   Times Map Map |
   Divide Map Map |
+  Modulus Map Map |
   Sin Map |
   Cos Map |
   Exp Map |
@@ -162,15 +164,12 @@ data Map =
   -- The Map provided must either be a real variable for OpenMath functions that are a function of a real variable, 
   -- or a Tuple for functions of more than one variable.
   
-  -- Todo: I think that this prototype is at a layer where the meaning of all tokens should be "known", so I think that CSymbol should be removed.
-  CSymbol String Map |
-
   Tuple [Map] |
 
   -- | If x {- then -} a {- else -} b, assumes codomain of a and b are the same, and that codomain of x is Booleans
   If Map Map Map |
 
-  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  
+  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  C.f. creating an identity using SignatureSpace.
   NamedMap String |
 
   -- | Lambda f g declares explicitly the free variables of a Map.  
@@ -281,8 +280,10 @@ listOfFreeGeneralVariables (Tuple fs) = List.nub (concatMap listOfFreeGeneralVar
 listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
 listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Negate a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (Times a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Divide a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Modulus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Sin x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (Cos x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (Exp x) = listOfFreeGeneralVariables x
@@ -300,6 +301,7 @@ listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [
 listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not.
 listOfFreeGeneralVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (listOfFreeGeneralVariables f)
+-- Todo: Fix this: Lambda binds, i.e. Lambda x f means that x is no longer a free variable (assuming it was a free variable in f in the first place). Similarly probably for validate, codomain etc.
 listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ Tuple fs
 listOfFreeGeneralVariables (Lambda g@(GeneralVariable _ _) _ ) = [g]
 listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
@@ -311,8 +313,6 @@ listOfFreeGeneralVariables (PartialApplication n f g) =
    newList = front ++ (drop 1 back)
    fvars = newList
    gvars = (listOfFreeGeneralVariables g)
-
-listOfFreeGeneralVariables (CSymbol _ f) = listOfFreeGeneralVariables f
 
 listOfFreeGeneralVariables (Max _) = []
 listOfFreeGeneralVariables (Min _) = []
@@ -339,8 +339,10 @@ domain (Lambda t@(Tuple fs) _ ) = domain t
 domain (If x a b ) = domain (Tuple [x, a, b])
 domain (Plus a b) = domain (Tuple [ a, b ])
 domain (Minus a b) = domain (Tuple [ a, b ])
+domain (Negate a) = domain a
 domain (Times a b) = domain (Tuple [ a, b ])
 domain (Divide a b) = domain (Tuple [ a, b ])
+domain (Modulus a b) = domain (Tuple [ a, b ])
 domain (Sin x) = domain x
 domain (Cos x) = domain x
 domain (Exp x) = domain x
@@ -367,11 +369,6 @@ domain (DistributedAccordingTo f g ) = domain (Tuple [ f, g])
 domain (DistributionFromRealisations fs ) = domain (Tuple fs)
 
 
--- Todo: Change to explicitly having Sin and Cos constructor.  Noted elsewhere as well.
-domain (CSymbol "openmath cd transc1 cos" _) = Reals
-domain (CSymbol "openmath cd transc1 sin" _) = Reals
-
-
 -- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.  
 codomain :: Map ->TopologicalSpace
 codomain UnitElement = UnitSpace
@@ -380,11 +377,13 @@ codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity
 codomain (Unspecified m) = m
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
 codomain (Lambda _ f ) = codomain f
-codomain (If _ a _ ) = codomain a -- Should check somewhere that x, a and b have same domain, here?  Similarly for some other lines that follow.
-codomain (Plus a _) = codomain a  -- Should check if Plus is valid operator on codomain. Here?  Similarly for some others that follow.
+codomain (If _ a _ ) = codomain a
+codomain (Plus a _) = codomain a
 codomain (Minus a _) = codomain a
+codomain (Negate a) = codomain a
 codomain (Times a _) = codomain a
 codomain (Divide a _) = codomain a
+codomain (Modulus a _) = codomain a
 codomain (Sin x) = codomain x -- Usually codomain x is Reals, if it was say complex or Square matrix, this would still make sense.  Also for vectorised interpretation.  Todo: needs more thought.
 codomain (Cos x) = codomain x
 codomain (Exp x) = codomain x -- Todo: This might work for codomain x Reals, complex, square matrix.  Different structure, in general, from the exponential map of a Riemannian manifold.
@@ -403,8 +402,6 @@ codomain (Equal a _) = Booleans
 codomain (ElementOf _ _) = Booleans
 codomain (Exists _ _) = Booleans
 codomain (Restriction _ f ) = codomain f
-codomain (CSymbol "openmath cd transc1 cos" _) = Reals
-codomain (CSymbol "openmath cd transc1 sin" _) = Reals
 codomain (Max _) = Reals
 codomain (Min _) = Reals
 codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
@@ -444,25 +441,29 @@ validateMap (If x a b ) =
 validateMap (Plus a b) = 
   validateMap a &&
   validateMap b &&
-  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
   
 validateMap (Minus a b) =
   validateMap a &&
   validateMap b &&
-  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain b) == Reals &&
+  canonicalSuperset (codomain a) == Reals
+
+validateMap (Negate a) =
+  validateMap a &&
   canonicalSuperset (codomain a) == Reals
 
 validateMap (Times a b) =
   validateMap a &&
   validateMap b &&
-  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
 
 validateMap (Divide a b) =
   validateMap a &&
   validateMap b &&
-  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
 
 -- validateMap (Compose f g) = 
@@ -470,9 +471,18 @@ validateMap (Divide a b) =
 --  validateMap g &&
 --  codomain g == domain f
 
-validateMap (Sin x) =  validateMap x
-validateMap (Cos x) =  validateMap x
-validateMap (Exp x) =  validateMap x
+validateMap (Sin x) =  
+  validateMap x && 
+  canonicalSuperset (codomain x) == Reals
+
+validateMap (Cos x) =
+  validateMap x && 
+  canonicalSuperset (codomain x) == Reals
+  
+validateMap (Exp x) =
+  validateMap x && 
+  canonicalSuperset (codomain x) == Reals
+
 validateMap (Power x y) =  validateMap x && validateMap y
 validateMap Pi =  True
 
@@ -535,9 +545,6 @@ validateMap (Restriction (SimpleSubset a) f ) =
   validateMap f &&
   validateMap a &&
   domain a == domain f
-
-validateMap (CSymbol "openmath cd transc1 cos" f) = codomain f == Reals
-validateMap (CSymbol "openmath cd transc1 sin" f) = codomain f == Reals
 
 validateMap (Max f) = codomain f == Reals
 validateMap (Min f) = codomain f == Reals
