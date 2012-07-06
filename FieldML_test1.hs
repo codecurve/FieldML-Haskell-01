@@ -233,6 +233,7 @@ prop_test_KroneckerProduct3 = (validateMap basis3dLinearLagrange_a)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
 
+-- Todo: it would be better to do this as a 1d mesh representing a polygonal boundary embedded in 2d, the key difference being the use of parameter stores.
 
 l1Map =
   Tuple [

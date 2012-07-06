@@ -76,11 +76,6 @@ data TopologicalSpace =
   -- Points that map to Unspecified in the codomain are treated as if they are not connected to any other points in the new Quotient space.
   Quotient Map |
   
-  -- | SignatureSpace m n represents the set of all functions f such that f::m->n
-  -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
-  -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
-  SignatureSpace TopologicalSpace TopologicalSpace |
-  
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a function, rather than being a fundamental constructor.
@@ -92,6 +87,14 @@ data TopologicalSpace =
   Codomain Map 
 
   deriving (Show, Eq)
+
+
+-- | SignatureSpace m n represents the set of all functions f such that f::m->n
+-- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
+-- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
+
+-- Todo: previously had SignatureSpace as a constructor for Topological space, needs more thought.
+data SignatureSpace = SignatureSpace TopologicalSpace TopologicalSpace deriving (Show, Eq)
 
 
 -- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
@@ -214,7 +217,25 @@ data Map =
   -- The result is a Tuple whose length is the product of the lengths of of each f.
   -- For example, for the case where fs = [f,g], 
   -- h_i is f_j * g_k, where i = (j-1) * m + k, j=1..n, k=1..m and asterisk means scalar real multiplication.
-  KroneckerProduct [Map]
+  KroneckerProduct [Map] |
+  
+  -- | DistributedAccordingTo f g is true if f is distributed according to g, where g meets the requirements to serve 
+  -- as a probability distribution for f.
+  -- Informally, these requirements are:
+  -- * g is real valued, i.e. the codomain of g is Reals.
+  -- * The domain of g is the codomain of f, 
+  -- * The domain of g must be a valid measure space. Note: canonical measure is assumed for Euclidean space and continuous subsets of Euclidian space.
+  -- * The values taken by g are in the closed interval [0,1].
+  -- * The integral of g over its domain is 1.
+  DistributedAccordingTo Map Map |
+  
+  -- | DistributionFromRealisations fs requires that all Maps in fs have the same codomain as each other.
+  -- It represents a Map whose domain is the codomain of f (where f is any member of fs), and whose codomain is Reals.
+  -- Thus, if g = DistributionFromRealisations fs, g x is zero if x is not present in fs, and g x is equal to n/m if x is in fs, where 
+  -- n is the number of times x occurs in fs, and m is length fs.
+  -- This is analogous to distributionFromRealisations suggested by Andrew Miller and other designers of CellML uncertainty specification draft
+  -- (see http://www.cellml.org/Members/miller/draft-secondary-spec-uncertainty/ July 2012)
+  DistributionFromRealisations [Map]
 
   deriving (Show, Eq)
 
@@ -283,6 +304,7 @@ listOfFreeGeneralVariables (Max _) = []
 listOfFreeGeneralVariables (Min _) = []
 
 listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ Tuple fs
+listOfFreeGeneralVariables (DistributedAccordingTo f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
 
 spaceOfVariable :: Map -> TopologicalSpace
 spaceOfVariable (GeneralVariable _ a) = a
