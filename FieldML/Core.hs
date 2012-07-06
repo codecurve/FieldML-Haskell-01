@@ -142,13 +142,21 @@ data Map =
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
   Unspecified TopologicalSpace |
   
-  -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  Similarly for Minus, Times, Divide.
+  -- | Assumes codomains of the two maps are the same, and that Plus has meaning on the codomain.  Similarly for Minus, Times, Divide, and for subsequent
+  -- standard elementary functions (Power) and transcendental functions: Sin, Cos, Exp.  Usually the operands are Real.
   
-  -- Todo: use OpenMath csymbols for these.
+  -- Todo: figure out how to tighten this up so that it is clear in which contexts these standard functions are meaningful.
   Plus Map Map |
   Minus Map Map |
   Times Map Map |
   Divide Map Map |
+  Sin Map |
+  Cos Map |
+  Exp Map |
+  Power Map Map |
+  
+  -- | Pi, ratio of circumference of circle to diameter in Euclidean plane geometry.
+  Pi |
 
   -- | The string refers to the relevant entry in an OpenMath content dictionary by URL.
   -- The Map provided must either be a real variable for OpenMath functions that are a function of a real variable, 
@@ -265,6 +273,7 @@ simplifyTopologicalSpace (CartesianProduct [m]) = m
 simplifyTopologicalSpace m = m
 
 listOfFreeGeneralVariables :: Map -> [Map]
+listOfFreeGeneralVariables UnitElement = []
 listOfFreeGeneralVariables (RealConstant _ ) = []
 listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
 listOfFreeGeneralVariables (Unspecified m) = []
@@ -274,6 +283,11 @@ listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, 
 listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Times a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Divide a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Sin x) = listOfFreeGeneralVariables x
+listOfFreeGeneralVariables (Cos x) = listOfFreeGeneralVariables x
+listOfFreeGeneralVariables (Exp x) = listOfFreeGeneralVariables x
+listOfFreeGeneralVariables (Power x y) = listOfFreeGeneralVariables $ Tuple [ x, y ]
+listOfFreeGeneralVariables Pi = []
 -- listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables g
 listOfFreeGeneralVariables (FromRealParameterSource _ a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (FromIntegerParameterSource _ a) = listOfFreeGeneralVariables a
@@ -312,6 +326,7 @@ spaceOfVariable (GeneralVariable _ a) = a
 
 -- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.
 domain :: Map -> TopologicalSpace
+domain UnitElement = UnitSpace
 domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
 domain (Unspecified _) = UnitSpace
@@ -326,6 +341,11 @@ domain (Plus a b) = domain (Tuple [ a, b ])
 domain (Minus a b) = domain (Tuple [ a, b ])
 domain (Times a b) = domain (Tuple [ a, b ])
 domain (Divide a b) = domain (Tuple [ a, b ])
+domain (Sin x) = domain x
+domain (Cos x) = domain x
+domain (Exp x) = domain x
+domain (Power x y) = domain (Tuple [ x, y])
+domain Pi = UnitSpace
 -- domain (Compose _ g) = domain g
 domain (FromRealParameterSource _ f) = codomain f 
 domain (FromIntegerParameterSource _ f) = codomain f
@@ -354,6 +374,7 @@ domain (CSymbol "openmath cd transc1 sin" _) = Reals
 
 -- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.  
 codomain :: Map ->TopologicalSpace
+codomain UnitElement = UnitSpace
 codomain (RealConstant _ ) = Reals
 codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
 codomain (Unspecified m) = m
@@ -364,6 +385,11 @@ codomain (Plus a _) = codomain a  -- Should check if Plus is valid operator on c
 codomain (Minus a _) = codomain a
 codomain (Times a _) = codomain a
 codomain (Divide a _) = codomain a
+codomain (Sin x) = codomain x -- Usually codomain x is Reals, if it was say complex or Square matrix, this would still make sense.  Also for vectorised interpretation.  Todo: needs more thought.
+codomain (Cos x) = codomain x
+codomain (Exp x) = codomain x -- Todo: This might work for codomain x Reals, complex, square matrix.  Different structure, in general, from the exponential map of a Riemannian manifold.
+codomain (Power x y) = codomain x
+codomain Pi = UnitSpace
 -- codomain (Compose f _) = codomain f
 codomain (FromRealParameterSource _ _) = Reals
 codomain (FromIntegerParameterSource _ _) = Labels Integers
@@ -443,6 +469,12 @@ validateMap (Divide a b) =
 --  validateMap f &&
 --  validateMap g &&
 --  codomain g == domain f
+
+validateMap (Sin x) =  validateMap x
+validateMap (Cos x) =  validateMap x
+validateMap (Exp x) =  validateMap x
+validateMap (Power x y) =  validateMap x && validateMap y
+validateMap Pi =  True
 
 validateMap (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscreteGv f))  && (validateCardinality xs f)
   where
