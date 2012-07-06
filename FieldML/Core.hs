@@ -305,6 +305,7 @@ listOfFreeGeneralVariables (Min _) = []
 
 listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ Tuple fs
 listOfFreeGeneralVariables (DistributedAccordingTo f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
+listOfFreeGeneralVariables (DistributionFromRealisations fs) = listOfFreeGeneralVariables $ Tuple fs
 
 spaceOfVariable :: Map -> TopologicalSpace
 spaceOfVariable (GeneralVariable _ a) = a
@@ -342,6 +343,9 @@ domain (Min _) = UnitSpace
 domain (KroneckerProduct fs) = domain (Tuple fs)
 domain f@(Exists _ _)               = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
 domain f@(PartialApplication _ _ _) = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
+domain (DistributedAccordingTo f g ) = domain (Tuple [ f, g])
+domain (DistributionFromRealisations fs ) = domain (Tuple fs)
+
 
 -- Todo: Change to explicitly having Sin and Cos constructor.  Noted elsewhere as well.
 domain (CSymbol "openmath cd transc1 cos" _) = Reals
@@ -383,6 +387,8 @@ codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
     tupleLength (Tuple gs) = length gs
 
 codomain (PartialApplication _ f _) = codomain f
+codomain (DistributedAccordingTo _ _ ) = Booleans
+codomain (DistributionFromRealisations _) = Reals
 
 getFactor :: Int -> TopologicalSpace -> TopologicalSpace
 getFactor n (CartesianProduct xs) = xs !! (n-1)
@@ -516,7 +522,15 @@ validateMap ( KroneckerProduct fs ) =
 validateMap (PartialApplication n f g) =
   validateMap f &&
   validateMap g &&
-  codomain g == getFactor n (domain f)
+  canonicalSuperset (codomain g) == getFactor n (domain f)
+
+validateMap (DistributedAccordingTo f g) = 
+  canonicalSuperset (codomain g) == Reals &&
+  domain g == codomain f
+
+validateMap (DistributionFromRealisations fs) =
+  all validateMap fs &&
+  length (List.nub (map codomain fs)) == 1
 
 
 -- | canonicalSuperset m returns n where m is a simple subset of n, or factors of m are subsets of factors of n.

@@ -203,7 +203,8 @@ g1 = Tuple [ GeneralVariable "x" Reals, RealConstant 1.93 ]
 equation1Style1 = xy1 `Equal` g1
 
 -- Demonstrating function space
-f1 = GeneralVariable "f" (SignatureSpace unitSquare Reals)
+-- Todo: commented out example of use of Signature space, while trying to decide what to do regarding relationship to topological space.
+-- f1 = GeneralVariable "f" (SignatureSpace unitSquare Reals)
 
 -- Inverse of non-invertible function produces a set.
 y = GeneralVariable "y" Reals
