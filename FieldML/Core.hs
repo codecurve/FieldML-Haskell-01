@@ -124,7 +124,7 @@ data Map =
   -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
   ElementOf Map TopologicalSpace |
 
-  -- | Exists x f means "there exists x such that f is true".  x must be a general variable, and it must also be one of the free variables of f.  
+  -- | Exists x f means: there exists x such that f is true.  x must be a general variable, and it must also be one of the free variables of f.  
   -- The codomain of f must be booleans.
   -- Equivalent: MathML/OpenMath: <csymbol cd="quant1">exists</csymbol> 
   Exists Map Map |
