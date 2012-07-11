@@ -156,7 +156,7 @@ circleConnectionMap =
 circle = Quotient circleConnectionMap
 
 -- Some simplification
-prop_testResult8 = ( simplifyTopologicalSpace (Factor 2 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
+prop_testResult8 = ( simplifyFSet (Factor 2 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
 
 -- Parameter map test
 -- 4 5 6

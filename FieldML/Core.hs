@@ -44,7 +44,7 @@ data SetOfLabels =
 
 
 -- | A topological space is more general than a topological manifold.  FieldML domains qualify as topological spaces.
-data TopologicalSpace = 
+data FSet = 
 
   -- | Note that this is equivalent to CartesianProduct []
   UnitSpace |
@@ -52,10 +52,10 @@ data TopologicalSpace =
   Reals |
   Booleans |
   Labels SetOfLabels |
-  CartesianProduct [TopologicalSpace] |
+  CartesianProduct [FSet] |
   
   -- | Factor n m creates the a topological space from a cartesian product m, consisting of the n'th factor, n=1 means the first factor.
-  Factor Int TopologicalSpace |
+  Factor Int FSet |
 
   -- Todo: unit testing of DisjointUnion, and the design thinking here is probably incomplete.
   DisjointUnion SetOfLabels DomainMap |
@@ -76,7 +76,7 @@ data TopologicalSpace =
   -- Points that map to Unspecified in the codomain are treated as if they are not connected to any other points in the new Quotient space.
   Quotient Map |
   
-  --  Todo: Possibly a constructor something like TangetSpaceAtPoint TopologicalSpace Point
+  --  Todo: Possibly a constructor something like TangetSpaceAtPoint FSet Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a function, rather than being a fundamental constructor.
   
@@ -94,7 +94,7 @@ data TopologicalSpace =
 -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
 
 -- Todo: previously had SignatureSpace as a constructor for Topological space, needs more thought.
-data SignatureSpace = SignatureSpace TopologicalSpace TopologicalSpace deriving (Show, Eq)
+data SignatureSpace = SignatureSpace FSet FSet deriving (Show, Eq)
 
 
 -- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
@@ -122,7 +122,7 @@ data Map =
   Equal Map Map |
 
   -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
-  ElementOf Map TopologicalSpace |
+  ElementOf Map FSet |
 
   -- | Exists x f means: there exists x such that f is true.  x must be a general variable, and it must also be one of the free variables of f.  
   -- The codomain of f must be booleans.
@@ -131,16 +131,16 @@ data Map =
   
   -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
-  Interior TopologicalSpace |
+  Interior FSet |
   
   -- | Any real value, as a constant.
   RealConstant Double |
   
-  -- | A variable that can represent any element from the specified TopologicalSpace
-  GeneralVariable String TopologicalSpace |
+  -- | A variable that can represent any element from the specified FSet
+  GeneralVariable String FSet |
   
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
-  Unspecified TopologicalSpace |
+  Unspecified FSet |
   
   -- | Assumes codomains of the two maps are both Reals.  Similarly for Minus, Times, Divide, and for subsequent
   -- standard elementary functions (Power) and transcendental functions: Sin, Cos, Exp.  
@@ -199,7 +199,7 @@ data Map =
   -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
   Compose Map Map |
   
-  -- | FromRealParameterSource xs f assumes that f is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's TopologicalSpace is Labels. The codomain of f must thus be the CartesianProduct of n discrete TopologicalSpaces, with a total cardinality equal to length xs.
+  -- | FromRealParameterSource xs f assumes that f is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. The codomain of f must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
   FromRealParameterSource [Double] Map |
   
   -- | See documentation for FromRealParameter source.
@@ -209,7 +209,7 @@ data Map =
   Project Int Map |
 
   -- | The given topological space must be a simple subdomain of the domain of the given map.
-  Restriction TopologicalSpace Map |
+  Restriction FSet Map |
   
   -- | Max f Assumes codomain of f is Reals, and evaluates to maximum value that f attains over the domain of f.
   Max Map |
@@ -250,8 +250,8 @@ data Map =
 -- | Domain Maps are for the construction of disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
 data DomainMap =
 
-  -- | This maps each label to the same TopologicalSpace
-  DomainMapConstant TopologicalSpace |
+  -- | This maps each label to the same FSet
+  DomainMapConstant FSet |
   
   -- | DomainMapIf is either embedded in another parent DomainMapIf constructor, or in a DisjointUnion parent constructor.
   -- Either way, the parent constructor specifies a SetOfLabels, called s1.  This constructor's set of labels is called s2.
@@ -264,12 +264,12 @@ data DomainMap =
 
 -- Focus here is on *processing* the FieldML data structures.  
 
--- | simplifyTopologicalSpace m will attempt to produce a new TopologicalSpace that is equivalent to m, but has a simpler definition.
-simplifyTopologicalSpace :: TopologicalSpace -> TopologicalSpace
-simplifyTopologicalSpace (Factor n (CartesianProduct ys)) = ys !! n
-simplifyTopologicalSpace (CartesianProduct []) = UnitSpace
-simplifyTopologicalSpace (CartesianProduct [m]) = m
-simplifyTopologicalSpace m = m
+-- | simplifyFSet m will attempt to produce a new FSet that is equivalent to m, but has a simpler definition.
+simplifyFSet :: FSet -> FSet
+simplifyFSet (Factor n (CartesianProduct ys)) = ys !! n
+simplifyFSet (CartesianProduct []) = UnitSpace
+simplifyFSet (CartesianProduct [m]) = m
+simplifyFSet m = m
 
 listOfFreeGeneralVariables :: Map -> [Map]
 listOfFreeGeneralVariables UnitElement = []
@@ -321,18 +321,18 @@ listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ 
 listOfFreeGeneralVariables (DistributedAccordingTo f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
 listOfFreeGeneralVariables (DistributionFromRealisations fs) = listOfFreeGeneralVariables $ Tuple fs
 
-spaceOfVariable :: Map -> TopologicalSpace
+spaceOfVariable :: Map -> FSet
 spaceOfVariable (GeneralVariable _ a) = a
 
--- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.
-domain :: Map -> TopologicalSpace
+-- Todo: make "return type" "Either FSet or InvalidMap" so that validation can be built in.
+domain :: Map -> FSet
 domain UnitElement = UnitSpace
 domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
 domain (Unspecified _) = UnitSpace
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (Tuple fs) = simplifyTopologicalSpace $ CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
+domain (Tuple fs) = simplifyFSet $ CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda (GeneralVariable _ m) _ ) = m -- Todo: assumes that there are no free variables in the lambda definition, since we aren't handling closures.
 domain (Lambda t@(Tuple fs) _ ) = domain t
@@ -363,14 +363,14 @@ domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
 domain (KroneckerProduct fs) = domain (Tuple fs)
-domain f@(Exists _ _)               = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
-domain f@(PartialApplication _ _ _) = simplifyTopologicalSpace $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
+domain f@(Exists _ _)               = simplifyFSet $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
+domain f@(PartialApplication _ _ _) = simplifyFSet $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
 domain (DistributedAccordingTo f g ) = domain (Tuple [ f, g])
 domain (DistributionFromRealisations fs ) = domain (Tuple fs)
 
 
--- Todo: make "return type" "Either TopologicalSpace or InvalidMap" so that validation can be built in.  
-codomain :: Map ->TopologicalSpace
+-- Todo: make "return type" "Either FSet or InvalidMap" so that validation can be built in.  
+codomain :: Map ->FSet
 codomain UnitElement = UnitSpace
 codomain (RealConstant _ ) = Reals
 codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
@@ -413,7 +413,7 @@ codomain (PartialApplication _ f _) = codomain f
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
 
-getFactor :: Int -> TopologicalSpace -> TopologicalSpace
+getFactor :: Int -> FSet -> FSet
 getFactor n (CartesianProduct xs) = xs !! (n-1)
 getFactor 1 m = m
 
@@ -421,7 +421,7 @@ getFactor 1 m = m
 -- | Cardinality of discrete space. Zero if can't be easily determined, or has continuous components.
 
 -- Todo: only some cases have been covered, i.e. only the bare minimum as required by existing unit tests.
-cardinality :: TopologicalSpace -> Int
+cardinality :: FSet -> Int
 cardinality UnitSpace = 1
 cardinality (Labels (IntegerRange a b) ) = b - a + 1
 cardinality (CartesianProduct fs) = product (map cardinality fs)
@@ -573,7 +573,7 @@ validateMap (DistributionFromRealisations fs) =
 
 
 -- | canonicalSuperset m returns n where m is a simple subset of n, or factors of m are subsets of factors of n.
-canonicalSuperset :: TopologicalSpace -> TopologicalSpace
+canonicalSuperset :: FSet -> FSet
 
 canonicalSuperset (CartesianProduct ms) = CartesianProduct (map canonicalSuperset ms)
 canonicalSuperset (SimpleSubset f) = canonicalSuperset (domain f)
