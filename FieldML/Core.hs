@@ -84,17 +84,15 @@ data FSet =
   Domain Map |
   
   -- | Represents the codomain of the given map.
-  Codomain Map 
+  Codomain Map |
+
+  -- | SignatureSpace m n represents the set of all functions f whose domain is m and whose codomain is n.
+  -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
+  -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
+  SignatureSpace FSet FSet
 
   deriving (Show, Eq)
 
-
--- | SignatureSpace m n represents the set of all functions f such that f::m->n
--- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
--- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
-
--- Todo: previously had SignatureSpace as a constructor for Topological space, needs more thought.
-data SignatureSpace = SignatureSpace FSet FSet deriving (Show, Eq)
 
 
 -- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
