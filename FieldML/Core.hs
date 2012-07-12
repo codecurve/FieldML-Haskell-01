@@ -43,7 +43,8 @@ data SetOfLabels =
   deriving(Show, Eq)
 
 
--- | A topological space is more general than a topological manifold.  FieldML domains qualify as topological spaces.
+-- | An FSet (for FieldML set) is more general than a topological space or topological manifold for that matter.  FieldML domains qualify as topological spaces.
+-- Essentially, an FSet is an object that can be represented by means of its constructors, i.e. broader than topological space, and not as broad as a set a la set theory.
 data FSet = 
 
   -- | Note that this is equivalent to CartesianProduct []
@@ -54,10 +55,13 @@ data FSet =
   Labels SetOfLabels |
   CartesianProduct [FSet] |
   
-  -- | Factor n m creates the a topological space from a cartesian product m, consisting of the n'th factor, n=1 means the first factor.
+  -- | Factor n m represents the FSet which is the n'th factor of a Cartesian product, n=1 means the first factor.
   Factor Int FSet |
 
+  -- | DisjointUnion represents the set resulting from forming the disjoint union of other sets.
+  
   -- Todo: unit testing of DisjointUnion, and the design thinking here is probably incomplete.
+  -- Todo: expand on description of disjoint union.
   DisjointUnion SetOfLabels DomainMap |
 
   -- | SimpleSubset p represents set-builder notation to create a set which consists of all x in the domain of the predicate, p,  
@@ -82,7 +86,7 @@ data FSet =
   
   -- | Represents the domain of the given map.
   Domain Map |
-  
+
   -- | Represents the codomain of the given map.
   Codomain Map |
 
@@ -95,7 +99,7 @@ data FSet =
 
 
 
--- | A map relates each value in one topological space, called its domain, to one value in its codomain, which is another topological space.
+-- | A map relates each value in one FSet, called its domain, to one value in its codomain, which is another FSet.
 -- Note that values themselves are sometimes treated as maps whose domain is the UnitSpace.
 data Map = 
 
@@ -170,16 +174,24 @@ data Map =
   -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  C.f. creating an identity using SignatureSpace.
   NamedMap String |
 
-  -- | Lambda f g declares explicitly the free variables of a Map.  
-  -- x is either a free variable or a variable tuple.  
+  -- | Lambda x expr1 represents a lambda, binding x in the expression represented by expr1. 
+  -- Thus, if g = Lambda x expr1, x has been bound, and if x was a free variable in expr1, it is not a free variable in g.
+  -- g will now be an object in SignatureSpace m n, m is the domain of expr1, and n is the codomain of expr1.  In other words, the Lambda does 
+  -- not affect the domain and codomain. However, it does alter the free variables, since it binds x, i.e. x is removed from the free variables.  
+  --
+  -- x must be either a free variable or a variable tuple.
   -- A variable tuple is a tuple whose members are either free variables or variable tuples (note the recursive definition).
   -- The value produced by the map when a value for x is provided is described by g.   
   -- g must not have free variables that are not present in x
   --
-  -- Note that the free variables of a map can be inferred, but a Lambda is useful for at least two reasons:
-  --  1) It allows the order of the free variables and the variable tuple structure to be explicitly specified.
-  --  2) It allows for free variables to be specified that may not be present in g, for example Lambda x 1.
+  -- A simple example of where a Lambda is useful: 
+  -- it allows for free variables to be specified that may not be present in f, for example Lambda x (RealConstant 1).
   Lambda Map Map |
+  
+  -- | Apply g x1 represents the application of a function g whose domain is m to a value represented by the expression x1, 
+  -- x1 must be an element of m, in other words, codomain of x1 must equal m.
+  -- Typically, g is declared as g = Lambda x f, which makes g an element of SignatureSpace m n
+  Apply Map Map |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
   -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
@@ -206,7 +218,7 @@ data Map =
   -- | Project n f assumes f is a Tuple, and represents the n'th factor of the tuple.
   Project Int Map |
 
-  -- | The given topological space must be a simple subdomain of the domain of the given map.
+  -- | The given FSet must be a simple subdomain of the domain of the given map.
   Restriction FSet Map |
   
   -- | Max f Assumes codomain of f is Reals, and evaluates to maximum value that f attains over the domain of f.
