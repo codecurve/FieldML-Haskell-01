@@ -3,7 +3,6 @@ where
 
 import qualified Data.Set as Set
 import qualified Data.List as List
-import qualified Data.Map as Map
 import Text.Show.Functions
 
 -- Todo: put a more sensible license terms etc. statement.
@@ -67,28 +66,28 @@ data FSet =
   -- | SimpleSubset p represents set-builder notation to create a set which consists of all x in the domain of the predicate, p,  
   -- such that the predicate p x is True. 
   -- p must have codomain = Booleans.
-  SimpleSubset Map |
+  SimpleSubset Expression |
   
   -- | Image f represents the subset of the codomain of f to which any of the points in the domain of f are mapped by f.
   -- Hint: for the image of a subset, use a restricted map.
   -- Equivalent: Exists x p(x,y).  p(x,y) is a boolean valued map: p(x,y) = (y == f(x) )
-  Image Map |
+  Image Expression |
 
   -- | Quotient f creates the quotient of the domain of f (Hint, use a Restriction if necessary).  
   -- The equivalence operator for the quotient is induced from f as follows: all points in the domain of f that map to the same point in the codomain are deemed equivalent.
   -- In other words, points in the codomain are deemed to be the equivalence classes.
   -- Points that map to Unspecified in the codomain are treated as if they are not connected to any other points in the new Quotient space.
-  Quotient Map |
+  Quotient Expression |
   
   --  Todo: Possibly a constructor something like TangetSpaceAtPoint FSet Point
   -- If the given space is a smooth manifold then this constructs the tangent space at that point.
   -- Todo: perhaps tangent spaces are constructed by a function, rather than being a fundamental constructor.
   
-  -- | Represents the domain of the given map.
-  Domain Map |
+  -- | Represents the domain of the given expression, if the expression is a lambda.
+  Domain Expression |
 
-  -- | Represents the codomain of the given map.
-  Codomain Map |
+  -- | Represents the codomain of the given expression, if the expression is a lambda.
+  Codomain Expression |
 
   -- | SignatureSpace m n represents the set of all functions f whose domain is m and whose codomain is n.
   -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
@@ -99,9 +98,8 @@ data FSet =
 
 
 
--- | A map relates each value in one FSet, called its domain, to one value in its codomain, which is another FSet.
--- Note that values themselves are sometimes treated as maps whose domain is the UnitSpace.
-data Map = 
+-- | An expression relates each value in one FSet, called its domain, to one value in its codomain, which is another FSet.
+data Expression = 
 
   -- | The sole element of the UnitSpace.
   -- Note that this is equivalent to Tuple []
@@ -111,68 +109,66 @@ data Map =
   BooleanConstant Bool |
 
   -- | Logical and of two expressions.
-  And Map Map |
+  And Expression Expression |
 
   -- | Logical not of an expression.
-  Not Map |
+  Not Expression |
 
   -- | Logical or of two expressions.
-  Or Map Map |
+  Or Expression Expression |
 
-  LessThan Map Map |
+  LessThan Expression Expression |
 
-  Equal Map Map |
+  Equal Expression Expression |
 
   -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
-  ElementOf Map FSet |
+  ElementOf Expression FSet |
 
   -- | Exists x f means: there exists x such that f is true.  x must be a general variable, and it must also be one of the free variables of f.  
   -- The codomain of f must be booleans.
   -- Equivalent: MathML/OpenMath: <csymbol cd="quant1">exists</csymbol> 
-  Exists Map Map |
+  Exists Expression Expression |
   
   -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
-  Interior FSet |
   
+  -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
+  Interior FSet |
+
   -- | Any real value, as a constant.
   RealConstant Double |
-  
+
   -- | A variable that can represent any element from the specified FSet
   GeneralVariable String FSet |
-  
+
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
   Unspecified FSet |
-  
+
   -- | Assumes codomains of the two maps are both Reals.  Similarly for Minus, Times, Divide, and for subsequent
   -- standard elementary functions (Power) and transcendental functions: Sin, Cos, Exp.  
   -- Note, this restriction might be relaxed in future, allowing for suitable algebras to be valid codomains of operands, and perhaps
   -- for vectorisation.
-  Plus Map Map |
-  Minus Map Map |
-  Negate Map |
-  Times Map Map |
-  Divide Map Map |
-  Modulus Map Map |
-  Sin Map |
-  Cos Map |
-  Exp Map |
-  Power Map Map |
-  
+  Plus Expression Expression |
+  Minus Expression Expression |
+  Negate Expression |
+  Times Expression Expression |
+  Divide Expression Expression |
+  Modulus Expression Expression |
+  Sin Expression |
+  Cos Expression |
+  Exp Expression |
+  Power Expression Expression |
+
   -- | Pi, ratio of circumference of circle to diameter in Euclidean plane geometry.
   Pi |
 
-  -- | The string refers to the relevant entry in an OpenMath content dictionary by URL.
-  -- The Map provided must either be a real variable for OpenMath functions that are a function of a real variable, 
-  -- or a Tuple for functions of more than one variable.
-  
-  Tuple [Map] |
+  Tuple [Expression] |
 
   -- | If x {- then -} a {- else -} b, assumes codomain of a and b are the same, and that codomain of x is Booleans
-  If Map Map Map |
+  If Expression Expression Expression |
 
-  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).  C.f. creating an identity using SignatureSpace.
-  NamedMap String |
+  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).
+  NamedExpression String |
 
   -- | Lambda x expr1 represents a lambda, binding x in the expression represented by expr1. 
   -- Thus, if g = Lambda x expr1, x has been bound, and if x was a free variable in expr1, it is not a free variable in g.
@@ -186,55 +182,62 @@ data Map =
   --
   -- A simple example of where a Lambda is useful: 
   -- it allows for free variables to be specified that may not be present in f, for example Lambda x (RealConstant 1).
-  Lambda Map Map |
+  Lambda Expression Expression |
+
+  -- | Lambdify expr1 is the same as Lambda x expr1, where x is the Tuple created from the list of free variables of expr1.
+  -- This is a convenience for making lambdas from any expression.
+  
+  -- Todo: very much still just an experiment.
+  Lambdify Expression |
   
   -- | Apply g x1 represents the application of a function g whose domain is m to a value represented by the expression x1, 
   -- x1 must be an element of m, in other words, codomain of x1 must equal m.
   -- Typically, g is declared as g = Lambda x f, which makes g an element of SignatureSpace m n
-  Apply Map Map |
+  Apply Expression Expression |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
   -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
   -- and B is the domain of g as a single slot for the tuple that represents g's domain.
-  -- Since any Map essentially is an expression in some variables, this is equivalent to using the value of g in place of the relevant variable.
   -- Note that this equivalent to function composition if f's domain is a single factor domain.
   
   -- Todo: consider using the name of a general variable that is part of the expression for f, rather than specifying the n'th slot. 
   -- Note however that would allow "deeper" binding, whereas the current approach only allows binding to any of the members of the top level
   -- tuple structure of the domain of f.
   -- Todo: contrast this style of partial application with function application in general, function composition, and variable substitution. Clarify apparent confusion.
-  PartialApplication Int Map Map |
+  PartialApplication Int Expression Expression |
   
-  -- Compose f g = f(g(x)), assumes f::b->c, g::a->b (i.e. domain/codomain compatibility).
+  -- | h = Compose f g means that h(x) = f(g(x)). It is only valid if f::b->c, g::a->b (i.e. domain/codomain compatibility).
   -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
-  Compose Map Map |
+  Compose Expression Expression |
   
-  -- | FromRealParameterSource xs f assumes that f is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. The codomain of f must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
-  FromRealParameterSource [Double] Map |
+  -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
+  -- The type of y must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
+  FromRealParameterSource [Double] Expression |
   
   -- | See documentation for FromRealParameter source.
-  FromIntegerParameterSource [Int] Map |
+  FromIntegerParameterSource [Int] Expression |
 
-  -- | Project n f assumes f is a Tuple, and represents the n'th factor of the tuple.
-  Project Int Map |
+  -- | Project n x assumes x is a Tuple, and represents the n'th factor of the tuple.
+  Project Int Expression |
 
-  -- | The given FSet must be a simple subdomain of the domain of the given map.
-  Restriction FSet Map |
+  -- | The given FSet must be a simple subdomain of the domain of the given expression.
+  Restriction FSet Expression |
   
-  -- | Max f Assumes codomain of f is Reals, and evaluates to maximum value that f attains over the domain of f.
-  Max Map |
+  -- | Max f Assumes codomain of f is Reals, and evaluates to maximum value that f attains over the domain of f. f must be a Lambda.
+  Max Expression |
   
   -- | Same as Max, but evaluates to minimum value.
-  Min Map |
+  Min Expression |
   
-  -- | Inverse f assumes that f is invertable, and represents the inverse function.
-  Inverse Map |
+  -- | Inverse f assumes that f is invertable, and represents the inverse function. f must be a Lambda.
+  Inverse Expression |
 
-  -- | h = KroneckerProduct fs requires each f in fs to be a 'Tuple's of reals, i.e. each member of the Tuple must have Reals as its codomain.
-  -- The result is a Tuple whose length is the product of the lengths of of each f.
-  -- For example, for the case where fs = [f,g], 
-  -- h_i is f_j * g_k, where i = (j-1) * m + k, j=1..n, k=1..m and asterisk means scalar real multiplication.
-  KroneckerProduct [Map] |
+  -- | y = KroneckerProduct xs requires each x in xs to be a 'Tuple's of real valued functions, 
+  -- i.e. each member of the Tuple must be a Lambda that has Reals as its codomain.
+  -- The represented result is a Tuple whose length is the product of the lengths of of each x.
+  -- For example, for the case where xs = [x1,x2], and x1 has m members, x2 has n members, then
+  -- y_i is x1_j * x2_k, where i = (j-1) * n + k, j=1..m, k=1..n and asterisk means scalar real multiplication, and _ precedes the index.
+  KroneckerProduct [Expression] |
   
   -- | DistributedAccordingTo f g is true if f is distributed according to g, where g meets the requirements to serve 
   -- as a probability distribution for f.
@@ -244,20 +247,20 @@ data Map =
   -- * The domain of g must be a valid measure space. Note: canonical measure is assumed for Euclidean space and continuous subsets of Euclidian space.
   -- * The values taken by g are in the closed interval [0,1].
   -- * The integral of g over its domain is 1.
-  DistributedAccordingTo Map Map |
+  DistributedAccordingTo Expression Expression |
   
-  -- | DistributionFromRealisations fs requires that all Maps in fs have the same codomain as each other.
-  -- It represents a Map whose domain is the codomain of f (where f is any member of fs), and whose codomain is Reals.
+  -- | DistributionFromRealisations fs requires that all Expressions in fs have the same codomain as each other.
+  -- It represents a Expression whose domain is the codomain of f (where f is any member of fs), and whose codomain is Reals.
   -- Thus, if g = DistributionFromRealisations fs, g x is zero if x is not present in fs, and g x is equal to n/m if x is in fs, where 
   -- n is the number of times x occurs in fs, and m is length fs.
   -- This is analogous to distributionFromRealisations suggested by Andrew Miller and other designers of CellML uncertainty specification draft
   -- (see http://www.cellml.org/Members/miller/draft-secondary-spec-uncertainty/ July 2012)
-  DistributionFromRealisations [Map]
+  DistributionFromRealisations [Expression]
 
   deriving (Show, Eq)
 
 
--- | Domain Maps are for the construction of disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
+-- | Domain Expressions are for the construction of disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
 data DomainMap =
 
   -- | This maps each label to the same FSet
@@ -281,7 +284,7 @@ simplifyFSet (CartesianProduct []) = UnitSpace
 simplifyFSet (CartesianProduct [m]) = m
 simplifyFSet m = m
 
-listOfFreeGeneralVariables :: Map -> [Map]
+listOfFreeGeneralVariables :: Expression -> [Expression]
 listOfFreeGeneralVariables UnitElement = []
 listOfFreeGeneralVariables (RealConstant _ ) = []
 listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
@@ -331,18 +334,18 @@ listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ 
 listOfFreeGeneralVariables (DistributedAccordingTo f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
 listOfFreeGeneralVariables (DistributionFromRealisations fs) = listOfFreeGeneralVariables $ Tuple fs
 
-spaceOfVariable :: Map -> FSet
-spaceOfVariable (GeneralVariable _ a) = a
+fSetOfVariable :: Expression -> FSet
+fSetOfVariable (GeneralVariable _ a) = a
 
--- Todo: make "return type" "Either FSet or InvalidMap" so that validation can be built in.
-domain :: Map -> FSet
+-- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.
+domain :: Expression -> FSet
 domain UnitElement = UnitSpace
 domain (RealConstant _ ) = UnitSpace
 domain (GeneralVariable _ m) = m
 domain (Unspecified _) = UnitSpace
 domain (Tuple []) = UnitSpace
 domain (Tuple [f]) = domain f
-domain (Tuple fs) = simplifyFSet $ CartesianProduct $ map spaceOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
+domain (Tuple fs) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda (GeneralVariable _ m) _ ) = m -- Todo: assumes that there are no free variables in the lambda definition, since we aren't handling closures.
 domain (Lambda t@(Tuple fs) _ ) = domain t
@@ -373,14 +376,14 @@ domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
 domain (KroneckerProduct fs) = domain (Tuple fs)
-domain f@(Exists _ _)               = simplifyFSet $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
-domain f@(PartialApplication _ _ _) = simplifyFSet $ CartesianProduct (map spaceOfVariable (listOfFreeGeneralVariables f))
+domain f@(Exists _ _)               = simplifyFSet $ CartesianProduct (map fSetOfVariable (listOfFreeGeneralVariables f))
+domain f@(PartialApplication _ _ _) = simplifyFSet $ CartesianProduct (map fSetOfVariable (listOfFreeGeneralVariables f))
 domain (DistributedAccordingTo f g ) = domain (Tuple [ f, g])
 domain (DistributionFromRealisations fs ) = domain (Tuple fs)
 
 
--- Todo: make "return type" "Either FSet or InvalidMap" so that validation can be built in.  
-codomain :: Map ->FSet
+-- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.  
+codomain :: Expression ->FSet
 codomain UnitElement = UnitSpace
 codomain (RealConstant _ ) = Reals
 codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
@@ -438,65 +441,65 @@ cardinality (CartesianProduct fs) = product (map cardinality fs)
 cardinality _ = 0
 
 
-validateMap :: Map -> Bool
-validateMap (RealConstant _ ) = True
-validateMap (GeneralVariable _ _) = True
-validateMap (If x a b ) = 
-  validateMap a && 
-  validateMap b && 
-  validateMap x && 
+validateExpression :: Expression -> Bool
+validateExpression (RealConstant _ ) = True
+validateExpression (GeneralVariable _ _) = True
+validateExpression (If x a b ) = 
+  validateExpression a && 
+  validateExpression b && 
+  validateExpression x && 
   codomain a == codomain b &&
   codomain x == Booleans
 
-validateMap (Plus a b) = 
-  validateMap a &&
-  validateMap b &&
+validateExpression (Plus a b) = 
+  validateExpression a &&
+  validateExpression b &&
   canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
   
-validateMap (Minus a b) =
-  validateMap a &&
-  validateMap b &&
+validateExpression (Minus a b) =
+  validateExpression a &&
+  validateExpression b &&
   canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
 
-validateMap (Negate a) =
-  validateMap a &&
+validateExpression (Negate a) =
+  validateExpression a &&
   canonicalSuperset (codomain a) == Reals
 
-validateMap (Times a b) =
-  validateMap a &&
-  validateMap b &&
+validateExpression (Times a b) =
+  validateExpression a &&
+  validateExpression b &&
   canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
 
-validateMap (Divide a b) =
-  validateMap a &&
-  validateMap b &&
+validateExpression (Divide a b) =
+  validateExpression a &&
+  validateExpression b &&
   canonicalSuperset (codomain b) == Reals &&
   canonicalSuperset (codomain a) == Reals
 
--- validateMap (Compose f g) = 
---  validateMap f &&
---  validateMap g &&
+-- validateExpression (Compose f g) = 
+--  validateExpression f &&
+--  validateExpression g &&
 --  codomain g == domain f
 
-validateMap (Sin x) =  
-  validateMap x && 
+validateExpression (Sin x) =  
+  validateExpression x && 
   canonicalSuperset (codomain x) == Reals
 
-validateMap (Cos x) =
-  validateMap x && 
+validateExpression (Cos x) =
+  validateExpression x && 
   canonicalSuperset (codomain x) == Reals
   
-validateMap (Exp x) =
-  validateMap x && 
+validateExpression (Exp x) =
+  validateExpression x && 
   canonicalSuperset (codomain x) == Reals
 
-validateMap (Power x y) =  validateMap x && validateMap y
-validateMap Pi =  True
+validateExpression (Power x y) =  validateExpression x && validateExpression y
+validateExpression Pi =  True
 
-validateMap (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscreteGv f))  && (validateCardinality xs f)
+validateExpression (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscreteGv f))  && (validateCardinality xs f)
   where
     validateCardinality xs f = (cardinality (codomain f) == length xs)    
     isDiscreteGvTuple (Tuple fs) = all isDiscreteGv fs
@@ -504,63 +507,63 @@ validateMap (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscre
     isDiscreteGv (GeneralVariable _ (Labels _)) = True
     isDiscreteGv _ = False
 
-validateMap (FromIntegerParameterSource xs f) = validateMap (FromRealParameterSource (replicate (length xs) 0.1) f)
+validateExpression (FromIntegerParameterSource xs f) = validateExpression (FromRealParameterSource (replicate (length xs) 0.1) f)
 
-validateMap (Project n f) = validateMap f -- Todo: check that codomain of f has at least n factors.
+validateExpression (Project n f) = validateExpression f -- Todo: check that codomain of f has at least n factors.
 
-validateMap (Tuple fs) = foldr (&&) True (map validateMap fs)
+validateExpression (Tuple fs) = foldr (&&) True (map validateExpression fs)
 
-validateMap (BooleanConstant _) = True
+validateExpression (BooleanConstant _) = True
 
-validateMap (And a b) =
-  validateMap a &&
-  validateMap b &&
+validateExpression (And a b) =
+  validateExpression a &&
+  validateExpression b &&
   codomain a == Booleans &&
   codomain b == Booleans
   
-validateMap (Or a b) =
-  validateMap a &&
-  validateMap b &&
+validateExpression (Or a b) =
+  validateExpression a &&
+  validateExpression b &&
   codomain a == Booleans &&
   codomain b == Booleans
 
-validateMap (Not a) =
-  validateMap a &&
+validateExpression (Not a) =
+  validateExpression a &&
   codomain a == Booleans
 
-validateMap (LessThan a b) = 
-  validateMap a &&
-  validateMap b &&
+validateExpression (LessThan a b) = 
+  validateExpression a &&
+  validateExpression b &&
   canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
   canonicalSuperset (codomain a) == Reals
 
-validateMap (Equal a b) =
-  validateMap a &&
-  validateMap b &&
+validateExpression (Equal a b) =
+  validateExpression a &&
+  validateExpression b &&
   canonicalSuperset (codomain a) == canonicalSuperset (codomain b)
 
-validateMap (ElementOf _ _) = True
+validateExpression (ElementOf _ _) = True
 
-validateMap (Exists (GeneralVariable _ _) f) = 
+validateExpression (Exists (GeneralVariable _ _) f) = 
   codomain f ==  Booleans &&
-  validateMap f
+  validateExpression f
 
-validateMap (Lambda a f ) = (isVariableTuple a) && (validateMap f)
+validateExpression (Lambda a f ) = (isVariableTuple a) && (validateExpression f)
   where 
     isVariableTuple (GeneralVariable _ _) = True
     isVariableTuple (Tuple fs) = all isVariableTuple fs
     isVariableTuple _ = False
 
-validateMap (Restriction (SimpleSubset a) f ) = 
-  validateMap f &&
-  validateMap a &&
+validateExpression (Restriction (SimpleSubset a) f ) = 
+  validateExpression f &&
+  validateExpression a &&
   domain a == domain f
 
-validateMap (Max f) = codomain f == Reals
-validateMap (Min f) = codomain f == Reals
+validateExpression (Max f) = codomain f == Reals
+validateExpression (Min f) = codomain f == Reals
 
-validateMap ( KroneckerProduct fs ) = 
-  all validateMap fs &&
+validateExpression ( KroneckerProduct fs ) = 
+  all validateExpression fs &&
   all essentiallyTupleOfReals fs  
   where 
     essentiallyTupleOfReals g = all realCodomain gs
@@ -568,17 +571,17 @@ validateMap ( KroneckerProduct fs ) =
         Tuple gs = unwrapTuple g        
         realCodomain = (\x -> (canonicalSuperset . codomain) x  == Reals)
 
-validateMap (PartialApplication n f g) =
-  validateMap f &&
-  validateMap g &&
+validateExpression (PartialApplication n f g) =
+  validateExpression f &&
+  validateExpression g &&
   canonicalSuperset (codomain g) == getFactor n (domain f)
 
-validateMap (DistributedAccordingTo f g) = 
+validateExpression (DistributedAccordingTo f g) = 
   canonicalSuperset (codomain g) == Reals &&
   domain g == codomain f
 
-validateMap (DistributionFromRealisations fs) =
-  all validateMap fs &&
+validateExpression (DistributionFromRealisations fs) =
+  all validateExpression fs &&
   length (List.nub (map codomain fs)) == 1
 
 
@@ -595,8 +598,10 @@ canonicalSuperset m = m
 -- | unwrapTuple f is used to extract the tuple structure, since some maps wrap around a tuple but the result retains the underlying tuple structure.
 -- Currently useful for validation of KroneckerProduct. 
 
--- Todo: comprehensively match patterns for all Map constructors, currently only sufficient for existing tests.
-unwrapTuple :: Map -> Map
+-- Todo: comprehensively match patterns for all Expression constructors, currently only sufficient for existing tests.
+unwrapTuple :: Expression -> Expression
 unwrapTuple t@(Tuple _) = t
 unwrapTuple (PartialApplication _ f _ ) = unwrapTuple f
 
+
+--  LocalWords:  CartesianPower FSet
