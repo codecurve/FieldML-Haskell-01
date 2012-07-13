@@ -108,41 +108,80 @@ data Expression =
   -- | A constant true or false.
   BooleanConstant Bool |
 
-  -- | Logical and of two expressions.
-  And Expression Expression |
-
-  -- | Logical not of an expression.
-  Not Expression |
-
-  -- | Logical or of two expressions.
-  Or Expression Expression |
-
-  LessThan Expression Expression |
-
-  Equal Expression Expression |
-
-  -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
-  ElementOf Expression FSet |
-
-  -- | Exists x f means: there exists x such that f is true.  x must be a general variable, and it must also be one of the free variables of f.  
-  -- The codomain of f must be booleans.
-  -- Equivalent: MathML/OpenMath: <csymbol cd="quant1">exists</csymbol> 
-  Exists Expression Expression |
-  
-  -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
-  -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
-  
-  -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
-  Interior FSet |
-
   -- | Any real value, as a constant.
   RealConstant Double |
 
   -- | A variable that can represent any element from the specified FSet
   GeneralVariable String FSet |
 
+  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).
+  
+  -- Todo: is this needed, since Equals x expr1 being added to a "List of assertions" would be equivalent.
+  NamedExpression String |
+  
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
   Unspecified FSet |
+
+  Tuple [Expression] |
+
+  -- | Project n x assumes x is a Tuple, and represents the n'th factor of the tuple.
+  Project Int Expression |
+
+  -- | Lambda x expr1 represents a lambda, binding x in the expression represented by expr1. 
+  -- Thus, if g = Lambda x expr1, x has been bound, and if x was a free variable in expr1, it is not a free variable in g.
+  -- g will now be an object in SignatureSpace m n, m is the domain of expr1, and n is the codomain of expr1.  In other words, the Lambda does 
+  -- not affect the domain and codomain. However, it does alter the free variables, since it binds x, i.e. x is removed from the free variables.  
+  --
+  -- x must be either a free variable or a variable tuple.
+  -- A variable tuple is a tuple whose members are either free variables or variable tuples (note the recursive definition).
+  -- The value produced by the map when a value for x is provided is described by g.   
+  -- g must not have free variables that are not present in x
+  --
+  -- A simple example of where a Lambda is useful: 
+  -- it allows for free variables to be specified that may not be present in f, for example Lambda x (RealConstant 1).
+  Lambda Expression Expression |
+
+  -- | Inverse f assumes that f is invertable, and represents the inverse function. f must be a Lambda.
+  Inverse Expression |
+
+  -- | Lambdify expr1 is the same as Lambda x expr1, where x is the Tuple created from the list of free variables of expr1.
+  -- This is a convenience for making lambdas from any expression.
+  
+  -- Todo: very much still just an experiment.
+  Lambdify Expression |
+  
+  -- | Apply f x represents the application of a function f whose domain is m to a value represented by the expression x, 
+  -- x must be an element of m.
+  -- Typically, f is declared as f = Lambda x1 expr1.
+  Apply Expression Expression |
+  
+  -- | h = Compose f g means that h(x) = f(g(x)). It is only valid if f::b->c, g::a->b (i.e. domain/codomain compatibility).
+  -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
+  Compose Expression Expression |
+  
+  -- | PartialApplication n f g results in a map h whose domain A cross B, 
+  -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
+  -- and B is the domain of g as a single slot for the tuple that represents g's domain.
+  -- Note that this equivalent to function composition if f's domain is a single factor domain.
+  
+  -- Todo: consider using the name of a general variable that is part of the expression for f, rather than specifying the n'th slot. 
+  -- Note however that would allow "deeper" binding, whereas the current approach only allows binding to any of the members of the top level
+  -- tuple structure of the domain of f.
+  -- Todo: contrast this style of partial application with function application in general, function composition, and variable substitution. Clarify apparent confusion.
+  PartialApplication Int Expression Expression |
+
+  -- | Logical and of two expressions.
+  And Expression Expression |
+
+  -- | Logical or of two expressions.
+  Or Expression Expression |
+
+  -- | Logical not of an expression.
+  Not Expression |
+
+  LessThan Expression Expression |
+
+  Equal Expression Expression |
 
   -- | Assumes codomains of the two maps are both Reals.  Similarly for Minus, Times, Divide, and for subsequent
   -- standard elementary functions (Power) and transcendental functions: Sin, Cos, Exp.  
@@ -161,76 +200,39 @@ data Expression =
 
   -- | Pi, ratio of circumference of circle to diameter in Euclidean plane geometry.
   Pi |
-
-  Tuple [Expression] |
-
+  
   -- | If x {- then -} a {- else -} b, assumes codomain of a and b are the same, and that codomain of x is Booleans
   If Expression Expression Expression |
 
-  -- | Indirection, refers to the map in the list of maps (not sure where that is yet).
-  NamedExpression String |
-
-  -- | Lambda x expr1 represents a lambda, binding x in the expression represented by expr1. 
-  -- Thus, if g = Lambda x expr1, x has been bound, and if x was a free variable in expr1, it is not a free variable in g.
-  -- g will now be an object in SignatureSpace m n, m is the domain of expr1, and n is the codomain of expr1.  In other words, the Lambda does 
-  -- not affect the domain and codomain. However, it does alter the free variables, since it binds x, i.e. x is removed from the free variables.  
-  --
-  -- x must be either a free variable or a variable tuple.
-  -- A variable tuple is a tuple whose members are either free variables or variable tuples (note the recursive definition).
-  -- The value produced by the map when a value for x is provided is described by g.   
-  -- g must not have free variables that are not present in x
-  --
-  -- A simple example of where a Lambda is useful: 
-  -- it allows for free variables to be specified that may not be present in f, for example Lambda x (RealConstant 1).
-  Lambda Expression Expression |
-
-  -- | Lambdify expr1 is the same as Lambda x expr1, where x is the Tuple created from the list of free variables of expr1.
-  -- This is a convenience for making lambdas from any expression.
-  
-  -- Todo: very much still just an experiment.
-  Lambdify Expression |
-  
-  -- | Apply f x represents the application of a function f whose domain is m to a value represented by the expression x, 
-  -- x must be an element of m.
-  -- Typically, f is declared as f = Lambda x1 expr1.
-  Apply Expression Expression |
-  
-  -- | PartialApplication n f g results in a map h whose domain A cross B, 
-  -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
-  -- and B is the domain of g as a single slot for the tuple that represents g's domain.
-  -- Note that this equivalent to function composition if f's domain is a single factor domain.
-  
-  -- Todo: consider using the name of a general variable that is part of the expression for f, rather than specifying the n'th slot. 
-  -- Note however that would allow "deeper" binding, whereas the current approach only allows binding to any of the members of the top level
-  -- tuple structure of the domain of f.
-  -- Todo: contrast this style of partial application with function application in general, function composition, and variable substitution. Clarify apparent confusion.
-  PartialApplication Int Expression Expression |
-  
-  -- | h = Compose f g means that h(x) = f(g(x)). It is only valid if f::b->c, g::a->b (i.e. domain/codomain compatibility).
-  -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
-  Compose Expression Expression |
-  
-  -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
-  -- The type of y must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
-  FromRealParameterSource [Double] Expression |
-  
-  -- | See documentation for FromRealParameter source.
-  FromIntegerParameterSource [Int] Expression |
-
-  -- | Project n x assumes x is a Tuple, and represents the n'th factor of the tuple.
-  Project Int Expression |
-
-  -- | The given FSet must be a simple subdomain of the domain of the given expression.
-  Restriction FSet Expression |
-  
   -- | Max f Assumes codomain of f is Reals, and evaluates to maximum value that f attains over the domain of f. f must be a Lambda.
   Max Expression |
   
   -- | Same as Max, but evaluates to minimum value.
   Min Expression |
   
-  -- | Inverse f assumes that f is invertable, and represents the inverse function. f must be a Lambda.
-  Inverse Expression |
+  -- | ElementOf x m represents a map that is true if x is in the set m, otherwise it is false.
+  ElementOf Expression FSet |
+
+  -- | Exists x f means: there exists x such that f is true.  x must be a general variable, and it must also be one of the free variables of f.  
+  -- The codomain of f must be booleans.
+  -- Equivalent: MathML/OpenMath: <csymbol cd="quant1">exists</csymbol> 
+  Exists Expression Expression |
+  
+  -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
+  -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
+  
+  -- | The given FSet must be a simple subdomain of the domain of the given expression.
+  Restriction FSet Expression |
+  
+  -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
+  Interior FSet |
+
+  -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
+  -- The type of y must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
+  FromRealParameterSource [Double] Expression |
+  
+  -- | See documentation for FromRealParameter source.
+  FromIntegerParameterSource [Int] Expression |
 
   -- | y = KroneckerProduct xs requires each x in xs to be a 'Tuple's of real valued functions, 
   -- i.e. each member of the Tuple must be a Lambda that has Reals as its codomain.
@@ -286,11 +288,28 @@ simplifyFSet m = m
 
 listOfFreeGeneralVariables :: Expression -> [Expression]
 listOfFreeGeneralVariables UnitElement = []
+listOfFreeGeneralVariables (BooleanConstant _) = []
 listOfFreeGeneralVariables (RealConstant _ ) = []
 listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
 listOfFreeGeneralVariables (Unspecified m) = []
 listOfFreeGeneralVariables (Tuple xs) = List.nub (concatMap listOfFreeGeneralVariables xs) 
-listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
+listOfFreeGeneralVariables (Project n x) = listOfFreeGeneralVariables x
+
+-- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
+listOfFreeGeneralVariables (Lambda t@(Tuple _) expr1) =  (listOfFreeGeneralVariables expr1) List.\\ (listOfFreeGeneralVariables t)
+listOfFreeGeneralVariables (Lambda x@(GeneralVariable _ _) expr1 ) = List.delete x (listOfFreeGeneralVariables expr1)
+listOfFreeGeneralVariables (Inverse f) = listOfFreeGeneralVariables f
+listOfFreeGeneralVariables (Lambdify _) = []
+listOfFreeGeneralVariables (Apply f x) = List.nub ((listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables x) )
+listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
+listOfFreeGeneralVariables (PartialApplication n f g) = List.nub ( (listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables g) )
+
+listOfFreeGeneralVariables (And a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Or a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
+listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
+
 listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Negate a) = listOfFreeGeneralVariables a
@@ -302,31 +321,17 @@ listOfFreeGeneralVariables (Cos x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (Exp x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (Power x y) = listOfFreeGeneralVariables $ Tuple [ x, y ]
 listOfFreeGeneralVariables Pi = []
-listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
-listOfFreeGeneralVariables (FromRealParameterSource _ a) = listOfFreeGeneralVariables a
-listOfFreeGeneralVariables (FromIntegerParameterSource _ a) = listOfFreeGeneralVariables a
-listOfFreeGeneralVariables (Project n x) = listOfFreeGeneralVariables x
-listOfFreeGeneralVariables (BooleanConstant _) = []
-listOfFreeGeneralVariables (And a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
-listOfFreeGeneralVariables (Or a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
-listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
-listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
-listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
-listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
-listOfFreeGeneralVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (listOfFreeGeneralVariables f)
-
--- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
-listOfFreeGeneralVariables (Lambda t@(Tuple _) expr1) =  (listOfFreeGeneralVariables expr1) List.\\ (listOfFreeGeneralVariables t)
-listOfFreeGeneralVariables (Lambda x@(GeneralVariable _ _) expr1 ) = List.delete x (listOfFreeGeneralVariables expr1)
-listOfFreeGeneralVariables (Lambdify _) = []
-listOfFreeGeneralVariables (Apply f x) = List.nub ((listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables x) )
-listOfFreeGeneralVariables (Restriction _ f) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
-
-listOfFreeGeneralVariables (PartialApplication n f g) = List.nub ( (listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables g) )
-
+listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
 listOfFreeGeneralVariables (Max f) = listOfFreeGeneralVariables f
 listOfFreeGeneralVariables (Min f) = listOfFreeGeneralVariables f
-listOfFreeGeneralVariables (Inverse f) = listOfFreeGeneralVariables f
+
+listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
+listOfFreeGeneralVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (listOfFreeGeneralVariables f)
+listOfFreeGeneralVariables (Restriction _ f) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
+listOfFreeGeneralVariables (Interior _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
+
+listOfFreeGeneralVariables (FromRealParameterSource _ a) = listOfFreeGeneralVariables a
+listOfFreeGeneralVariables (FromIntegerParameterSource _ a) = listOfFreeGeneralVariables a
 
 listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ Tuple fs
 listOfFreeGeneralVariables (DistributedAccordingTo x f) = listOfFreeGeneralVariables $ Tuple [ x, f ]
