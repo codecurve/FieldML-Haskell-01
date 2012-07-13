@@ -190,9 +190,9 @@ data Expression =
   -- Todo: very much still just an experiment.
   Lambdify Expression |
   
-  -- | Apply g x1 represents the application of a function g whose domain is m to a value represented by the expression x1, 
-  -- x1 must be an element of m, in other words, codomain of x1 must equal m.
-  -- Typically, g is declared as g = Lambda x f, which makes g an element of SignatureSpace m n
+  -- | Apply f x represents the application of a function f whose domain is m to a value represented by the expression x, 
+  -- x must be an element of m.
+  -- Typically, f is declared as f = Lambda x1 expr1.
   Apply Expression Expression |
   
   -- | PartialApplication n f g results in a map h whose domain A cross B, 
@@ -239,20 +239,20 @@ data Expression =
   -- y_i is x1_j * x2_k, where i = (j-1) * n + k, j=1..m, k=1..n and asterisk means scalar real multiplication, and _ precedes the index.
   KroneckerProduct [Expression] |
   
-  -- | DistributedAccordingTo f g is true if f is distributed according to g, where g meets the requirements to serve 
-  -- as a probability distribution for f.
+  -- | DistributedAccordingTo x f is true if x is distributed according to f, where f meets the requirements to serve 
+  -- as a probability distribution for x.
   -- Informally, these requirements are:
-  -- * g is real valued, i.e. the codomain of g is Reals.
-  -- * The domain of g is the codomain of f, 
-  -- * The domain of g must be a valid measure space. Note: canonical measure is assumed for Euclidean space and continuous subsets of Euclidian space.
-  -- * The values taken by g are in the closed interval [0,1].
-  -- * The integral of g over its domain is 1.
+  -- * f is a Lambda whose domain is the same as x's FSet.
+  -- * f is real valued, i.e. the codomain of f is Reals.
+  -- * The domain of f must be a valid measure space. Note: canonical measure is assumed for Euclidean space and continuous subsets of Euclidian space.
+  -- * The values taken by f are in the closed interval [0,1].
+  -- * The Lebesgue integral of f over its domain is 1.
   DistributedAccordingTo Expression Expression |
   
-  -- | DistributionFromRealisations fs requires that all Expressions in fs have the same codomain as each other.
-  -- It represents a Expression whose domain is the codomain of f (where f is any member of fs), and whose codomain is Reals.
-  -- Thus, if g = DistributionFromRealisations fs, g x is zero if x is not present in fs, and g x is equal to n/m if x is in fs, where 
-  -- n is the number of times x occurs in fs, and m is length fs.
+  -- | DistributionFromRealisations xs requires that all Expressions in xs are values on the same FSet which we will refer to as m.
+  -- It represents a Lambda Expression whose domain m, and whose codomain is Reals.
+  -- Thus, if g = DistributionFromRealisations xs, Apply g x is zero if x is not present in xs, otherwise it is equal to p/q, where 
+  -- p is the number of times x occurs in xs, and q is length xs.
   -- This is analogous to distributionFromRealisations suggested by Andrew Miller and other designers of CellML uncertainty specification draft
   -- (see http://www.cellml.org/Members/miller/draft-secondary-spec-uncertainty/ July 2012)
   DistributionFromRealisations [Expression]
@@ -289,7 +289,7 @@ listOfFreeGeneralVariables UnitElement = []
 listOfFreeGeneralVariables (RealConstant _ ) = []
 listOfFreeGeneralVariables f@(GeneralVariable _ _ ) = [f]
 listOfFreeGeneralVariables (Unspecified m) = []
-listOfFreeGeneralVariables (Tuple fs) = List.nub (concatMap listOfFreeGeneralVariables fs) 
+listOfFreeGeneralVariables (Tuple xs) = List.nub (concatMap listOfFreeGeneralVariables xs) 
 listOfFreeGeneralVariables (If x a b ) = listOfFreeGeneralVariables $ Tuple [ x, a, b ]
 listOfFreeGeneralVariables (Plus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Minus a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
@@ -302,37 +302,35 @@ listOfFreeGeneralVariables (Cos x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (Exp x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (Power x y) = listOfFreeGeneralVariables $ Tuple [ x, y ]
 listOfFreeGeneralVariables Pi = []
--- listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables g
+listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
 listOfFreeGeneralVariables (FromRealParameterSource _ a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (FromIntegerParameterSource _ a) = listOfFreeGeneralVariables a
-listOfFreeGeneralVariables (Project n f) = listOfFreeGeneralVariables f
+listOfFreeGeneralVariables (Project n x) = listOfFreeGeneralVariables x
 listOfFreeGeneralVariables (BooleanConstant _) = []
 listOfFreeGeneralVariables (And a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Or a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Not a) = listOfFreeGeneralVariables a
 listOfFreeGeneralVariables (LessThan a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Equal a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
-listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not.
+listOfFreeGeneralVariables (ElementOf x m) = listOfFreeGeneralVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
 listOfFreeGeneralVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (listOfFreeGeneralVariables f)
--- Todo: Fix this: Lambda binds, i.e. Lambda x f means that x is no longer a free variable (assuming it was a free variable in f in the first place). Similarly probably for validate, codomain etc.
-listOfFreeGeneralVariables (Lambda (Tuple fs) _) = listOfFreeGeneralVariables $ Tuple fs
-listOfFreeGeneralVariables (Lambda g@(GeneralVariable _ _) _ ) = [g]
-listOfFreeGeneralVariables (Restriction _ f ) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 
-listOfFreeGeneralVariables (PartialApplication n f g) = 
- List.nub ( fvars ++ gvars )
- where
-   (front, back) = (splitAt (n-1) (listOfFreeGeneralVariables f) )
-   newList = front ++ (drop 1 back)
-   fvars = newList
-   gvars = (listOfFreeGeneralVariables g)
+-- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
+listOfFreeGeneralVariables (Lambda t@(Tuple _) expr1) =  (listOfFreeGeneralVariables expr1) List.\\ (listOfFreeGeneralVariables t)
+listOfFreeGeneralVariables (Lambda x@(GeneralVariable _ _) expr1 ) = List.delete x (listOfFreeGeneralVariables expr1)
+listOfFreeGeneralVariables (Lambdify _) = []
+listOfFreeGeneralVariables (Apply f x) = List.nub ((listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables x) )
+listOfFreeGeneralVariables (Restriction _ f) = listOfFreeGeneralVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 
-listOfFreeGeneralVariables (Max _) = []
-listOfFreeGeneralVariables (Min _) = []
+listOfFreeGeneralVariables (PartialApplication n f g) = List.nub ( (listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables g) )
+
+listOfFreeGeneralVariables (Max f) = listOfFreeGeneralVariables f
+listOfFreeGeneralVariables (Min f) = listOfFreeGeneralVariables f
+listOfFreeGeneralVariables (Inverse f) = listOfFreeGeneralVariables f
 
 listOfFreeGeneralVariables (KroneckerProduct fs) = listOfFreeGeneralVariables $ Tuple fs
-listOfFreeGeneralVariables (DistributedAccordingTo f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
-listOfFreeGeneralVariables (DistributionFromRealisations fs) = listOfFreeGeneralVariables $ Tuple fs
+listOfFreeGeneralVariables (DistributedAccordingTo x f) = listOfFreeGeneralVariables $ Tuple [ x, f ]
+listOfFreeGeneralVariables (DistributionFromRealisations xs) = listOfFreeGeneralVariables $ Tuple xs
 
 fSetOfVariable :: Expression -> FSet
 fSetOfVariable (GeneralVariable _ a) = a
