@@ -5,7 +5,7 @@ ModML aims to create a DSL embedded in Haskell that end users can use.
 The current state (as at 24 May 2012) of this FieldML Haskell prototype is not to create an end-user language, but rather, to prototype the FieldML object model.
 Thus, at this stage, there is still heavy reliance on features of Haskell that would need an equivalent in the FieldML object model.
 
-Ideas:
+Ideas and thoughts:
 Domain inference
 Codomain inference
 Validity checking of some degree.
@@ -16,6 +16,10 @@ FEM example:
  
 Arbitrary basis function specification using something like MathML
 Tensor product basis functions.
+
+Mesh refinement
+
+Are list expressions and constructors needed at the FieldML level?  Currently, many constructors depend on lists at the lower level language syntax.  Perhaps tuples are fine, since they serve the role of homogenous lists as well as inhomogenous lists.
 
 Issues:
 How is inheritance done in Haskell?

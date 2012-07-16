@@ -116,7 +116,7 @@ data Expression =
 
   -- | Indirection, refers to the map in the list of maps (not sure where that is yet).
   
-  -- Todo: is this needed, since Equals x expr1 being added to a "List of assertions" would be equivalent.
+  -- Todo: is this needed, since Equals x expr1 being added to a 'List of assertions' would be equivalent.
   NamedExpression String |
   
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
@@ -220,17 +220,17 @@ data Expression =
   
   -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
+
+  -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
+  Interior FSet |
   
   -- | The given FSet must be a simple subdomain of the domain of the given expression.
   Restriction FSet Expression |
   
-  -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
-  Interior FSet |
-
   -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
   -- The type of y must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
   FromRealParameterSource [Double] Expression |
-  
+
   -- | See documentation for FromRealParameter source.
   FromIntegerParameterSource [Int] Expression |
 
@@ -240,11 +240,11 @@ data Expression =
   -- For example, for the case where xs = [x1,x2], and x1 has m members, x2 has n members, then
   -- y_i is x1_j * x2_k, where i = (j-1) * n + k, j=1..m, k=1..n and asterisk means scalar real multiplication, and _ precedes the index.
   KroneckerProduct [Expression] |
-  
+
   -- | DistributedAccordingTo x f is true if x is distributed according to f, where f meets the requirements to serve 
   -- as a probability distribution for x.
   -- Informally, these requirements are:
-  -- * f is a Lambda whose domain is the same as x's FSet.
+  -- * f is a Lambda whose domain is the same as x's FSet (i.e. x is an element of the domain of f)
   -- * f is real valued, i.e. the codomain of f is Reals.
   -- * The domain of f must be a valid measure space. Note: canonical measure is assumed for Euclidean space and continuous subsets of Euclidian space.
   -- * The values taken by f are in the closed interval [0,1].
