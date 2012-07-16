@@ -129,16 +129,12 @@ data Expression =
 
   -- | Lambda x expr1 represents a lambda, binding x in the expression represented by expr1. 
   -- Thus, if g = Lambda x expr1, x has been bound, and if x was a free variable in expr1, it is not a free variable in g.
-  -- g will now be an object in SignatureSpace m n, m is the domain of expr1, and n is the codomain of expr1.  In other words, the Lambda does 
-  -- not affect the domain and codomain. However, it does alter the free variables, since it binds x, i.e. x is removed from the free variables.  
+  -- g will now be an object in SignatureSpace m n, where m is the codomain of the free variables of x, and n is the codomain of expr1.  
+  -- Lambda alters the free variables, since it binds x, i.e. the free variables of g are the free variables of expr1 with x removed.  
   --
   -- x must be either a free variable or a variable tuple.
   -- A variable tuple is a tuple whose members are either free variables or variable tuples (note the recursive definition).
-  -- The value produced by the map when a value for x is provided is described by g.   
-  -- g must not have free variables that are not present in x
-  --
-  -- A simple example of where a Lambda is useful: 
-  -- it allows for free variables to be specified that may not be present in f, for example Lambda x (RealConstant 1).
+  -- The value produced by the map when a value for x is provided (i.e. Apply g x) is described by expr1.
   Lambda Expression Expression |
 
   -- | Inverse f assumes that f is invertable, and represents the inverse function. f must be a Lambda.
@@ -218,14 +214,14 @@ data Expression =
   -- Equivalent: MathML/OpenMath: <csymbol cd="quant1">exists</csymbol> 
   Exists Expression Expression |
   
+  -- | The given FSet must be a simple subdomain of the domain of the given expression.
+  Restriction FSet Expression |
+  
   -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
 
   -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
   Interior FSet |
-  
-  -- | The given FSet must be a simple subdomain of the domain of the given expression.
-  Restriction FSet Expression |
   
   -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
   -- The type of y must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
@@ -343,43 +339,43 @@ fSetOfVariable (GeneralVariable _ a) = a
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.
 domain :: Expression -> FSet
 domain UnitElement = UnitSpace
-domain (RealConstant _ ) = UnitSpace
-domain (GeneralVariable _ m) = m
-domain (Unspecified _) = UnitSpace
-domain (Tuple []) = UnitSpace
-domain (Tuple [f]) = domain f
-domain (Tuple fs) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (List.nub (concatMap listOfFreeGeneralVariables fs))
-domain (Lambda UnitElement _) = UnitSpace 
-domain (Lambda (GeneralVariable _ m) _ ) = m -- Todo: assumes that there are no free variables in the lambda definition, since we aren't handling closures.
-domain (Lambda t@(Tuple fs) _ ) = domain t
-domain (If x a b ) = domain (Tuple [x, a, b])
-domain (Plus a b) = domain (Tuple [ a, b ])
-domain (Minus a b) = domain (Tuple [ a, b ])
-domain (Negate a) = domain a
-domain (Times a b) = domain (Tuple [ a, b ])
-domain (Divide a b) = domain (Tuple [ a, b ])
-domain (Modulus a b) = domain (Tuple [ a, b ])
-domain (Sin x) = domain x
-domain (Cos x) = domain x
-domain (Exp x) = domain x
-domain (Power x y) = domain (Tuple [ x, y])
-domain Pi = UnitSpace
--- domain (Compose _ g) = domain g
-domain (FromRealParameterSource _ f) = codomain f 
-domain (FromIntegerParameterSource _ f) = codomain f
-domain (Project n f) = domain f
 domain (BooleanConstant _) = UnitSpace
-domain (And a b) = domain (Tuple [ a, b ])
-domain (Or a b) = domain (Tuple [ a, b ])
-domain (Not a) = domain a
-domain (LessThan a b) = domain (Tuple [ a, b ])
-domain (Equal a b) = domain (Tuple [ a, b ])
-domain (ElementOf x _) = domain x
+domain (RealConstant _ ) = UnitSpace
+domain (GeneralVariable _ m) = UnitSpace
+domain (Unspecified _) = UnitSpace
+domain (Tuple _) = UnitSpace
+domain (Project n (Tuple fs)) = domain (fs!!n)
+domain (Lambda UnitElement _) = UnitSpace 
+domain (Lambda x@(GeneralVariable _ _) _ ) = codomain x
+domain (Lambda t@(Tuple _) _ ) = codomain t
+domain (Inverse f) = codomain f
+domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (List.nub (listOfFreeGeneralVariables expr))
+domain (If x a b ) = UnitSpace
+domain (Plus a b) = UnitSpace
+domain (Minus a b) = UnitSpace
+domain (Negate a) = UnitSpace
+domain (Times a b) = UnitSpace
+domain (Divide a b) = UnitSpace
+domain (Modulus a b) = UnitSpace
+domain (Sin x) = UnitSpace
+domain (Cos x) = UnitSpace
+domain (Exp x) = UnitSpace
+domain (Power x y) = UnitSpace
+domain Pi = UnitSpace
+domain (Compose _ g) = domain g
+domain (FromRealParameterSource _ f) = UnitSpace
+domain (FromIntegerParameterSource _ f) = UnitSpace
+domain (And a b) = UnitSpace
+domain (Or a b) = UnitSpace
+domain (Not a) = UnitSpace
+domain (LessThan a b) = UnitSpace
+domain (Equal a b) = UnitSpace
+domain (ElementOf x _) = UnitSpace
 domain (Restriction s _ ) = s
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
-domain (KroneckerProduct fs) = domain (Tuple fs)
-domain f@(Exists _ _)               = simplifyFSet $ CartesianProduct (map fSetOfVariable (listOfFreeGeneralVariables f))
+domain (KroneckerProduct fs) = UnitSpace
+domain f@(Exists _ _)               = UnitSpace
 domain f@(PartialApplication _ _ _) = simplifyFSet $ CartesianProduct (map fSetOfVariable (listOfFreeGeneralVariables f))
 domain (DistributedAccordingTo f g ) = domain (Tuple [ f, g])
 domain (DistributionFromRealisations fs ) = domain (Tuple fs)
@@ -452,19 +448,24 @@ validateExpression (If x a b ) =
   validateExpression b && 
   validateExpression x && 
   codomain a == codomain b &&
-  codomain x == Booleans
+  codomain x == Booleans &&
+  domain x == UnitSpace
 
 validateExpression (Plus a b) = 
   validateExpression a &&
   validateExpression b &&
+  canonicalSuperset (codomain a) == Reals &&
   canonicalSuperset (codomain b) == Reals &&
-  canonicalSuperset (codomain a) == Reals
+  domain a == UnitSpace &&
+  domain b == UnitSpace
   
 validateExpression (Minus a b) =
   validateExpression a &&
   validateExpression b &&
+  canonicalSuperset (codomain a) == Reals &&
   canonicalSuperset (codomain b) == Reals &&
-  canonicalSuperset (codomain a) == Reals
+  domain a == UnitSpace &&
+  domain b == UnitSpace
 
 validateExpression (Negate a) =
   validateExpression a &&
