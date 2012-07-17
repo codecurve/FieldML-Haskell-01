@@ -127,14 +127,14 @@ data Expression =
   -- | Project n x assumes x is a Tuple, and represents the n'th factor of the tuple.
   Project Int Expression |
 
-  -- | Lambda x expr1 represents a lambda, binding x in the expression represented by expr1. 
-  -- Thus, if g = Lambda x expr1, x has been bound, and if x was a free variable in expr1, it is not a free variable in g.
-  -- g will now be an object in SignatureSpace m n, where m is the codomain of the free variables of x, and n is the codomain of expr1.  
-  -- Lambda alters the free variables, since it binds x, i.e. the free variables of g are the free variables of expr1 with x removed.  
+  -- | Lambda x expr represents a lambda, binding x in the expression represented by expr.
+  -- Thus, if g = Lambda x expr, x has been bound, and if x was a free variable in expr, it is not a free variable in g.
+  -- g will now be an object in SignatureSpace m n, where m is the codomain of the free variables of x, and n is the codomain of expr.  
+  -- Lambda alters the free variables, since it binds x, i.e. the free variables of g are the free variables of expr with x removed.  
   --
   -- x must be either a free variable or a variable tuple.
   -- A variable tuple is a tuple whose members are either free variables or variable tuples (note the recursive definition).
-  -- The value produced by the map when a value for x is provided (i.e. Apply g x) is described by expr1.
+  -- The value produced by the map when a value for x is provided (i.e. Apply g x) is described by expr.
   Lambda Expression Expression |
 
   -- | Inverse f assumes that f is invertable, and represents the inverse function. f must be a Lambda.
@@ -155,15 +155,9 @@ data Expression =
   -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
   Compose Expression Expression |
   
-  -- | PartialApplication n f g results in a map h whose domain A cross B, 
-  -- where A is the same as the domain of f but with the n-th factor removed from the domain, and the value from g used for that slot.
-  -- and B is the domain of g as a single slot for the tuple that represents g's domain.
-  -- Note that this equivalent to function composition if f's domain is a single factor domain.
-  
-  -- Todo: consider using the name of a general variable that is part of the expression for f, rather than specifying the n'th slot. 
-  -- Note however that would allow "deeper" binding, whereas the current approach only allows binding to any of the members of the top level
-  -- tuple structure of the domain of f.
-  -- Todo: contrast this style of partial application with function application in general, function composition, and variable substitution. Clarify apparent confusion.
+  -- | If h = PartialApplication n f x then the domain of h is the same as the domain of f 
+  -- but with the n-th factor removed from the domain, and the value from x used for that slot.
+  -- Note that this equivalent to function application if f's domain is a single factor domain.
   PartialApplication Int Expression Expression |
 
   -- | Logical and of two expressions.
@@ -217,10 +211,8 @@ data Expression =
   -- | The given FSet must be a simple subdomain of the domain of the given expression.
   Restriction FSet Expression |
   
-  -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. Interior m evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m.
+  -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. f = Interior m represents a lambda i.e. f(x) evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m, otherwise false.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
-
-  -- Todo: Documentation above mentions x (as if it is an argument, but constructor doesn't have a slot for an argument).
   Interior FSet |
   
   -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
@@ -280,6 +272,7 @@ simplifyFSet :: FSet -> FSet
 simplifyFSet (Factor n (CartesianProduct ys)) = ys !! n
 simplifyFSet (CartesianProduct []) = UnitSpace
 simplifyFSet (CartesianProduct [m]) = m
+simplifyFSet (SignatureSpace UnitSpace m) = m
 simplifyFSet m = m
 
 listOfFreeGeneralVariables :: Expression -> [Expression]
@@ -298,7 +291,7 @@ listOfFreeGeneralVariables (Inverse f) = listOfFreeGeneralVariables f
 listOfFreeGeneralVariables (Lambdify _) = []
 listOfFreeGeneralVariables (Apply f x) = List.nub ((listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables x) )
 listOfFreeGeneralVariables (Compose f g) = listOfFreeGeneralVariables $ Tuple [ f, g ]
-listOfFreeGeneralVariables (PartialApplication n f g) = List.nub ( (listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables g) )
+listOfFreeGeneralVariables (PartialApplication n f x) = List.nub ( (listOfFreeGeneralVariables f) ++ (listOfFreeGeneralVariables x) )
 
 listOfFreeGeneralVariables (And a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
 listOfFreeGeneralVariables (Or a b) = listOfFreeGeneralVariables $ Tuple [ a, b ]
@@ -336,12 +329,17 @@ listOfFreeGeneralVariables (DistributionFromRealisations xs) = listOfFreeGeneral
 fSetOfVariable :: Expression -> FSet
 fSetOfVariable (GeneralVariable _ a) = a
 
+-- | Returns the FSet from which a function maps values. Unless it is actually a function, the expression is treated as a value, which is treated as a function from UnitSpace.
+
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.
+-- Todo: Explicit patterns all mentioned at this stage there is no 'catch-all', still using this to provide rudimentary debugging, but would look prettier with the UnitSpace case handled by a catch-all.
 domain :: Expression -> FSet
+
 domain UnitElement = UnitSpace
 domain (BooleanConstant _) = UnitSpace
 domain (RealConstant _ ) = UnitSpace
-domain (GeneralVariable _ m) = UnitSpace
+domain (GeneralVariable _ (SignatureSpace m _)) = m
+domain (GeneralVariable _ _) = UnitSpace
 domain (Unspecified _) = UnitSpace
 domain (Tuple _) = UnitSpace
 domain (Project n (Tuple fs)) = domain (fs!!n)
@@ -349,159 +347,255 @@ domain (Lambda UnitElement _) = UnitSpace
 domain (Lambda x@(GeneralVariable _ _) _ ) = codomain x
 domain (Lambda t@(Tuple _) _ ) = codomain t
 domain (Inverse f) = codomain f
-domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (List.nub (listOfFreeGeneralVariables expr))
-domain (If x a b ) = UnitSpace
-domain (Plus a b) = UnitSpace
-domain (Minus a b) = UnitSpace
-domain (Negate a) = UnitSpace
-domain (Times a b) = UnitSpace
-domain (Divide a b) = UnitSpace
-domain (Modulus a b) = UnitSpace
-domain (Sin x) = UnitSpace
-domain (Cos x) = UnitSpace
-domain (Exp x) = UnitSpace
-domain (Power x y) = UnitSpace
-domain Pi = UnitSpace
+domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (listOfFreeGeneralVariables expr)
+domain (Apply _ _) = UnitSpace
 domain (Compose _ g) = domain g
-domain (FromRealParameterSource _ f) = UnitSpace
-domain (FromIntegerParameterSource _ f) = UnitSpace
-domain (And a b) = UnitSpace
-domain (Or a b) = UnitSpace
-domain (Not a) = UnitSpace
-domain (LessThan a b) = UnitSpace
-domain (Equal a b) = UnitSpace
-domain (ElementOf x _) = UnitSpace
-domain (Restriction s _ ) = s
+domain (PartialApplication n f _) = simplifyFSet $ CartesianProduct ((take (n-1) fFactors) ++ (drop n fFactors))
+  where
+    fFactors = getFactors (domain f)
+    getFactors CartesianProduct ms = ms
+    getFactors m = [m]
+
+domain (And _ _) = UnitSpace
+domain (Or _ _) = UnitSpace
+domain (Not _) = UnitSpace
+domain (LessThan _ _) = UnitSpace
+domain (Equal _ _) = UnitSpace
+domain (Plus _ _) = UnitSpace
+domain (Minus _ _) = UnitSpace
+domain (Negate _) = UnitSpace
+domain (Times _ _) = UnitSpace
+domain (Divide _ _) = UnitSpace
+domain (Modulus _ _) = UnitSpace
+domain (Sin _) = UnitSpace
+domain (Cos _) = UnitSpace
+domain (Exp _) = UnitSpace
+domain (Power _ _) = UnitSpace
+domain Pi = UnitSpace
+domain (If _ _ _ ) = UnitSpace
 domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
-domain (KroneckerProduct fs) = UnitSpace
-domain f@(Exists _ _)               = UnitSpace
-domain f@(PartialApplication _ _ _) = simplifyFSet $ CartesianProduct (map fSetOfVariable (listOfFreeGeneralVariables f))
-domain (DistributedAccordingTo f g ) = domain (Tuple [ f, g])
-domain (DistributionFromRealisations fs ) = domain (Tuple fs)
+domain (ElementOf _ _) = UnitSpace
+domain (Exists _ _) = UnitSpace
+domain (Restriction m _ ) = m
+domain (Interior SimpleSubset l@(Lambda _ _)) = domain l
+domain (FromRealParameterSource _ _) = UnitSpace
+domain (FromIntegerParameterSource _ _) = UnitSpace
+domain (KroneckerProduct _) = UnitSpace
+domain (DistributedAccordingTo _ _ ) = UnitSpace
+domain (DistributionFromRealisations x:xs ) = codomain x -- Note: this Assumes all xs also have codomain same as x.
 
+
+-- | Returns the FSet to which a function maps values. Even if it is actually just a value expression, rather than a function, the expression is treated as a function from UnitSpace, and then the codomain is the 'type' of the value.
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.  
-codomain :: Expression ->FSet
+codomain :: Expression -> FSet
+
 codomain UnitElement = UnitSpace
+codomain (BooleanConstant _) = Booleans
 codomain (RealConstant _ ) = Reals
-codomain (GeneralVariable _ m) = m -- GeneralVariable is essentially an identity map, its domain and codomain are the same.
+codomain (GeneralVariable _ m) = m
 codomain (Unspecified m) = m
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
-codomain (Lambda _ f ) = codomain f
-codomain (If _ a _ ) = codomain a
-codomain (Plus a _) = codomain a
-codomain (Minus a _) = codomain a
-codomain (Negate a) = codomain a
-codomain (Times a _) = codomain a
-codomain (Divide a _) = codomain a
-codomain (Modulus a _) = codomain a
-codomain (Sin x) = codomain x -- Usually codomain x is Reals, if it was say complex or Square matrix, this would still make sense.  Also for vectorised interpretation.  Todo: needs more thought.
-codomain (Cos x) = codomain x
-codomain (Exp x) = codomain x -- Todo: This might work for codomain x Reals, complex, square matrix.  Different structure, in general, from the exponential map of a Riemannian manifold.
-codomain (Power x y) = codomain x
-codomain Pi = UnitSpace
--- codomain (Compose f _) = codomain f
-codomain (FromRealParameterSource _ _) = Reals
-codomain (FromIntegerParameterSource _ _) = Labels Integers
 codomain (Project n f) = getFactor n (codomain f)
-codomain (BooleanConstant _) = Booleans
-codomain (And a _) = Booleans
-codomain (Or a _) = Booleans
-codomain (Not a) = Booleans
-codomain (LessThan a _) = Booleans
-codomain (Equal a _) = Booleans
+codomain (Lambda _ expr ) = codomain expr
+codomain (Inverse f) = domain f
+codomain (Lambdify expr) = codomain expr
+codomain (Apply f _) = codomain f
+codomain (Compose f _) = codomain f
+codomain (PartialApplication _ f _) = codomain f
+codomain (And _ _) = Booleans
+codomain (Or _ _) = Booleans
+codomain (Not _) = Booleans
+codomain (LessThan _ _) = Booleans
+codomain (Equal _ _) = Booleans
+codomain (Plus _ _) = Reals
+codomain (Minus_ _) = Reals
+codomain (Negate_) = Reals
+codomain (Times_ _) = Reals
+codomain (Divide_ _) = Reals
+codomain (Modulus_ _) = Reals
+codomain (Sin _) = Reals
+codomain (Cos _) = Reals
+codomain (Exp _) = Reals
+codomain (Power _ _) = Reals
+codomain Pi = Reals
+codomain (If _ a _ ) = codomain a
+codomain (Max _) = Reals
+codomain (Min _) = Reals
 codomain (ElementOf _ _) = Booleans
 codomain (Exists _ _) = Booleans
 codomain (Restriction _ f ) = codomain f
-codomain (Max _) = Reals
-codomain (Min _) = Reals
+codomain (Interior _) = Booleans
+codomain (FromRealParameterSource _ _) = Reals
+codomain (FromIntegerParameterSource _ _) = Labels Integers
 codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
   where
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
 
-codomain (PartialApplication _ f _) = codomain f
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
 
-getFactor :: Int -> FSet -> FSet
-getFactor n (CartesianProduct xs) = xs !! (n-1)
-getFactor 1 m = m
-
-
--- | Cardinality of discrete space. Zero if can't be easily determined, or has continuous components.
-
--- Todo: only some cases have been covered, i.e. only the bare minimum as required by existing unit tests.
-cardinality :: FSet -> Int
-cardinality UnitSpace = 1
-cardinality (Labels (IntegerRange a b) ) = b - a + 1
-cardinality (CartesianProduct fs) = product (map cardinality fs)
-cardinality _ = 0
-
-
+-- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
 validateExpression :: Expression -> Bool
+
+validateExpression UnitElement = True
+validateExpression (BooleanConstant _) = True
 validateExpression (RealConstant _ ) = True
-validateExpression (GeneralVariable _ _) = True
-validateExpression (If x a b ) = 
-  validateExpression a && 
-  validateExpression b && 
-  validateExpression x && 
-  codomain a == codomain b &&
-  codomain x == Booleans &&
-  domain x == UnitSpace
+validateExpression (GeneralVariable _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
+validateExpression (Unspecified _) = True
+validateExpression (Tuple xs) = all validateExpression xs
+validateExpression (Project n x) = 
+  validateExpression x  && 
+  factorCount (codomain x) >= n
+
+validateExpression (Lambda x expr ) = (isVariableTuple x) && (validateExpression expr)
+  where 
+    isVariableTuple (GeneralVariable _ _) = True
+    isVariableTuple (Tuple xs) = all isVariableTuple xs
+    isVariableTuple _ = False
+
+-- Todo: Other expressions are lambda like, and can be inverted, add their cases.  Probably will treat inverse of values that are not lambda-like as invalid though.
+validateExpression (Inverse f) = 
+  validateExpression f &&
+  lambdaLike f
+
+validateExpression (Lambdify expr) = validateExpression expr && not (lambdaLike expr) -- Todo: Not sure if the restriction that expr is "not lambda-like" is necessary.
+
+validateExpression (Apply f x) = 
+  lambdaLike f &&
+  codomain x == domain f &&
+  validateExpression f &&
+  validateExpression x
+
+validateExpression (Compose f g) = 
+  lambdaLike f &&
+  lambdaLike g &&
+  validateExpression f &&
+  validateExpression g &&
+  codomain g == domain f
+
+validateExpression (PartialApplication n f x) =
+  lambdaLike f &&
+  factorCount (domain f) >= n &&
+  canonicalSuperset (codomain x) == getFactor n (domain f) &&
+  validateExpression f &&
+  validateExpression x
+
+validateExpression (And a b) =
+  validateExpression a &&
+  validateExpression b &&
+  codomain a == Booleans &&
+  codomain b == Booleans &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
+  
+validateExpression (Or a b) =
+  validateExpression a &&
+  validateExpression b &&
+  codomain a == Booleans &&
+  codomain b == Booleans &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
+
+validateExpression (Not a) =
+  validateExpression a &&
+  codomain a == Booleans &&
+  not (lambdaLike a)
+
+validateExpression (LessThan a b) = 
+  validateExpression a &&
+  validateExpression b &&
+  canonicalSuperset (codomain a) == Reals &&
+  canonicalSuperset (codomain b) == Reals &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
+
+validateExpression (Equal a b) =
+  validateExpression a &&
+  validateExpression b &&
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
 
 validateExpression (Plus a b) = 
   validateExpression a &&
   validateExpression b &&
   canonicalSuperset (codomain a) == Reals &&
   canonicalSuperset (codomain b) == Reals &&
-  domain a == UnitSpace &&
-  domain b == UnitSpace
-  
+  not (lambdaLike a) &&
+  not (lambdaLike b)
+
 validateExpression (Minus a b) =
   validateExpression a &&
   validateExpression b &&
   canonicalSuperset (codomain a) == Reals &&
   canonicalSuperset (codomain b) == Reals &&
-  domain a == UnitSpace &&
-  domain b == UnitSpace
+  not (lambdaLike a) &&
+  not (lambdaLike b)
 
 validateExpression (Negate a) =
   validateExpression a &&
-  canonicalSuperset (codomain a) == Reals
+  canonicalSuperset (codomain a) == Reals &&
+  not (lambdaLike a)
 
 validateExpression (Times a b) =
   validateExpression a &&
   validateExpression b &&
   canonicalSuperset (codomain b) == Reals &&
-  canonicalSuperset (codomain a) == Reals
+  canonicalSuperset (codomain a) == Reals &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
 
 validateExpression (Divide a b) =
   validateExpression a &&
   validateExpression b &&
   canonicalSuperset (codomain b) == Reals &&
-  canonicalSuperset (codomain a) == Reals
+  canonicalSuperset (codomain a) == Reals &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
 
--- validateExpression (Compose f g) = 
---  validateExpression f &&
---  validateExpression g &&
---  codomain g == domain f
+validateExpression (Modulus a b) =
+  validateExpression a &&
+  validateExpression b &&
+  canonicalSuperset (codomain b) == Reals &&
+  canonicalSuperset (codomain a) == Reals &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
 
 validateExpression (Sin x) =  
   validateExpression x && 
-  canonicalSuperset (codomain x) == Reals
+  canonicalSuperset (codomain x) == Reals &&
+  not (lambdaLike x)
 
 validateExpression (Cos x) =
   validateExpression x && 
-  canonicalSuperset (codomain x) == Reals
+  canonicalSuperset (codomain x) == Reals &&
+  not (lambdaLike x)
   
 validateExpression (Exp x) =
   validateExpression x && 
-  canonicalSuperset (codomain x) == Reals
+  canonicalSuperset (codomain x) == Reals &&
+  not (lambdaLike x)
 
-validateExpression (Power x y) =  validateExpression x && validateExpression y
+validateExpression (Power x y) =  
+  validateExpression x && 
+  validateExpression y &&
+  codomain x == Reals &&
+  codomain y == Reals &&
+  not (lambdaLike x) &&
+  not (lambdaLike y)
+
 validateExpression Pi =  True
+
+validateExpression (If x a b ) = 
+  validateExpression a && 
+  validateExpression b && 
+  validateExpression x && 
+  codomain a == codomain b &&
+  codomain x == Booleans &&
+  not (lambdaLike x)
 
 validateExpression (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscreteGv f))  && (validateCardinality xs f)
   where
@@ -513,50 +607,12 @@ validateExpression (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (i
 
 validateExpression (FromIntegerParameterSource xs f) = validateExpression (FromRealParameterSource (replicate (length xs) 0.1) f)
 
-validateExpression (Project n f) = validateExpression f -- Todo: check that codomain of f has at least n factors.
-
-validateExpression (Tuple fs) = foldr (&&) True (map validateExpression fs)
-
-validateExpression (BooleanConstant _) = True
-
-validateExpression (And a b) =
-  validateExpression a &&
-  validateExpression b &&
-  codomain a == Booleans &&
-  codomain b == Booleans
-  
-validateExpression (Or a b) =
-  validateExpression a &&
-  validateExpression b &&
-  codomain a == Booleans &&
-  codomain b == Booleans
-
-validateExpression (Not a) =
-  validateExpression a &&
-  codomain a == Booleans
-
-validateExpression (LessThan a b) = 
-  validateExpression a &&
-  validateExpression b &&
-  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
-  canonicalSuperset (codomain a) == Reals
-
-validateExpression (Equal a b) =
-  validateExpression a &&
-  validateExpression b &&
-  canonicalSuperset (codomain a) == canonicalSuperset (codomain b)
 
 validateExpression (ElementOf _ _) = True
 
 validateExpression (Exists (GeneralVariable _ _) f) = 
   codomain f ==  Booleans &&
   validateExpression f
-
-validateExpression (Lambda a f ) = (isVariableTuple a) && (validateExpression f)
-  where 
-    isVariableTuple (GeneralVariable _ _) = True
-    isVariableTuple (Tuple fs) = all isVariableTuple fs
-    isVariableTuple _ = False
 
 validateExpression (Restriction (SimpleSubset a) f ) = 
   validateExpression f &&
@@ -575,23 +631,46 @@ validateExpression ( KroneckerProduct fs ) =
         Tuple gs = unwrapTuple g        
         realCodomain = (\x -> (canonicalSuperset . codomain) x  == Reals)
 
-validateExpression (PartialApplication n f g) =
-  validateExpression f &&
-  validateExpression g &&
-  canonicalSuperset (codomain g) == getFactor n (domain f)
-
 validateExpression (DistributedAccordingTo f g) = 
   canonicalSuperset (codomain g) == Reals &&
   domain g == codomain f
 
 validateExpression (DistributionFromRealisations fs) =
   all validateExpression fs &&
-  length (List.nub (map codomain fs)) == 1
+  length (List.nub (map (simplifyFSet . codomain) fs)) == 1
+
+
+-- Utility methods follow
+
+-- Todo: more comprehensive handling of FSet types, e.g. subset of Cartesian product.
+getFactor :: Int -> FSet -> FSet
+getFactor n (CartesianProduct xs) = xs !! (n-1)
+getFactor 1 m = m
+
+
+-- Todo: more comprehensive handling of other FSet types, e.g. subset of cartesian power, currently this would come out as 1.
+factorCount FSet -> Int
+factorCount (CartesianProduct ms) = length ms
+
+factorCount _ = 1
+
+
+-- | Cardinality of discrete space. Zero if can't be easily determined, or has continuous components.
+
+-- Todo: only some cases have been covered, i.e. only the bare minimum as required by existing unit tests.
+cardinality :: FSet -> Int
+cardinality UnitSpace = 1
+cardinality (Labels (IntegerRange a b) ) = b - a + 1
+cardinality (CartesianProduct fs) = product (map cardinality fs)
+cardinality _ = 0
+
+
+lambdaLike :: Expressions -> Bool
+lambdaLike x = domain x != UnitSpace
 
 
 -- | canonicalSuperset m returns n where m is a simple subset of n, or factors of m are subsets of factors of n.
 canonicalSuperset :: FSet -> FSet
-
 canonicalSuperset (CartesianProduct ms) = CartesianProduct (map canonicalSuperset ms)
 canonicalSuperset (SimpleSubset f) = canonicalSuperset (domain f)
 canonicalSuperset (Image f) = canonicalSuperset (codomain f)
