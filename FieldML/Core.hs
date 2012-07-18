@@ -5,20 +5,6 @@ import qualified Data.Set as Set
 import qualified Data.List as List
 import Text.Show.Functions
 
--- Todo: put a more sensible license terms etc. statement.
---
--- By Randall Britten
--- Auckland Bioengineering Institute
--- 2012
--- University of Auckland
--- Permission granted to redistribute in source code or binary form, attributing the contributors.  No warranty of any kind is given.
---
--- The ideas here were strongly influenced by Andrew Miller's open source ModML. 
-
--- This is under construction
-
-
-
 type Label = String
 
 -- | SetOfLabels is like an ensemble in FieldML, integer labels and their decimal string equivalent are considered to be identical labels.
