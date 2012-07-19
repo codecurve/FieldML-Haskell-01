@@ -187,34 +187,36 @@ prop_testResult8 = ( simplifyFSet (Factor 2 (CartesianProduct  [Reals, Booleans,
 -- 4 5 6
 -- 1 2 3
 
-localNode = GeneralVariable "localNode" (Labels (IntegerRange 1 4))
-elementId = GeneralVariable "elementId" (Labels (IntegerRange 1 2))
+elementIdFSet = Labels (IntegerRange 1 2)
+localNodeFSet = Labels (IntegerRange 1 4)
+elementId = GeneralVariable "elementId" elementIdFSet
+localNode = GeneralVariable "localNode" localNodeFSet
 
-localToGlobalNodes = 
-  FromIntegerParameterSource
-    [ 1, 2, 4, 5, 
-      2, 3, 5, 6 ]
-    (Tuple [ elementId, localNode ])
+localToGlobalNodes = FromIntegerParameterSource
+  [ 1, 2, 4, 5, 
+    2, 3, 5, 6 ]
+  (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
-prop_testResult_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
+prop_test_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
 
-prop_testResult_IntParam_01b = (validExpression localToGlobalNodes)
+prop_test_IntParam_01b = (validExpression localToGlobalNodes)
 
 brokenParamTest = 
   FromIntegerParameterSource
     [ 1, 2, 3, 4, 5 ]
-    (Tuple [ elementId, localNode ])
+  (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
 prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
 
 -- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
-globalNode = GeneralVariable "globalNode" (Labels (IntegerRange 1 6))
+globalNodeFSet = Labels (IntegerRange 1 6)
+globalNode = GeneralVariable "globalNode" globalNodeFSet
 
 pressureAtNodes = 
   FromRealParameterSource 
     [  0.1,      0.5,  55.9, 
       -0.4,   -100.9,  19.0 ] 
-    globalNode
+    globalNodeFSet
 
 prop_test_IntParam_01d = ( validExpression pressureAtNodes )
 
@@ -240,18 +242,23 @@ predicate2b = PartialApplication 1 predicate2a (RealConstant 1.0)
 
 levelSet1 = SimpleSubset predicate2b
 
--- Tensor like product
-basis1dLinearLagrange_xi1 = PartialApplication 1 expression3c (GeneralVariable "xi1" unitLineSegment)
-basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "xi2" unitLineSegment)
-basis1dLinearLagrange_xi3 = PartialApplication 1 expression3c (GeneralVariable "xi3" unitLineSegment)
+-- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
+
+basis1dLinearLagrange_xi1 = Apply expression3c (GeneralVariable "ξ1" unitLineSegment)
+basis1dLinearLagrange_xi2 = Apply expression3c (GeneralVariable "ξ2" unitLineSegment)
+basis1dLinearLagrange_xi3 = Apply expression3c (GeneralVariable "ξ3" unitLineSegment)
 
 prop_test_PartialApplication = (validExpression basis1dLinearLagrange_xi1)
 
-basis2dLinearLagrange_a = KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2]
+basis2dLinearLagrange_a = Lambda 
+  (Tuple [(GeneralVariable "ξ1" unitLineSegment), (GeneralVariable "ξ2" unitLineSegment)]) 
+  (KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2])
 
 prop_test_KroneckerProduct = (validExpression basis2dLinearLagrange_a)
 
-basis3dLinearLagrange_a = KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2, basis1dLinearLagrange_xi3 ]
+basis3dLinearLagrange_a = Lambda
+  (Tuple [(GeneralVariable "ξ1" unitLineSegment), (GeneralVariable "ξ2" unitLineSegment), (GeneralVariable "ξ3" unitLineSegment)])   
+  (KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2, basis1dLinearLagrange_xi3 ])
 
 prop_test_KroneckerProduct3 = (validExpression basis3dLinearLagrange_a)
 
@@ -259,54 +266,61 @@ prop_test_KroneckerProduct3 = (validExpression basis3dLinearLagrange_a)
 
 -- Todo: it would be better to do this as a 1d mesh representing a polygonal boundary embedded in 2d, the key difference being the use of parameter stores.
 
-l1Map =
+l1Map = Lambda xi1 (
   Tuple [
     xi1, 
     RealConstant 0 ]
-l2Map =
+  )
+l2Map = Lambda xi1 (
   Tuple [ 
     RealConstant 1, 
     xi1 ]
-l3Map =
+  )
+l3Map = Lambda xi1 (
   Tuple [ 
     (RealConstant 1 ) `Minus` xi1, 
     RealConstant 1 ]
-l4Map =
+  )
+l4Map = Lambda xi1 (
   Tuple [ 
     RealConstant 0, 
     (RealConstant 1 ) `Minus` xi1 ]
+  )
 
 l1SpaceXY = Image l1Map
 l2SpaceXY = Image l2Map
 l3SpaceXY = Image l3Map
 l4SpaceXY = Image l4Map
 
-unionPredicate = 
+unionPredicate = Lambda xy (
   (xy `ElementOf` l1SpaceXY) `Or`
   (xy `ElementOf` l2SpaceXY) `Or`
   (xy `ElementOf` l3SpaceXY) `Or`
   (xy `ElementOf` l4SpaceXY)
+  )
 
 squareBoundary = SimpleSubset unionPredicate
 
 squareFromBoundary = Interior squareBoundary
 
 -- Equivalent of Image
-l1SpaceXY' = SimpleSubset (Exists xi1 (xy1 `Equal` l1Map))
+l1SpaceXY' = SimpleSubset ( Lambda xy1
+    (Exists xi1 (xy1 `Equal` (Apply l1Map xi1)))
+  )
 
 SimpleSubset p1a = l1SpaceXY'
 
 prop_test_Exists1a = (validExpression p1a)
 
-prop_test_Exists1b = (freeVariables p1a == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
+prop_test_Exists1b = (freeVariables p1a == [] )
 
 prop_test_Exists1c = (domain p1a == CartesianProduct[Reals, Reals])
 
-Exists _ p1b = p1a
+Lambda _ p1b = p1a
 
-prop_test_Exists1d = (freeVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals]),GeneralVariable "xi1" unitLineSegment] )
+prop_test_Exists1d = (freeVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
 
-prop_test_Exists1e = (domain p1b == CartesianProduct [ CartesianProduct [Reals,Reals], unitLineSegment ] )
+prop_test_Exists1e = (canonicalSuperset domain p1b == UnitSpace )
 
 -- Todo: validation is too strict, and not correct. Currently validation of Equal requires that both operands have the same codomain, whereas what should be checked is that there is a conversion that allows values from one to be compared with the other, even if the codomains are not identical.
 prop_test_Exists1f = (validExpression p1b)
@@ -345,4 +359,4 @@ normalDistribution =
     )
   )
   
--- statement1 = (GeneralVariable "xr" Reals) `DistributedAccordingTo` normalDistribution 
+statement1 = (GeneralVariable "xr" Reals) `DistributedAccordingTo` normalDistribution 

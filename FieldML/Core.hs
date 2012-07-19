@@ -201,12 +201,13 @@ data Expression =
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
   Interior FSet |
   
-  -- | FromRealParameterSource xs y assumes that y is a GeneralVariable, or a Tuple of GeneralVariables, such that each GeneralVariable's FSet is Labels. 
-  -- The type of y must thus be the CartesianProduct of n discrete FSets, with a total cardinality equal to length xs.
-  FromRealParameterSource [Double] Expression |
+  -- | f = FromRealParameterSource xs m assumes that m is an discrete FSet, or the CartesianProduct of n discrete FSets, 
+  -- with a total cardinality equal to length xs.
+  -- f is then a lambda from m to Reals.
+  FromRealParameterSource [Double] FSet |
 
   -- | See documentation for FromRealParameter source.
-  FromIntegerParameterSource [Int] Expression |
+  FromIntegerParameterSource [Int] FSet |
 
   -- | y = KroneckerProduct xs requires each x in xs to be a 'Tuple's of real valued functions, 
   -- i.e. each member of the Tuple must be a Lambda that has Reals as its codomain.
@@ -305,8 +306,8 @@ freeVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (freeVariables 
 freeVariables (Restriction _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 freeVariables (Interior _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
 
-freeVariables (FromRealParameterSource _ a) = freeVariables a
-freeVariables (FromIntegerParameterSource _ a) = freeVariables a
+freeVariables (FromRealParameterSource _ a) = []
+freeVariables (FromIntegerParameterSource _ a) = []
 
 freeVariables (KroneckerProduct fs) = freeVariables $ Tuple fs
 freeVariables (DistributedAccordingTo x f) = freeVariables $ Tuple [ x, f ]
@@ -365,8 +366,8 @@ domain (ElementOf _ _) = UnitSpace
 domain (Exists _ _) = UnitSpace
 domain (Restriction m _ ) = m
 domain (Interior (SimpleSubset l@(Lambda _ _)) ) = domain l
-domain (FromRealParameterSource _ _) = UnitSpace
-domain (FromIntegerParameterSource _ _) = UnitSpace
+domain (FromRealParameterSource _ m) = m
+domain (FromIntegerParameterSource _ m) = m
 domain (KroneckerProduct _) = UnitSpace
 domain (DistributedAccordingTo _ _ ) = UnitSpace
 domain (DistributionFromRealisations xs ) = codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validateExpression.
@@ -420,6 +421,7 @@ codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
   where
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
+    tupleLength (Apply _ (Lambda _ (Tuple gs))) = length gs
 
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
@@ -518,15 +520,15 @@ validExpression (If x a b ) =
   codomain x == Booleans &&
   not (lambdaLike x)
 
-validExpression (FromRealParameterSource xs f) = ((isDiscreteGvTuple f) || (isDiscreteGv f))  && (validateCardinality xs f)
+validExpression (FromRealParameterSource xs m) = ((isDFS m) || (isProductOfDFSs m))  && (validateCardinality xs m)
   where
-    validateCardinality xs f = (cardinality (codomain f) == length xs)    
-    isDiscreteGvTuple (Tuple fs) = all isDiscreteGv fs
-    isDiscreteGvTuple _ = False    
-    isDiscreteGv (GeneralVariable _ (Labels _)) = True
-    isDiscreteGv _ = False
+    validateCardinality xs f = (cardinality m == length xs)    
+    isDFS (Labels _) = True
+    isDFS _ = False
+    isProductOfDFSs (CartesianProduct ms) = all isDFS ms
+    isProductOfDFSs _ = False
 
-validExpression (FromIntegerParameterSource xs f) = validExpression (FromRealParameterSource (replicate (length xs) 0.1) f)
+validExpression (FromIntegerParameterSource xs m) = validExpression (FromRealParameterSource (replicate (length xs) 0.1) m)
 
 validExpression (ElementOf _ _) = True
 
