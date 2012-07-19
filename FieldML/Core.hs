@@ -256,7 +256,7 @@ data DomainMap =
 
 -- | simplifyFSet m will attempt to produce a new FSet that is equivalent to m, but has a simpler definition.
 simplifyFSet :: FSet -> FSet
-simplifyFSet (Factor n (CartesianProduct ys)) = ys !! n
+simplifyFSet (Factor n (CartesianProduct ys)) = ys !! (n-1)
 simplifyFSet (CartesianProduct []) = UnitSpace
 simplifyFSet (CartesianProduct [m]) = m
 simplifyFSet (SignatureSpace UnitSpace m) = m
@@ -329,7 +329,7 @@ domain (GeneralVariable _ (SignatureSpace m _)) = m
 domain (GeneralVariable _ _) = UnitSpace
 domain (Unspecified _) = UnitSpace
 domain (Tuple _) = UnitSpace
-domain (Project n (Tuple fs)) = domain (fs!!n)
+domain (Project n (Tuple fs)) = domain (fs!!(n-1))
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda x@(GeneralVariable _ _) _ ) = codomain x
 domain (Lambda t@(Tuple _) _ ) = codomain t
@@ -589,7 +589,7 @@ canonicalSuperset :: FSet -> FSet
 canonicalSuperset (CartesianProduct ms) = CartesianProduct (map canonicalSuperset ms)
 canonicalSuperset (SimpleSubset f) = canonicalSuperset (domain f)
 canonicalSuperset (Image f) = canonicalSuperset (codomain f)
-canonicalSuperset (Factor n (CartesianProduct ms)) = canonicalSuperset (ms!!n)
+canonicalSuperset (Factor n (CartesianProduct ms)) = canonicalSuperset (ms!!(n-1))
 canonicalSuperset m = m
 
 -- | Checks that both expressions are of the same codomain, and are each valid, and are each value-like, not lambda-like.

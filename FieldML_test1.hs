@@ -181,7 +181,7 @@ circleConnectionMap =
 circle = Quotient circleConnectionMap
 
 -- Some simplification
-prop_testResult8 = ( simplifyFSet (Factor 2 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
+prop_testResult8 = ( simplifyFSet (Factor 3 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
 
 -- Parameter map test
 -- 4 5 6
@@ -320,7 +320,7 @@ Lambda _ p1b = p1a
 
 prop_test_Exists1d = (freeVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
 
-prop_test_Exists1e = (canonicalSuperset domain p1b == UnitSpace )
+prop_test_Exists1e = (canonicalSuperset (domain p1b) == UnitSpace )
 
 -- Todo: validation is too strict, and not correct. Currently validation of Equal requires that both operands have the same codomain, whereas what should be checked is that there is a conversion that allows values from one to be compared with the other, even if the codomains are not identical.
 prop_test_Exists1f = (validExpression p1b)
