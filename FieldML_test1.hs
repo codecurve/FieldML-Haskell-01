@@ -26,42 +26,56 @@ m2 = CartesianProduct [real2, Labels elementIds]
 x = GeneralVariable "x" Reals
 
 expression1 :: Expression
-expression1 =  
-  (x `LessThan` (RealConstant 1) )
-  `And` 
-  ( (RealConstant 0) `LessThan` x)
+expression1 =  Lambda x
+  (  (x `LessThan` (RealConstant 1) )
+     `And` 
+     ( (RealConstant 0) `LessThan` x)
+  )   
+  
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 -- But perhaps the chart is just the tuple that represents a value in the topological space?  Tuples can consist of named variables.
 
 unitLineSegment = SimpleSubset expression1
 
-prop_test_BooleanExpression1a = (validateExpression expression1)
-prop_test_BooleanExpression1b = (listOfFreeGeneralVariables expression1 == [GeneralVariable "x" Reals])
-prop_test_BooleanExpression1c = (domain expression1 == Reals)
-prop_test_BooleanExpression1d = (codomain expression1 == Booleans)
+prop_test_BooleanExpression1a = (validExpression expression1)
+prop_test_BooleanExpression1b = (freeVariables expression1 == [])
+
+Lambda _ expression1_lambdaRhs = expression1
+prop_test_BooleanExpression1c = (freeVariables expression1_lambdaRhs == [GeneralVariable "x" Reals])
+
+prop_test_BooleanExpression1d = (domain expression1 == Reals)
+prop_test_BooleanExpression1e = (codomain expression1 == Booleans)
+
+prop_test_Subset1a = (canonicalSuperset unitLineSegment == Reals)
 
 -- As above, but more inline:
 unitLineSegment' = 
   SimpleSubset (
-    (x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x)
+    Lambda x ((x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x))
   )
+
+prop_test_match1a = (unitLineSegment == unitLineSegment')
 
 xy = Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]
   
 expression2 :: Expression
-expression2 =
+expression2 = Lambda xy
+  (  
     ((Project 1 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 1 xy)) 
     `And`
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
+  )  
 
 prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Reals] )
+prop_test_2dTupleMapDomain1b = (freeVariables expression2 == [] )
 
-prop_test_2dTupleMapDomain1b = (listOfFreeGeneralVariables expression2 == [GeneralVariable "x" Reals,GeneralVariable "y" Reals] )
+Lambda _ expression2_lambdaRhs = expression2
+prop_test_2dTupleMapDomain1c = (freeVariables expression2_lambdaRhs == [GeneralVariable "x" Reals,GeneralVariable "y" Reals] )
   
-prop_test_2dTupleMapDomain1c = (validateExpression expression2)
+prop_test_2dTupleMapDomain1d = (validExpression expression2)
 
-xi1 = GeneralVariable "xi1" unitLineSegment
+xi1 = GeneralVariable "ξ1" unitLineSegment
 
 expression3a :: Expression
 expression3a = (RealConstant 1) `Minus` xi1
@@ -70,37 +84,46 @@ expression3b :: Expression
 expression3b =  xi1
   
 -- By the way, this is a 1D linear lagrange interpolation basis.
-expression3c = Tuple [expression3a, expression3b]
+expression3c = Lambda xi1 (Tuple [expression3a, expression3b])
 
-prop_test_Tuple_domain = ( domain expression3c == unitLineSegment )
-prop_test_Tuple_codomain = ( canonicalSuperset (codomain expression3c) == CartesianProduct [Reals,Reals] )
-prop_test_Tuple_freeVariables = ( listOfFreeGeneralVariables expression3c == [ xi1 ] )
+prop_test_LambdaTuple_domain = ( domain expression3c == unitLineSegment )
+prop_test_LambdaTuple_codomain = ( canonicalSuperset (codomain expression3c) == CartesianProduct [Reals,Reals] )
+prop_test_LambdaTuple_freeVariables = ( freeVariables expression3c == [] )
+prop_test_LambdaTuple_valid = ( validExpression expression3c )
+
+Lambda _ expression3c_lambdaRhs = expression3c
+prop_test_Tuple_freeVariables = ( freeVariables expression3c_lambdaRhs == [ xi1 ] )
 
 expression4 :: Expression
-expression4 =
+expression4 = 
+  Lambda xy (
     ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals )
     `And`
     ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals )
     `And`
-    ( ( GeneralVariable "x" Reals `Plus` GeneralVariable "y" Reals ) `LessThan` (RealConstant 1)  )
+    ( ( GeneralVariable "x" Reals `Plus` GeneralVariable "y" Reals ) `LessThan` (RealConstant 1) )
+  )
 
 simplex2d = SimpleSubset expression4
 
 prop_test_Simplex2dPredicate = (domain expression4 == CartesianProduct[Reals, Reals])
   
 expression5 :: Expression
-expression5 =
+expression5 = 
+  Lambda xy (
     (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
     `And`
     (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
+  )
 
-prop_testResult_UnitSquarePredicate = (domain expression5 == CartesianProduct [Reals,Reals] )
+prop_test_UnitSquarePredicate_domain = (domain expression5 == CartesianProduct [Reals,Reals] )
+prop_test_UnitSquarePredicate_valid = (validExpression expression5)
 
 unitSquare = SimpleSubset expression5
-    
 
--- Validate
-prop_testValidate1 = (validateExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
+
+-- Validate that lambda's do not need the RHS to contain the bound variables
+prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
     
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
@@ -126,24 +149,26 @@ d3 =
     )
 
 -- Partial application
-polarToCartesian =
-  Tuple
-    [
-      (Cos (GeneralVariable "theta" Reals))
-      `Times`
-      (GeneralVariable "radius" Reals)
-      ,
-      (Sin (GeneralVariable "theta" Reals))
-      `Times`        
-      (GeneralVariable "radius" Reals)
-    ]
+polarToCartesian = 
+  Lambda (Tuple [GeneralVariable "radius" Reals, GeneralVariable "θ" Reals]) (
+    Tuple
+      [
+        (Cos (GeneralVariable "θ" Reals))
+        `Times`
+        (GeneralVariable "radius" Reals)
+        ,
+        (Sin (GeneralVariable "θ" Reals))
+        `Times`        
+        (GeneralVariable "radius" Reals)
+      ]
+    )
 
-prop_testResult6 = (domain polarToCartesian == CartesianProduct [Reals, Reals])
+prop_test_DomainPolarToCartesian = (domain polarToCartesian == CartesianProduct [Reals, Reals])
 
 polarToCartesianFixedRadius = 
   PartialApplication 2 (polarToCartesian) (RealConstant 1)
 
-prop_testResult7 = ((listOfFreeGeneralVariables polarToCartesianFixedRadius) == [ GeneralVariable "theta" Reals ])
+prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == Reals )
   
 -- Circle from unit line    
 
@@ -173,14 +198,14 @@ localToGlobalNodes =
 
 prop_testResult_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
 
-prop_testResult_IntParam_01b = (validateExpression localToGlobalNodes)
+prop_testResult_IntParam_01b = (validExpression localToGlobalNodes)
 
 brokenParamTest = 
   FromIntegerParameterSource
     [ 1, 2, 3, 4, 5 ]
     (Tuple [ elementId, localNode ])
 
-prop_test_IntParam_01c = ( not (validateExpression brokenParamTest))
+prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
 
 -- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
 globalNode = GeneralVariable "globalNode" (Labels (IntegerRange 1 6))
@@ -191,7 +216,7 @@ pressureAtNodes =
       -0.4,   -100.9,  19.0 ] 
     globalNode
 
-prop_test_IntParam_01d = ( validateExpression pressureAtNodes )
+prop_test_IntParam_01d = ( validExpression pressureAtNodes )
 
 -- Demonstrating equations.  For now, this is just a Map to Boolean, but an extra construct could be added that means that this is asserted to be true.
 xy1 = GeneralVariable "xy" (CartesianProduct [Reals, Reals])
@@ -220,15 +245,15 @@ basis1dLinearLagrange_xi1 = PartialApplication 1 expression3c (GeneralVariable "
 basis1dLinearLagrange_xi2 = PartialApplication 1 expression3c (GeneralVariable "xi2" unitLineSegment)
 basis1dLinearLagrange_xi3 = PartialApplication 1 expression3c (GeneralVariable "xi3" unitLineSegment)
 
-prop_test_PartialApplication = (validateExpression basis1dLinearLagrange_xi1)
+prop_test_PartialApplication = (validExpression basis1dLinearLagrange_xi1)
 
 basis2dLinearLagrange_a = KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2]
 
-prop_test_KroneckerProduct = (validateExpression basis2dLinearLagrange_a)
+prop_test_KroneckerProduct = (validExpression basis2dLinearLagrange_a)
 
 basis3dLinearLagrange_a = KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2, basis1dLinearLagrange_xi3 ]
 
-prop_test_KroneckerProduct3 = (validateExpression basis3dLinearLagrange_a)
+prop_test_KroneckerProduct3 = (validExpression basis3dLinearLagrange_a)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
 
@@ -271,25 +296,25 @@ l1SpaceXY' = SimpleSubset (Exists xi1 (xy1 `Equal` l1Map))
 
 SimpleSubset p1a = l1SpaceXY'
 
-prop_test_Exists1a = (validateExpression p1a)
+prop_test_Exists1a = (validExpression p1a)
 
-prop_test_Exists1b = (listOfFreeGeneralVariables p1a == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
+prop_test_Exists1b = (freeVariables p1a == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
 
 prop_test_Exists1c = (domain p1a == CartesianProduct[Reals, Reals])
 
 Exists _ p1b = p1a
 
-prop_test_Exists1d = (listOfFreeGeneralVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals]),GeneralVariable "xi1" unitLineSegment] )
+prop_test_Exists1d = (freeVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals]),GeneralVariable "xi1" unitLineSegment] )
 
 prop_test_Exists1e = (domain p1b == CartesianProduct [ CartesianProduct [Reals,Reals], unitLineSegment ] )
 
 -- Todo: validation is too strict, and not correct. Currently validation of Equal requires that both operands have the same codomain, whereas what should be checked is that there is a conversion that allows values from one to be compared with the other, even if the codomains are not identical.
-prop_test_Exists1f = (validateExpression p1b)
+prop_test_Exists1f = (validExpression p1b)
 
 Equal p1c1 p1c2 = p1b
 
-prop_test_Exists1g1 = (validateExpression p1c1)
-prop_test_Exists1g2 = (validateExpression p1c2)
+prop_test_Exists1g1 = (validExpression p1c1)
+prop_test_Exists1g2 = (validExpression p1c2)
 
 -- Uncertainty 
 normalDistribution = 
