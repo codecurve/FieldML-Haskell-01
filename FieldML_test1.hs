@@ -303,7 +303,7 @@ squareBoundary = SimpleSubset unionPredicate
 
 squareFromBoundary = Interior squareBoundary
 
--- Equivalent of Image
+-- Equivalent of Image, using Exists
 l1SpaceXY' = SimpleSubset ( Lambda xy1
     (Exists xi1 (xy1 `Equal` (Apply l1Map xi1)))
   )
@@ -325,7 +325,7 @@ prop_test_Exists1e = (canonicalSuperset (domain p1b) == UnitSpace )
 -- Todo: validation is too strict, and not correct. Currently validation of Equal requires that both operands have the same codomain, whereas what should be checked is that there is a conversion that allows values from one to be compared with the other, even if the codomains are not identical.
 prop_test_Exists1f = (validExpression p1b)
 
-Equal p1c1 p1c2 = p1b
+Exists p1c1 p1c2 = p1b
 
 prop_test_Exists1g1 = (validExpression p1c1)
 prop_test_Exists1g2 = (validExpression p1c2)
