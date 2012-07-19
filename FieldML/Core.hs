@@ -422,6 +422,7 @@ codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
     tupleLength (Apply _ (Lambda _ (Tuple gs))) = length gs
+    -- Todo: Should consider perhaps having an expression simplifier that performs the substitution that an Apply represents. See also validTupleOfRealValues.
 
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
@@ -545,7 +546,10 @@ validExpression (Max f) = realCodomain f
 validExpression (Min f) = realCodomain f
 
 validExpression ( KroneckerProduct xs ) = all validTupleOfRealValues xs
-  where validTupleOfRealValues (Tuple ys) = all validRealValue ys
+  where 
+    validTupleOfRealValues (Tuple ys) = all validRealValue ys
+    validTupleOfRealValues (Apply (Lambda _ expr) _) = validTupleOfRealValues expr
+    -- Todo: see comment made at codomain for KroneckerProduct
 
 validExpression (DistributedAccordingTo expr f) = 
   realCodomain f &&
