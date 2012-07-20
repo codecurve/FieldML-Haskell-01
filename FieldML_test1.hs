@@ -38,6 +38,7 @@ expression1 =  Lambda x
 
 unitLineSegment = SimpleSubset expression1
 
+-- Todo: This is an abuse of QuickCheck, it is being used in the style of JUnit/XUnit testing.  It is also painful to use because each test is simply repeated.
 prop_test_BooleanExpression1a = (validExpression expression1)
 prop_test_BooleanExpression1b = (freeVariables expression1 == [])
 

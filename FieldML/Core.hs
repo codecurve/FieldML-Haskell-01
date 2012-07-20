@@ -84,7 +84,7 @@ data FSet =
 
 
 
--- | An expression relates each value in one FSet, called its domain, to one value in its codomain, which is another FSet.
+-- | Expressions represent algebraic expressions, lambdas, and function applications. Expressions that are not "lambdaLike" are treated as values.
 data Expression = 
 
   -- | The sole element of the UnitSpace.
@@ -201,21 +201,26 @@ data Expression =
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
   Interior FSet |
   
-  -- | f = FromRealParameterSource xs m assumes that m is an discrete FSet, or the CartesianProduct of n discrete FSets, 
-  -- with a total cardinality equal to length xs.
-  -- f is then a lambda from m to Reals.
-  FromRealParameterSource [Double] FSet |
+  -- | Represents a multidimensional array, reshaped so that it is indexed by the factors of the FSet.
+  -- f = MultiDimArray v m assumes that m is an discrete FSet, or the CartesianProduct of n discrete FSets,
+  -- with a total cardinality equal to length v.
+  -- f is a lambda from m to the value type of v's elements.
+  MultiDimArray SimpleVector FSet |
 
-  -- | See documentation for FromRealParameter source.
-  FromIntegerParameterSource [Int] FSet |
+  -- | Contraction x1 i1 x2 i2 requires x1 and x2 to be MultiDimArrays. 
+  -- It represents the sum over i of x1_i * x2_i, where x1 is indexed by its i1'th index, and x2 by its i2'th index.
+  -- The result is indexed by the remaining indices of x1 and x2.
+  -- I.e. the result is a lambda from CartesianProduct m1 m2, where m1 is the domain of x1 with the i1'th factor removed, and similarly for m2.
+  -- x1 and x2 are expected to be "MultiDimArray"s.
+  Contraction Expression Int Expression Int |
 
-  -- | y = KroneckerProduct xs requires each x in xs to be a 'Tuple's of real valued functions, 
-  -- i.e. each member of the Tuple must be a Lambda that has Reals as its codomain.
+  -- | y = KroneckerProduct xs requires each x in xs to be a MultiDimArray with a single index (essentially a vector).
+  -- For AlgebraicVector, each member of the Tuple must have Reals as its codomain.
   -- The represented result is a Tuple whose length is the product of the lengths of of each x.
   -- For example, for the case where xs = [x1,x2], and x1 has m members, x2 has n members, then
   -- y_i is x1_j * x2_k, where i = (j-1) * n + k, j=1..m, k=1..n and asterisk means scalar real multiplication, and _ precedes the index.
   KroneckerProduct [Expression] |
-
+  
   -- | DistributedAccordingTo x f is true if x is distributed according to f, where f meets the requirements to serve 
   -- as a probability distribution for x.
   -- Informally, these requirements are:
@@ -236,6 +241,26 @@ data Expression =
 
   deriving (Show, Eq)
 
+
+-- | A simple vector here is a prototype for how data sources will be wrapped. It is used as the basis for a MultiDimArray. 
+-- It also allows Tuples to be represented as a vector.
+
+-- Todo: Consider just having these 3 constructors under Expression.
+data SimpleVector = 
+  -- | A prototype placeholder for the numerical data that will be available from external sources, e.g. HDF5 etc.
+  RealParameterVector [Double] | 
+
+  -- | Similar to RealParameterSource
+  IntegerParameterVector [Int] |
+
+  -- | AlgebraicVector (Tuple xs) represents a vector whose length is the same as the length of xs, 
+  -- with each member of the tuple being the corresponding element of the vector.
+  -- Otherwise, AlgebraicVector x represents a vector with a single element
+
+  -- Todo: Consider just having Tuple for this, and validation checks for homogeneity.
+  AlgebraicVector Expression
+
+  deriving (Show, Eq)
 
 -- | Domain Expressions are for the construction of disjoint unions, they produce a domain for each input value, where the input value must be from a SetOfLabels
 data DomainMap =
@@ -306,10 +331,10 @@ freeVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (freeVariables 
 freeVariables (Restriction _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 freeVariables (Interior _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
 
-freeVariables (FromRealParameterSource _ a) = []
-freeVariables (FromIntegerParameterSource _ a) = []
+freeVariables (MultiDimArray _ (AlgebraicVector x)) = freeVariables x
+freeVariables (MultiDimArray _ _) = []
 
-freeVariables (KroneckerProduct fs) = freeVariables $ Tuple fs
+freeVariables (KroneckerProduct xs) = freeVariables $ Tuple xs
 freeVariables (DistributedAccordingTo x f) = freeVariables $ Tuple [ x, f ]
 freeVariables (DistributionFromRealisations xs) = freeVariables $ Tuple xs
 
