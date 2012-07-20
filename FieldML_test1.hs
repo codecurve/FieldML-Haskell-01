@@ -241,6 +241,8 @@ predicate2a = ( y `Equal` f2 )
 
 predicate2b = PartialApplication 1 predicate2a (RealConstant 1.0)
 
+prop_test_Predicate2b = (validExpression predicate2b)
+
 levelSet1 = SimpleSubset predicate2b
 
 -- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
@@ -361,3 +363,6 @@ normalDistribution =
   )
   
 statement1 = (GeneralVariable "xr" Reals) `DistributedAccordingTo` normalDistribution 
+
+
+-- 

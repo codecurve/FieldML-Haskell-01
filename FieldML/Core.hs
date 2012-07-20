@@ -331,15 +331,13 @@ freeVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (freeVariables 
 freeVariables (Restriction _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 freeVariables (Interior _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
 
-freeVariables (MultiDimArray _ (AlgebraicVector x)) = freeVariables x
+freeVariables (MultiDimArray (AlgebraicVector x) _) = freeVariables x
 freeVariables (MultiDimArray _ _) = []
 
 freeVariables (KroneckerProduct xs) = freeVariables $ Tuple xs
 freeVariables (DistributedAccordingTo x f) = freeVariables $ Tuple [ x, f ]
 freeVariables (DistributionFromRealisations xs) = freeVariables $ Tuple xs
 
-fSetOfVariable :: Expression -> FSet
-fSetOfVariable (GeneralVariable _ a) = a
 
 -- | Returns the FSet from which a function maps values. Unless it is actually a function, the expression is treated as a value, which is treated as a function from UnitSpace.
 
@@ -391,8 +389,7 @@ domain (ElementOf _ _) = UnitSpace
 domain (Exists _ _) = UnitSpace
 domain (Restriction m _ ) = m
 domain (Interior (SimpleSubset l@(Lambda _ _)) ) = domain l
-domain (FromRealParameterSource _ m) = m
-domain (FromIntegerParameterSource _ m) = m
+domain (MultiDimArray _ m) = m
 domain (KroneckerProduct _) = UnitSpace
 domain (DistributedAccordingTo _ _ ) = UnitSpace
 domain (DistributionFromRealisations xs ) = codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validateExpression.
@@ -440,8 +437,10 @@ codomain (ElementOf _ _) = Booleans
 codomain (Exists _ _) = Booleans
 codomain (Restriction _ f ) = codomain f
 codomain (Interior _) = Booleans
-codomain (FromRealParameterSource _ _) = Reals
-codomain (FromIntegerParameterSource _ _) = Labels Integers
+codomain (MultiDimArray (RealParameterVector _) _) = Reals
+codomain (MultiDimArray (IntegerParameterVector _) _) = Labels Integers
+codomain (MultiDimArray (AlgebraicVector (Tuple (x:xs))) _) = expressionType x
+codomain (MultiDimArray (AlgebraicVector x) _) = expressionType x
 codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
   where
     m = product ( map tupleLength fs )
@@ -451,6 +450,7 @@ codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
 
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
+
 
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
 validExpression :: Expression -> Bool
@@ -546,15 +546,16 @@ validExpression (If x a b ) =
   codomain x == Booleans &&
   not (lambdaLike x)
 
-validExpression (FromRealParameterSource xs m) = ((isDFS m) || (isProductOfDFSs m))  && (validateCardinality xs m)
+validExpression (MultiDimArray (RealParameterVector xs) m) = ((isDiscreteFSet m) || (isProductOfDFSs m))  && (validateCardinality xs m)
   where
     validateCardinality xs f = (cardinality m == length xs)    
-    isDFS (Labels _) = True
-    isDFS _ = False
-    isProductOfDFSs (CartesianProduct ms) = all isDFS ms
+    isDiscreteFSet (Labels _) = True
+    isDiscreteFSet _ = False
+    isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
     isProductOfDFSs _ = False
 
-validExpression (FromIntegerParameterSource xs m) = validExpression (FromRealParameterSource (replicate (length xs) 0.1) m)
+validExpression (MultiDimArray (IntegerParameterVector xs) m) = validExpression $ MultiDimArray (RealParameterVector dummyRealsList) m
+  where dummyRealsList = replicate (length xs) 0.1
 
 validExpression (ElementOf _ _) = True
 
@@ -586,6 +587,15 @@ validExpression (DistributionFromRealisations xs) =
 
 
 -- Utility methods follow
+fSetOfVariable :: Expression -> FSet
+fSetOfVariable (GeneralVariable _ a) = a
+
+
+expressionType :: Expression -> FSet
+expressionType x
+  | lambdaLike x = SignatureSpace (domain x) (codomain x)
+  | otherwise = codomain x
+    
 
 -- Todo: more comprehensive handling of FSet types, e.g. subset of Cartesian product.
 getFactor :: Int -> FSet -> FSet
