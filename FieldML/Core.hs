@@ -557,6 +557,12 @@ validExpression (MultiDimArray (RealParameterVector xs) m) = ((isDiscreteFSet m)
 validExpression (MultiDimArray (IntegerParameterVector xs) m) = validExpression $ MultiDimArray (RealParameterVector dummyRealsList) m
   where dummyRealsList = replicate (length xs) 0.1
 
+validExpression (MultiDimArray (AlgebraicVector x) m) = validExpression x && validateCardinality x m
+  where
+    validateCardinality (Tuple xs) m = cardinality m == length xs
+    validateCardinality (Apply (Lambda _ x1) _) m = validateCardinality x1 m
+    validateCardinality _ m = cardinality m == 1
+
 validExpression (ElementOf _ _) = True
 
 validExpression (Exists (GeneralVariable _ _) f) = 
