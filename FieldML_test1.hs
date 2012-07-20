@@ -193,18 +193,21 @@ localNodeFSet = Labels (IntegerRange 1 4)
 elementId = GeneralVariable "elementId" elementIdFSet
 localNode = GeneralVariable "localNode" localNodeFSet
 
-localToGlobalNodes = FromIntegerParameterSource
-  [ 1, 2, 4, 5, 
-    2, 3, 5, 6 ]
+localToGlobalNodes = MultiDimArray  
+  (IntegerParameterVector
+    [ 1, 2, 4, 5, 
+      2, 3, 5, 6 ]
+  )
   (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
 prop_test_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
 
 prop_test_IntParam_01b = (validExpression localToGlobalNodes)
 
-brokenParamTest = 
-  FromIntegerParameterSource
+brokenParamTest = MultiDimArray
+  (IntegerParameterVector  
     [ 1, 2, 3, 4, 5 ]
+  )  
   (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
 prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
@@ -213,11 +216,12 @@ prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
 globalNodeFSet = Labels (IntegerRange 1 6)
 globalNode = GeneralVariable "globalNode" globalNodeFSet
 
-pressureAtNodes = 
-  FromRealParameterSource 
-    [  0.1,      0.5,  55.9, 
-      -0.4,   -100.9,  19.0 ] 
-    globalNodeFSet
+pressureAtNodes = MultiDimArray 
+  (RealParameterVector
+     [  0.1,      0.5,  55.9, 
+        -0.4,   -100.9,  19.0 ] 
+  )
+  globalNodeFSet
 
 prop_test_IntParam_01d = ( validExpression pressureAtNodes )
 
@@ -235,11 +239,11 @@ equation1Style1 = xy1 `Equal` g1
 -- Inverse of non-invertible function produces a set.
 y = GeneralVariable "y" Reals
 
-f2 = x `Times` x
+f2 = (x `Times` x)
 
-predicate2a = ( y `Equal` f2 )
+predicate2a = Lambda y ( y `Equal` f2 )
 
-predicate2b = PartialApplication 1 predicate2a (RealConstant 1.0)
+predicate2b = Lambda x (Apply predicate2a (RealConstant 1.0))
 
 prop_test_Predicate2b = (validExpression predicate2b)
 
