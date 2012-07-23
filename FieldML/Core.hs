@@ -144,10 +144,10 @@ data Expression =
   -- This is similar to PartialApplication in a way, except that the domain of f is treated as a single slot.
   Compose Expression Expression |
   
-  -- | If h = PartialApplication n f x then the domain of h is the same as the domain of f 
+  -- | If h = PartialApplication f n x then the domain of h is the same as the domain of f 
   -- but with the n-th factor removed from the domain, and the value from x used for that slot.
   -- Note that this equivalent to function application if f's domain is a single factor domain.
-  PartialApplication Int Expression Expression |
+  PartialApplication Expression Int Expression |
 
   -- | Logical and of two expressions.
   And Expression Expression |

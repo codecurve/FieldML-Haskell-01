@@ -38,7 +38,7 @@ freeVariables (Inverse f) = freeVariables f
 freeVariables (Lambdify _) = []
 freeVariables (Apply f x) = List.nub ((freeVariables f) ++ (freeVariables x) )
 freeVariables (Compose f g) = freeVariables $ Tuple [ f, g ]
-freeVariables (PartialApplication n f x) = List.nub ( (freeVariables f) ++ (freeVariables x) )
+freeVariables (PartialApplication f n x) = List.nub ( (freeVariables f) ++ (freeVariables x) )
 
 freeVariables (And a b) = freeVariables $ Tuple [ a, b ]
 freeVariables (Or a b) = freeVariables $ Tuple [ a, b ]
@@ -95,7 +95,7 @@ domain (Inverse f) = codomain f
 domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (freeVariables expr)
 domain (Apply _ _) = UnitSpace
 domain (Compose _ g) = domain g
-domain (PartialApplication n f _) = simplifyFSet $ CartesianProduct ((take (n-1) fFactors) ++ (drop n fFactors))
+domain (PartialApplication f n _) = simplifyFSet $ CartesianProduct ((take (n-1) fFactors) ++ (drop n fFactors))
   where
     fFactors = getFactors (domain f)
     getFactors (CartesianProduct ms) = ms
@@ -148,7 +148,7 @@ codomain (Inverse f) = domain f
 codomain (Lambdify expr) = codomain expr
 codomain (Apply f _) = codomain f
 codomain (Compose f _) = codomain f
-codomain (PartialApplication _ f _) = codomain f
+codomain (PartialApplication f _ _) = codomain f
 codomain (And _ _) = Booleans
 codomain (Or _ _) = Booleans
 codomain (Not _) = Booleans
@@ -226,7 +226,7 @@ validExpression (Compose f g) =
   validExpression g &&
   codomain g == domain f
 
-validExpression (PartialApplication n f x) =
+validExpression (PartialApplication f n x) =
   lambdaLike f &&
   factorCount (domain f) >= n &&
   canonicalSuperset (codomain x) == getFactor n (domain f) &&
