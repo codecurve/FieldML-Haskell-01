@@ -76,6 +76,8 @@ data FSet =
   -- | SignatureSpace m n represents the set of all functions f whose domain is m and whose codomain is n.
   -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
   -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
+  -- In general, a Signature space is not a topological space, but some special cases are, 
+  -- for example a Banach space (i.e. a complete normed vector space) is a topological space.
   SignatureSpace FSet FSet |
 
   -- | To allow for recursive declarations, assumes that mapping from names to FSet's exists somewhere
