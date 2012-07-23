@@ -4,6 +4,8 @@ module FieldML_test1
 where
 
 import FieldML.Core
+import FieldML.Library01
+import FieldML.Library02
 import Control.Monad (unless)
 import Data.List (stripPrefix)
 import qualified Data.Set as Set
@@ -16,29 +18,20 @@ testMain = do
 
 
 -- Tests
-real2 = CartesianProduct [Reals, Reals]
-real3 = CartesianProduct [Reals, Reals, Reals]
 
 elementIds = IntegerRange 1 4
   
 m2 = CartesianProduct [real2, Labels elementIds]
 
 x = GeneralVariable "x" Reals
-
-expression1 :: Expression
-expression1 =  Lambda x
-  (  (x `LessThan` (RealConstant 1) )
-     `And` 
-     ( (RealConstant 0) `LessThan` x)
-  )   
   
+SimpleSubset expression1 = unitLineSegment
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
--- But perhaps the chart is just the tuple that represents a value in the topological space?  Tuples can consist of named variables.
-
-unitLineSegment = SimpleSubset expression1
+-- But perhaps the chart is just the tuple that represents a value in the topological space (Tuples can consist of named variables).
 
 -- Todo: This is an abuse of QuickCheck, it is being used in the style of JUnit/XUnit testing.  It is also painful to use because each test is simply repeated.
+-- Todo: separate validation of library items from general validation.
 prop_test_BooleanExpression1a = (validExpression expression1)
 prop_test_BooleanExpression1b = (freeVariables expression1 == [])
 
@@ -76,52 +69,26 @@ prop_test_2dTupleMapDomain1c = (freeVariables expression2_lambdaRhs == [GeneralV
   
 prop_test_2dTupleMapDomain1d = (validExpression expression2)
 
-xi1 = GeneralVariable "ξ1" unitLineSegment
+xi1 = GeneralVariable "ξ1" unitLineSegment  
 
-expression3a :: Expression
-expression3a = (RealConstant 1) `Minus` xi1
+prop_test_LambdaTuple_domain = ( domain basis1dLinearLagrange == unitLineSegment )
+prop_test_LambdaTuple_codomain = ( canonicalSuperset (codomain basis1dLinearLagrange) == real2 )
+prop_test_LambdaTuple_freeVariables = ( freeVariables basis1dLinearLagrange == [] )
+prop_test_LambdaTuple_valid = ( validExpression basis1dLinearLagrange )
 
-expression3b :: Expression
-expression3b =  xi1
-  
--- By the way, this is a 1D linear lagrange interpolation basis.
-expression3c = Lambda xi1 (Tuple [expression3a, expression3b])
-
-prop_test_LambdaTuple_domain = ( domain expression3c == unitLineSegment )
-prop_test_LambdaTuple_codomain = ( canonicalSuperset (codomain expression3c) == CartesianProduct [Reals,Reals] )
-prop_test_LambdaTuple_freeVariables = ( freeVariables expression3c == [] )
-prop_test_LambdaTuple_valid = ( validExpression expression3c )
+expression3c = basis1dLinearLagrange
 
 Lambda _ expression3c_lambdaRhs = expression3c
 prop_test_Tuple_freeVariables = ( freeVariables expression3c_lambdaRhs == [ xi1 ] )
 
-expression4 :: Expression
-expression4 = 
-  Lambda xy (
-    ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals )
-    `And`
-    ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals )
-    `And`
-    ( ( GeneralVariable "x" Reals `Plus` GeneralVariable "y" Reals ) `LessThan` (RealConstant 1) )
-  )
-
-simplex2d = SimpleSubset expression4
+SimpleSubset expression4 = simplex2d
 
 prop_test_Simplex2dPredicate = (domain expression4 == CartesianProduct[Reals, Reals])
   
-expression5 :: Expression
-expression5 = 
-  Lambda xy (
-    (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
-    `And`
-    (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
-  )
+SimpleSubset expression5 = unitSquare
 
 prop_test_UnitSquarePredicate_domain = (domain expression5 == CartesianProduct [Reals,Reals] )
 prop_test_UnitSquarePredicate_valid = (validExpression expression5)
-
-unitSquare = SimpleSubset expression5
-
 
 -- Validate that lambda's do not need the RHS to contain the bound variables
 prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
@@ -251,23 +218,13 @@ levelSet1 = SimpleSubset predicate2b
 
 -- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
 
-basis1dLinearLagrange_xi1 = Apply expression3c (GeneralVariable "ξ1" unitLineSegment)
-basis1dLinearLagrange_xi2 = Apply expression3c (GeneralVariable "ξ2" unitLineSegment)
-basis1dLinearLagrange_xi3 = Apply expression3c (GeneralVariable "ξ3" unitLineSegment)
+basis1dLinearLagrange_xi1 = Apply basis1dLinearLagrange (GeneralVariable "ξ1" unitLineSegment)
 
 prop_test_PartialApplication = (validExpression basis1dLinearLagrange_xi1)
 
-basis2dLinearLagrange_a = Lambda 
-  (Tuple [(GeneralVariable "ξ1" unitLineSegment), (GeneralVariable "ξ2" unitLineSegment)]) 
-  (KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2])
+prop_test_KroneckerProduct2d = (validExpression basis2dLinearLagrange)
 
-prop_test_KroneckerProduct = (validExpression basis2dLinearLagrange_a)
-
-basis3dLinearLagrange_a = Lambda
-  (Tuple [(GeneralVariable "ξ1" unitLineSegment), (GeneralVariable "ξ2" unitLineSegment), (GeneralVariable "ξ3" unitLineSegment)])   
-  (KroneckerProduct [basis1dLinearLagrange_xi1, basis1dLinearLagrange_xi2, basis1dLinearLagrange_xi3 ])
-
-prop_test_KroneckerProduct3 = (validExpression basis3dLinearLagrange_a)
+prop_test_KroneckerProduct3d = (validExpression basis3dLinearLagrange)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
 
@@ -337,36 +294,12 @@ Exists p1c1 p1c2 = p1b
 prop_test_Exists1g1 = (validExpression p1c1)
 prop_test_Exists1g2 = (validExpression p1c2)
 
--- Uncertainty 
-normalDistribution = 
-  Lambda 
-  (GeneralVariable "x" Reals)
-  (
-    (
-      (RealConstant 1.0) 
-      `Divide` 
-      ( (GeneralVariable "variance" Reals) 
-        `Times` 
-        ( ((RealConstant 2.0) `Times` Pi) `Power` ((RealConstant 1.0) `Divide` (RealConstant 2.0)) )
-      )
-    )
-    `Times`
-    ( Exp  
-      ( (Negate ((RealConstant 1) `Divide` (RealConstant 2)) )
-        `Times`
-        (Power 
-          (
-            ((GeneralVariable "x" Reals) `Minus` (GeneralVariable "mean" Reals))
-            `Divide`
-            (GeneralVariable "variance" Reals)
-          )
-          (RealConstant 2)
-        ) 
-      )
-    )
-  )
-  
-statement1 = (GeneralVariable "xr" Reals) `DistributedAccordingTo` normalDistribution 
+mean1 = RealConstant 1.3
+variance1 = RealConstant 0.2
+
+statement1 = 
+  (GeneralVariable "xr" Reals) 
+  `DistributedAccordingTo` 
+  (Apply normalDistribution (Tuple [mean1, variance1]))
 
 
--- 

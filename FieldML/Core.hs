@@ -79,9 +79,9 @@ data FSet =
   -- Note that the special case where m is an Ensemble (i.e. SignatureSpace Labels _ ) is equivalent to a CartesianPower 
   -- where each of the factors is labelled.  In FieldML, this is treated as having the same topology as a CartesianPower.
   SignatureSpace FSet FSet |
-  
+
   -- | To allow for recursive declarations, assumes that mapping from names to FSet's exists somewhere
-  
+
   -- Todo: implement list of names that are 'in scope'.
   FSetVariable String
 
