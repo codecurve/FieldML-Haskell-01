@@ -10,7 +10,7 @@ where
 
 import FieldML.Core
 
-import qualified Data.List as List
+import Data.List ( delete, nub, (\\) )
 
 -- Focus here is on *processing* the FieldML data structures.  
 
@@ -28,17 +28,17 @@ freeVariables (BooleanConstant _) = []
 freeVariables (RealConstant _ ) = []
 freeVariables f@(GeneralVariable _ _ ) = [f]
 freeVariables (Unspecified m) = []
-freeVariables (Tuple xs) = List.nub (concatMap freeVariables xs) 
+freeVariables (Tuple xs) = nub (concatMap freeVariables xs) 
 freeVariables (Project n x) = freeVariables x
 
 -- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
-freeVariables (Lambda t@(Tuple _) expr1) =  (freeVariables expr1) List.\\ (freeVariables t)
-freeVariables (Lambda x@(GeneralVariable _ _) expr1 ) = List.delete x (freeVariables expr1)
+freeVariables (Lambda t@(Tuple _) expr1) =  (freeVariables expr1) \\ (freeVariables t)
+freeVariables (Lambda x@(GeneralVariable _ _) expr1 ) = delete x (freeVariables expr1)
 freeVariables (Inverse f) = freeVariables f
 freeVariables (Lambdify _) = []
-freeVariables (Apply f x) = List.nub ((freeVariables f) ++ (freeVariables x) )
+freeVariables (Apply f x) = nub ((freeVariables f) ++ (freeVariables x) )
 freeVariables (Compose f g) = freeVariables $ Tuple [ f, g ]
-freeVariables (PartialApplication f n x) = List.nub ( (freeVariables f) ++ (freeVariables x) )
+freeVariables (PartialApplication f n x) = nub ( (freeVariables f) ++ (freeVariables x) )
 
 freeVariables (And a b) = freeVariables $ Tuple [ a, b ]
 freeVariables (Or a b) = freeVariables $ Tuple [ a, b ]
@@ -62,7 +62,7 @@ freeVariables (Max f) = freeVariables f
 freeVariables (Min f) = freeVariables f
 
 freeVariables (ElementOf x m) = freeVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
-freeVariables (Exists x@(GeneralVariable _ _) f) = List.delete x (freeVariables f)
+freeVariables (Exists x@(GeneralVariable _ _) f) = delete x (freeVariables f)
 freeVariables (Restriction _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 freeVariables (Interior _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
 
@@ -324,7 +324,7 @@ validExpression (DistributedAccordingTo expr f) =
 
 validExpression (DistributionFromRealisations xs) =
   all validExpression xs &&
-  length (List.nub (map (simplifyFSet . codomain) xs)) == 1
+  length (nub (map (simplifyFSet . codomain) xs)) == 1
 
 
 -- Utility methods follow
