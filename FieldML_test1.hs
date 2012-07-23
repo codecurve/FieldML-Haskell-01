@@ -6,6 +6,8 @@ where
 import FieldML.Core
 import FieldML.Library01
 import FieldML.Library02
+import FieldML.Utility01
+
 import Control.Monad (unless)
 import Data.List (stripPrefix)
 import qualified Data.Set as Set
@@ -302,4 +304,10 @@ statement1 =
   `DistributedAccordingTo` 
   (Apply normalDistribution (Tuple [mean1, variance1]))
 
+prop_test_normallyDistributedVariable1 = (validExpression statement1)
 
+{-
+pressureField = 
+  Lambda 
+    (Tuple [GeneralVariable "elementId" elementIdFSet, GeneralVariable "ξ ])
+-}
