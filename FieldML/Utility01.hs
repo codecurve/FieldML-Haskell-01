@@ -143,7 +143,9 @@ codomain (GeneralVariable _ m) = m
 codomain (Unspecified m) = m
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
 codomain (Project n f) = getFactor n (codomain f)
-codomain (Lambda _ expr ) = codomain expr
+codomain (Lambda _ expr ) 
+  | lambdaLike expr = SignatureSpace (domain expr) (codomain expr)
+  | otherwise = codomain expr
 codomain (Inverse f) = domain f
 codomain (Lambdify expr) = codomain expr
 codomain (Apply f _) = codomain f
@@ -173,7 +175,7 @@ codomain (Exists _ _) = Booleans
 codomain (Restriction _ f ) = codomain f
 codomain (Interior _) = Booleans
 codomain (MultiDimArray (RealParameterVector _) _) = Reals
-codomain (MultiDimArray (IntegerParameterVector _) _) = Labels Integers
+codomain (MultiDimArray (IntegerParameterVector _ m) _) = m
 codomain (MultiDimArray (AlgebraicVector (Tuple (x:xs))) _) = expressionType x
 codomain (MultiDimArray (AlgebraicVector x) _) = expressionType x
 codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
@@ -289,8 +291,16 @@ validExpression (MultiDimArray (RealParameterVector xs) m) = ((isDiscreteFSet m)
     isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
     isProductOfDFSs _ = False
 
-validExpression (MultiDimArray (IntegerParameterVector xs) m) = validExpression $ MultiDimArray (RealParameterVector dummyRealsList) m
-  where dummyRealsList = replicate (length xs) 0.1
+validExpression (MultiDimArray (IntegerParameterVector xs (Labels intLabels)) m) = 
+  (validExpression $ MultiDimArray (RealParameterVector dummyRealsList) m) &&
+  all (inLabels intLabels) xs
+  where 
+    dummyRealsList = replicate (length xs) 0.1
+    inLabels (IntegerRange x1 x2) x = x >= x1 && x <= x2
+    inLabels Integers x = True
+    inLabels (DiscreteSetUnion n1 n2) x = inLabels n1 x || inLabels n2 x
+    inLabels (Intersection n1 n2) x = inLabels n1 x && inLabels n2 x
+    inLabels _ _ = False
 
 validExpression (MultiDimArray (AlgebraicVector x) m) = validExpression x && validateCardinality x
   where
@@ -305,6 +315,7 @@ validExpression (Exists (GeneralVariable _ _) f) =
   validExpression f
 
 validExpression (Restriction (SimpleSubset p) f ) = 
+  lambdaLike f &&
   validExpression f &&
   validExpression p &&
   domain p == domain f

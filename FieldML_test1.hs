@@ -136,36 +136,41 @@ polarToCartesian =
 prop_test_DomainPolarToCartesian = (domain polarToCartesian == CartesianProduct [Reals, Reals])
 
 polarToCartesianFixedRadius = 
-  PartialApplication 2 (polarToCartesian) (RealConstant 1)
+  PartialApplication (polarToCartesian) 2 (RealConstant 1)
 
 prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == Reals )
   
--- Circle from unit line    
+-- Topology, connectivity using Quotient: Circle topology from unit line    
 
 circleConnectionMap =
   Restriction
   unitLineSegment
--- Todo: get CD, and add to known lists.
-  (Modulus (GeneralVariable "theta" Reals) Pi )
+  (Lambdify (Modulus (GeneralVariable "theta" Reals) Pi ))
+
+prop_test_RestrictionForCircle = (validExpression circleConnectionMap)
 
 circle = Quotient circleConnectionMap
 
 -- Some simplification
 prop_testResult8 = ( simplifyFSet (Factor 3 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
 
--- Parameter map test
+-- Parameter map test: Global nodes:
 -- 4 5 6
 -- 1 2 3
 
+meshGlobalNodesFSet = Labels (IntegerRange 1 6)
 elementIdFSet = Labels (IntegerRange 1 2)
 localNodeFSet = Labels (IntegerRange 1 4)
 elementId = GeneralVariable "elementId" elementIdFSet
 localNode = GeneralVariable "localNode" localNodeFSet
 
+-- Todo: codomain here is Integers, and should be meshGlobalNodesFSet (i.e. the IDs of the global nodes).  
+-- Could introduce a constructor syntax, i.e. facility to define constructor and facility to use constructor.
 localToGlobalNodes = MultiDimArray  
   (IntegerParameterVector
     [ 1, 2, 4, 5, 
       2, 3, 5, 6 ]
+    meshGlobalNodesFSet
   )
   (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
@@ -176,6 +181,7 @@ prop_test_IntParam_01b = (validExpression localToGlobalNodes)
 brokenParamTest = MultiDimArray
   (IntegerParameterVector  
     [ 1, 2, 3, 4, 5 ]
+    meshGlobalNodesFSet
   )  
   (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
@@ -311,3 +317,100 @@ pressureField =
   Lambda 
     (Tuple [GeneralVariable "elementId" elementIdFSet, GeneralVariable "ξ ])
 -}
+
+-- MultiDimArray s are Lambda s, hence indexing is by means of application, and slices and slabs can be retrieved via partial application.
+elementIdToGlobalNodes = 
+  Lambda 
+  (GeneralVariable "elementId" elementIdFSet)
+  (PartialApplication localToGlobalNodes 1 (GeneralVariable "elementId" elementIdFSet))
+
+
+
+-- Mesh connectivity
+
+-- Todo: Should this be stronly typed as the element IDs?  We want to enforce that the range is discrete. Perhaps just use an FSet, and check that it's discrete as part of validation?
+elementIdLabels = IntegerRange 1 2 
+
+mesh_SansConnectivity = 
+  DisjointUnion 
+    elementIdLabels
+    (DomainMapConstant unitSquare) 
+
+-- Local element edge numbering
+--  +-4-+
+--  |   |
+--  2   3
+--  |   |
+--  +-1-+
+
+localEdgeLabels = IntegerRange 1 4
+
+localEdgeFSet = Labels (IntegerRange 1 4)
+
+-- Global mesh element edge numbering
+--  +-6-+-7-+
+--  |   |   |
+--  3   4   5
+--  |   |   |
+--  +-1-+-2-+
+
+globalEdgeFSet = Labels (IntegerRange 1 7)
+
+localToGlobalEdges = MultiDimArray  
+  (IntegerParameterVector
+    [ 1, 3, 4, 6, 
+      2, 4, 5, 7 ]
+    globalEdgeFSet
+  )
+  (CartesianProduct [ elementIdFSet, localEdgeFSet ])
+
+loc1 = (GeneralVariable "loc1" mesh_SansConnectivity)
+{-
+equivalenceInducer = 
+  Lambda
+    loc1
+    (
+       PartialApplication localToGlobalEdges 1 (Project 1 loc1)
+-}
+   
+edge2Predicate = Lambda
+  (GeneralVariable "ξ" unitSquare)
+  ((Project 1 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 0.0))
+
+edge3Predicate = Lambda
+  (GeneralVariable "ξ" unitSquare) 
+  ((Project 1 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 1.0))
+
+edge1Predicate = Lambda
+  (GeneralVariable "ξ" unitSquare) 
+  ((Project 2 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 0.0))
+
+edge4Predicate = Lambda
+  (GeneralVariable "ξ" unitSquare) 
+  ((Project 2 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 1.0))
+
+-- Todo: Thsi belongs in the library.
+unitSquareXiToLocalEdgeId = 
+  Lambda 
+  (GeneralVariable "ξ" unitSquare)
+  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge1Predicate)) (LabelValue (IntegerLabel 1 localEdgeLabels))
+  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge2Predicate)) (LabelValue (IntegerLabel 2 localEdgeLabels))
+  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge3Predicate)) (LabelValue (IntegerLabel 3 localEdgeLabels))
+  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge4Predicate)) (LabelValue (IntegerLabel 4 localEdgeLabels))
+  (Unspecified localEdgeFSet)
+  ))))
+
+equivalenceInducer = 
+  (Lambda
+    (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity)
+    (Apply 
+      (PartialApplication localToGlobalEdges 1 (GeneralVariable "elementId" elementIdFSet) ) 
+      (Apply unitSquareXiToLocalEdgeId (GeneralVariable "ξ" unitSquare))
+    )
+  )
+  `Where` [
+    ( (GeneralVariable "elementId" elementIdFSet) `Equal` (Project 1 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) )),
+    ( (GeneralVariable "ξ" unitSquare)            `Equal` (Project 2 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) ))
+  ]
+  
+mesh_WithConnectivity = Quotient equivalenceInducer

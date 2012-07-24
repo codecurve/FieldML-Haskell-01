@@ -26,6 +26,10 @@ data SetOfLabels =
   deriving(Show, Eq)
 
 
+-- | Represents values from SetOfLabels
+data ValueFromSetOfLabels = StringLabel Label SetOfLabels | IntegerLabel Int SetOfLabels deriving (Show,Eq)
+
+
 -- | An FSet (for FieldML set) is more general than a topological space or topological manifold for that matter.  FieldML domains qualify as topological spaces.
 -- Essentially, an FSet is an object that can be represented by means of its constructors, i.e. broader than topological space, and not as broad as a set a la set theory.
 data FSet = 
@@ -101,6 +105,9 @@ data Expression =
 
   -- | Any real value, as a constant.
   RealConstant Double |
+  
+  -- | A value from a Labels FSet
+  LabelValue ValueFromSetOfLabels |
 
   -- | A variable that can represent any element from the specified FSet
   GeneralVariable String FSet |
@@ -150,6 +157,13 @@ data Expression =
   -- but with the n-th factor removed from the domain, and the value from x used for that slot.
   -- Note that this equivalent to function application if f's domain is a single factor domain.
   PartialApplication Expression Int Expression |
+  
+  -- | expr1 `Where` xs assumes each x in xs is an expression of the form: x1 `Equal` x2, and each such x is taken as an assertion that x1 indeed equals x2.
+  -- Usually x1 is a variable, and is used in expr1, to be interpreted as anywhere x1 occurs in expr1 it can be substituted with x2.
+  -- This is inspired by Haskell's where syntax.
+  
+  -- Todo: domain, codomain, free variables, validExpression etc.
+  Where Expression [Expression] |
 
   -- | Logical and of two expressions.
   And Expression Expression |
@@ -255,8 +269,8 @@ data SimpleVector =
   -- | A prototype placeholder for the numerical data that will be available from external sources, e.g. HDF5 etc.
   RealParameterVector [Double] | 
 
-  -- | Similar to RealParameterSource
-  IntegerParameterVector [Int] |
+  -- | Similar to RealParameterSource, except that the FSet specifies which Labels are represented by the Integers.
+  IntegerParameterVector [Int] FSet |
 
   -- | AlgebraicVector (Tuple xs) represents a vector whose length is the same as the length of xs, 
   -- with each member of the tuple being the corresponding element of the vector.
