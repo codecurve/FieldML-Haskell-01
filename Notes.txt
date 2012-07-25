@@ -1,43 +1,40 @@
-This is an attempt at using Haskell to prototype FieldML design ideas.
+FieldML Haskell prototype - Discussion notes
 
-ModML aims to create a DSL embedded in Haskell that end users can use.
+This prototype is an attempt at using Haskell to prototype FieldML design ideas.
+These ideas are based on discussions of the FieldML design work group, whose current members are: Poul Nielsen, Richard Christie, Andrew Miller, Alan Wu and myself (Randall Britten).
+In the past, others have also contributed to these discussions, notably Caton Little, Chris Bradley and Peter Hunter.
 
-The current state (as at 24 May 2012) of this FieldML Haskell prototype is not to create an end-user language, but rather, to prototype the FieldML object model.
-Thus, at this stage, there is still heavy reliance on features of Haskell that would need an equivalent in the FieldML object model.
+
+Comparison with ModML
+Many ideas from ModML influenced the development of this prototype.
+One important difference is that ModML aims to create a DSL embedded in Haskell that end users can use, whereas the current state of this FieldML Haskell prototype is not to create an end-user language, but rather, to prototype the FieldML object model.
+Thus, at this stage, there is still heavy reliance on features of Haskell that would need an equivalent in the FieldML object model, e.g. Haskell lists.
+
 
 Ideas and thoughts:
-Domain inference
-Codomain inference
+Domain and codomain inference, already implemented to some extent.
 Validity checking of some degree.
-
-Represent domain connectivity
-FEM example: 
- - DOF mapping
- 
-Arbitrary basis function specification using something like MathML
-Tensor product basis functions.
 
 Mesh refinement
 
 Are list expressions and constructors needed at the FieldML level?  Currently, many constructors depend on lists at the lower level language syntax.  Perhaps tuples are fine, since they serve the role of homogenous lists as well as inhomogenous lists.
 
-Issues:
-How is inheritance done in Haskell?
-Additional structure, e.g. metric, algebraic operations: for some TopologicalSpace constructions, these can be induced.
+Additional algebraic structure, e.g. metric, algebraic operations: for some FSet constructions, these can be induced.
 Need to be able to recognise massive homogeneity in order to optimise, e.g. for OpenCMISS.
 
--- Todo list ():
-FieldML.Core, Haskell
+Note: Maps and Values can be seen as the same thing, a value is just a map whose domain is the UnitSpace. However, it is pragmatic to differentiate between the two. Also, always treating values as maps from UnitSpace is recursive, i.e. v is the same as us → v is the same as us → (us → v), etc.
+
+What about expressions that evaluate to an FSet? E.g. f::Reals → FSet s.t. f(x) = SimpleSubset Reals -x x
+
+
+Todo list:
 - Change to using HUnit rather than QuickTest
 - Validation:
 -- Other validation
-- Connectivity
-- Tensor product basis functions
-- Coordinate system transformation
-- represent derivative continuity intention at connected points
-- "Versions"
-- Generate discretised points in a TopologicalSpace.
-- Partial application, binding, composition, projection from a general variable.
+
+- Represent derivative continuity intention at connected points
+- "Versions", i.e. different values for a field at a node to be used for interpolation of a field, depending on which element.
+- Generate discretised points in a TopologicalSpace (aka "Grid points").
 
 - Try use classes for each type of TopologicalSpace, each type of Map etc.
 - Try use OpenMath/MathML CSymbol to CD entries almost everywhere.
@@ -50,21 +47,34 @@ FieldML.Core, Haskell
 
 - Consider making "Apply" explicit, as in MathML and OpenMath. For most maps, it is implicit, e.g. Plus f g.
 
+- Ensure there is a way to construct a value or any type of FSet.
 
--- Done:
--- - Disjoint Union
--- - Read a bit about f5 (fibrebundle.net).
+
+Done:
+- Tensor product basis functions-- - Disjoint Union
+- Read a bit about f5 (fibrebundle.net).
 - Validation:
 -- Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
+- Connectivity
+
+- FEM example: 
+-- DOF mapping
+
+- Coordinate system transformation
+
+- Partial application, binding, composition, projection from a general variable.
+- Arbitrary basis function specification using something like MathML
 
 
-Haskell vs Scala:
+Haskell vs Scala
+
 Scala plus factors: has inheritance.  Has case classes.  Nice support in Eclipse.
-Scala minus factors: syntax more verbose than Haskell. Can't neatly combine case classes with inheritance though, messay "unapply".
+Scala minus factors: syntax more verbose than Haskell. Can't neatly combine case classes with inheritance though, messy "unapply".
 Haskell plus factors: terse syntax. 
 Haskell minus factors: data types do not have inheritance. Tools not great.
 
-Want to be able to say things like:
+
+Goal: Want to be able to represent things similar to the following (As at 2012-07-25, this goal has actually essentially been achieved):
 
 M1 :: TopologicalSpace
 M1 = Reals
@@ -82,7 +92,7 @@ domain(f2) == CartesianProduct[Reals, Reals]
 codomain(f2) = Reals
 f2 x = Project(1, x) + Project(2, x)
 Or
-f2 = lambda x -> Project(1, x) + Project(2, x)
+f2 = lambda x → Project(1, x) + Project(2, x)
 
 Naming Maps so that we can write point free composition?
 
@@ -98,7 +108,8 @@ Tuple[
 ]
 
 
+Mapping to OpenCMISS
 
-Note: Currently Maps and Values are treated as the same thing, a value is just a map whose domain is the UnitSpace.
+The goal of this will be to represent a mesh and a the relevant fields for a FEM problem that OpenCMISS can solve, and map the FieldML-Haskell representation of the mesh and the fields to the OpenCMISS representation.
 
-What about 'TopologicalSpace's where the definition of the space leaves some variables free? Is that like a closure, or is it invalid, or can it be represented, but formally, e.g. if is is such an object, then s::x->TopologicalSpace, where x is the free variable.
+This is now the next main focus of this work.
