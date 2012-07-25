@@ -401,6 +401,7 @@ unitSquareXiToLocalEdgeId =
   (Unspecified localEdgeFSet)
   ))))
 
+-- Todo: No, aaargh! Collapsed entire sides of both adjacent squares a common point!  Should be an affine map to an intermediate space, and each point in the intermediate space serves as an equivalence class.
 equivalenceInducer = 
   (Lambda
     (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity)
@@ -418,3 +419,10 @@ prop_test_Where = ((freeVariables equivalenceInducer) == [])
 
 mesh_WithConnectivity = Quotient equivalenceInducer
 
+Where a xs = equivalenceInducer
+x1a:x1b:x1s = xs
+Equal x2a x2b = x1a
+Equal x3a x3b = x1b
+Project n x4a = x3b
+
+prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)

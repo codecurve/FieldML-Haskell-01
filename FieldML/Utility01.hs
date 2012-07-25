@@ -2,6 +2,7 @@ module FieldML.Utility01 (
   freeVariables,
   domain,
   codomain,
+  expressionType,
   canonicalSuperset,
   simplifyFSet,
   validExpression
@@ -11,6 +12,7 @@ where
 import FieldML.Core
 
 import Data.List ( delete, nub, (\\) )
+import qualified Data.Set as Set
 
 -- Focus here is on *processing* the FieldML data structures.  
 
@@ -26,7 +28,7 @@ freeVariables :: Expression -> [Expression]
 freeVariables UnitElement = []
 freeVariables (BooleanConstant _) = []
 freeVariables (RealConstant _ ) = []
-freeVariables (LabelValue _)= []
+freeVariables (LabelValue _) = []
 freeVariables f@(GeneralVariable _ _ ) = [f]
 freeVariables (Unspecified m) = []
 freeVariables (Tuple xs) = nub (concatMap freeVariables xs) 
@@ -88,24 +90,32 @@ domain :: Expression -> FSet
 domain UnitElement = UnitSpace
 domain (BooleanConstant _) = UnitSpace
 domain (RealConstant _ ) = UnitSpace
-domain (GeneralVariable _ (SignatureSpace m _)) = m
+domain (LabelValue _ ) = UnitSpace
+domain (GeneralVariable _ (SignatureSpace m _)) = simplifyFSet m
 domain (GeneralVariable _ _) = UnitSpace
 domain (Unspecified _) = UnitSpace
 domain (Tuple _) = UnitSpace
-domain (Project n (Tuple fs)) = domain (fs!!(n-1))
+domain (Project n (Tuple fs)) = simplifyFSet $ domain (fs!!(n-1))
+domain (Project n x) = error ("Project for anything other than Tuple not implemented yet, args:" ++ show n ++ ", " ++ show x)
+
 domain (Lambda UnitElement _) = UnitSpace 
-domain (Lambda x@(GeneralVariable _ _) _ ) = codomain x
-domain (Lambda t@(Tuple _) _ ) = codomain t
-domain (Inverse f) = codomain f
+domain (Lambda x@(GeneralVariable _ _) _ ) = simplifyFSet $ codomain x
+domain (Lambda t@(Tuple _) _ ) = simplifyFSet $ codomain t
+domain (Inverse f) = simplifyFSet (codomain f)
 domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (freeVariables expr)
-domain (Apply _ _) = UnitSpace
-domain (Compose _ g) = domain g
+domain (Apply f _) = effectiveResultingDomain $ (simplifyFSet (codomain f))
+  where
+    effectiveResultingDomain (SignatureSpace m _) = m
+    effectiveResultingDomain _ = UnitSpace
+
+domain (Compose _ g) = simplifyFSet $ domain g
 domain (PartialApplication f n _) = simplifyFSet $ CartesianProduct ((take (n-1) fFactors) ++ (drop n fFactors))
   where
     fFactors = getFactors (domain f)
     getFactors (CartesianProduct ms) = ms
     getFactors m = [m]
 
+domain (Where expr _) = simplifyFSet $ domain expr
 domain (And _ _) = UnitSpace
 domain (Or _ _) = UnitSpace
 domain (Not _) = UnitSpace
@@ -127,23 +137,27 @@ domain (Max _) = UnitSpace
 domain (Min _) = UnitSpace
 domain (ElementOf _ _) = UnitSpace
 domain (Exists _ _) = UnitSpace
-domain (Restriction m _ ) = m
-domain (Interior (SimpleSubset l@(Lambda _ _)) ) = domain l
-domain (MultiDimArray _ m) = m
+domain (Restriction m _ ) = simplifyFSet m
+domain (Interior (SimpleSubset l@(Lambda _ _)) ) = simplifyFSet $ domain l
+domain (MultiDimArray _ m) = simplifyFSet m
 domain (KroneckerProduct _) = UnitSpace
 domain (DistributedAccordingTo _ _ ) = UnitSpace
-domain (DistributionFromRealisations xs ) = codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validExpression.
+domain (DistributionFromRealisations xs ) = simplifyFSet $ codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validExpression.
+-- Todo: breaks if xs is []
 
 
 -- | Returns the FSet to which a function maps values. Even if it is actually just a value expression, rather than a function, the expression is treated as a function from UnitSpace, and then the codomain is the 'type' of the value.
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.  
--- Todo: make it so that it can be assumed that codomain has simplified the FSet before returning it.
+-- Todo: make it so that it can be assumed that codomain has simplified the FSet before returning it, same for domain
 codomain :: Expression -> FSet
 
 codomain UnitElement = UnitSpace
 codomain (BooleanConstant _) = Booleans
 codomain (RealConstant _ ) = Reals
+codomain (LabelValue (StringLabel _ m)) = Labels m
+codomain (LabelValue (IntegerLabel _ m)) = Labels m
+
 codomain (GeneralVariable _ m) = m
 codomain (Unspecified m) = m
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
@@ -153,9 +167,16 @@ codomain (Lambda _ expr )
   | otherwise = codomain expr
 codomain (Inverse f) = domain f
 codomain (Lambdify expr) = codomain expr
-codomain (Apply f _) = codomain f
-codomain (Compose f _) = codomain f
-codomain (PartialApplication f _ _) = codomain f
+
+codomain (Apply f _) = effectiveResultingCodomain $ (simplifyFSet (codomain f))
+  where
+    effectiveResultingCodomain (SignatureSpace _ n) = n
+    effectiveResultingCodomain _ = simplifyFSet $ codomain f
+
+codomain (Compose f _) = simplifyFSet $ codomain f
+codomain (PartialApplication f _ _) = simplifyFSet $ codomain f
+codomain (Where expr _) = simplifyFSet $ codomain expr
+
 codomain (And _ _) = Booleans
 codomain (Or _ _) = Booleans
 codomain (Not _) = Booleans
@@ -200,6 +221,16 @@ validExpression :: Expression -> Bool
 validExpression UnitElement = True
 validExpression (BooleanConstant _) = True
 validExpression (RealConstant _ ) = True
+validExpression (LabelValue (StringLabel  x  (StringLabels xs) )) = x `elem` (Set.toList xs)
+validExpression (LabelValue (IntegerLabel x (IntegerRange a b) )) = a <= x && x <= b
+validExpression (LabelValue (IntegerLabel _ Integers )) = True
+validExpression (LabelValue (IntegerLabel x (DiscreteSetUnion n1 n2))) = 
+  validExpression (LabelValue (IntegerLabel x n1))  ||
+  validExpression (LabelValue (IntegerLabel x n2))
+validExpression (LabelValue (IntegerLabel x (Intersection n1 n2))) = 
+  validExpression (LabelValue (IntegerLabel x n1))  &&
+  validExpression (LabelValue (IntegerLabel x n2))
+
 validExpression (GeneralVariable _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
 validExpression (Unspecified _) = True
 validExpression (Tuple xs) = all validExpression xs
@@ -240,6 +271,14 @@ validExpression (PartialApplication f n x) =
   validExpression f &&
   validExpression x
 
+validExpression (Where expr locals) = 
+  validExpression expr &&
+  all validExpression locals &&
+  all localVarAssignment locals
+    where 
+      localVarAssignment (Equal (GeneralVariable _ _) _) = True
+      localVarAssignment _ = False
+  
 validExpression (And a b) = validBinaryOp Booleans a b
 
 validExpression (Or a b) = validBinaryOp Booleans a b
@@ -347,11 +386,11 @@ validExpression (DistributionFromRealisations xs) =
 fSetOfVariable :: Expression -> FSet
 fSetOfVariable (GeneralVariable _ a) = a
 
-
+-- | Simply wraps a lambda like expression's domain and codomain in SignatureSpace, and for all others, the codomain FSet is returned directly.
 expressionType :: Expression -> FSet
 expressionType x
   | lambdaLike x = SignatureSpace (domain x) (codomain x)
-  | otherwise = codomain x
+  | otherwise = simplifyFSet (codomain x)
     
 
 -- Todo: more comprehensive handling of FSet types, e.g. subset of Cartesian product.

@@ -121,7 +121,7 @@ data Expression =
   Unspecified FSet |
 
   Tuple [Expression] |
-
+  
   -- | Project n x assumes x is a Tuple, and represents the n'th factor of the tuple.
   Project Int Expression |
 
