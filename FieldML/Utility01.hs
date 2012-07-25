@@ -26,6 +26,7 @@ freeVariables :: Expression -> [Expression]
 freeVariables UnitElement = []
 freeVariables (BooleanConstant _) = []
 freeVariables (RealConstant _ ) = []
+freeVariables (LabelValue _)= []
 freeVariables f@(GeneralVariable _ _ ) = [f]
 freeVariables (Unspecified m) = []
 freeVariables (Tuple xs) = nub (concatMap freeVariables xs) 
@@ -39,6 +40,10 @@ freeVariables (Lambdify _) = []
 freeVariables (Apply f x) = nub ((freeVariables f) ++ (freeVariables x) )
 freeVariables (Compose f g) = freeVariables $ Tuple [ f, g ]
 freeVariables (PartialApplication f n x) = nub ( (freeVariables f) ++ (freeVariables x) )
+freeVariables (Where expr xs) = (freeVariables expr) \\ (localVars xs)
+  where
+    localVars ((local `Equal` _):x1s) = (freeVariables local) ++ (localVars x1s)
+    localVars [] = []
 
 freeVariables (And a b) = freeVariables $ Tuple [ a, b ]
 freeVariables (Or a b) = freeVariables $ Tuple [ a, b ]

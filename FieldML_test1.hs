@@ -389,7 +389,8 @@ edge4Predicate = Lambda
   (GeneralVariable "ξ" unitSquare) 
   ((Project 2 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 1.0))
 
--- Todo: Thsi belongs in the library.
+-- Todo: This belongs in the library.
+-- Todo: This has an problem: each corner is mapped to only one of the two edges.
 unitSquareXiToLocalEdgeId = 
   Lambda 
   (GeneralVariable "ξ" unitSquare)
@@ -413,4 +414,7 @@ equivalenceInducer =
     ( (GeneralVariable "ξ" unitSquare)            `Equal` (Project 2 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) ))
   ]
   
+prop_test_Where = ((freeVariables equivalenceInducer) == [])
+
 mesh_WithConnectivity = Quotient equivalenceInducer
+
