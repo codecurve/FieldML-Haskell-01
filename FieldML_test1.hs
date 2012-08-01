@@ -347,12 +347,23 @@ localEdgeLabels = IntegerRange 1 4
 
 localEdgeFSet = Labels (IntegerRange 1 4)
 
--- Global mesh element edge numbering
+-- Global mesh element edge numbering, but first example below collapses edge number 4 to a single point.
 --  +-6-+-7-+
 --  |   |   |
 --  3   4   5
 --  |   |   |
 --  +-1-+-2-+
+--
+-- The mesh with the collapsed edge is shown here:
+--
+--  |\     /|
+--  | 6   7 |
+--  |  \ /  |
+--  3   4   5
+--  |  / \  |
+--  | 1   2 |
+--  |/     \|
+
 
 globalEdgeFSet = Labels (IntegerRange 1 7)
 
@@ -365,13 +376,6 @@ localToGlobalEdges = MultiDimArray
   (CartesianProduct [ elementIdFSet, localEdgeFSet ])
 
 loc1 = (GeneralVariable "loc1" mesh_SansConnectivity)
-{-
-equivalenceInducer = 
-  Lambda
-    loc1
-    (
-       PartialApplication localToGlobalEdges 1 (Project 1 loc1)
--}
    
 edge2Predicate = Lambda
   (GeneralVariable "ξ" unitSquare)
@@ -401,8 +405,7 @@ unitSquareXiToLocalEdgeId =
   (Unspecified localEdgeFSet)
   ))))
 
--- Todo: No, aaargh! Collapsed entire sides of both adjacent squares a common point!  Should be an affine map to an intermediate space, and each point in the intermediate space serves as an equivalence class.
-equivalenceInducer = 
+equivalenceInducer1 = 
   (Lambda
     (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity)
     (Apply 
@@ -415,11 +418,11 @@ equivalenceInducer =
     ( (GeneralVariable "ξ" unitSquare)            `Equal` (Project 2 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) ))
   ]
   
-prop_test_Where = ((freeVariables equivalenceInducer) == [])
+prop_test_Where = ((freeVariables equivalenceInducer1) == [])
 
-mesh_WithConnectivity = Quotient equivalenceInducer
+mesh_WithConnectivity = Quotient equivalenceInducer1
 
-Where a xs = equivalenceInducer
+Where a xs = equivalenceInducer1
 x1a:x1b:x1s = xs
 Equal x2a x2b = x1a
 Equal x3a x3b = x1b
