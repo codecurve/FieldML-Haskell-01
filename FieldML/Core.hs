@@ -114,7 +114,7 @@ data Expression =
 
   -- | Indirection, refers to the map in the list of maps (not sure where that is yet).
   
-  -- Todo: is this needed, since Equals x expr1 being added to a 'List of assertions' would be equivalent?
+  -- Todo: is this needed, since Equals x expr1 being added to a 'List of assertions' would be equivalent?  This is just a placeholder for now.
   NamedExpression String |
   
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 

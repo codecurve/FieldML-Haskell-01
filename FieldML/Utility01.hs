@@ -147,6 +147,7 @@ domain (DistributedAccordingTo _ _ ) = UnitSpace
 domain (DistributionFromRealisations xs ) = simplifyFSet $ codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validExpression.
 -- Todo: breaks if xs is []
 
+domain x = error ("Not implemented yet for this constructor. Args:" ++ show x)
 
 -- | Returns the FSet to which a function maps values. Even if it is actually just a value expression, rather than a function, the expression is treated as a function from UnitSpace, and then the codomain is the 'type' of the value.
 
@@ -211,10 +212,13 @@ codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
     tupleLength (Apply _ (Lambda _ (Tuple gs))) = length gs
+    tupleLength x = error ("Not implemented yet for this constructor. Args:" ++ show x)
     -- Todo: Should consider perhaps having an expression simplifier that performs the substitution that an Apply represents. See also validTupleOfRealValues.
 
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
+
+codomain x = error ("Not implemented yet for this constructor. Args:" ++ show x)
 
 
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
@@ -329,30 +333,8 @@ validExpression (If x a b ) =
   codomain x == Booleans &&
   not (lambdaLike x)
 
-validExpression (MultiDimArray (RealParameterVector xs) m) = ((isDiscreteFSet m) || (isProductOfDFSs m))  && validateCardinality
-  where
-    validateCardinality = (cardinality m == length xs)    
-    isDiscreteFSet (Labels _) = True
-    isDiscreteFSet _ = False
-    isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
-    isProductOfDFSs _ = False
-
-validExpression (MultiDimArray (IntegerParameterVector xs (Labels intLabels)) m) = 
-  (validExpression $ MultiDimArray (RealParameterVector dummyRealsList) m) &&
-  all (inLabels intLabels) xs
-  where 
-    dummyRealsList = replicate (length xs) 0.1
-    inLabels (IntegerRange x1 x2) x = x >= x1 && x <= x2
-    inLabels Integers x = True
-    inLabels (DiscreteSetUnion n1 n2) x = inLabels n1 x || inLabels n2 x
-    inLabels (Intersection n1 n2) x = inLabels n1 x && inLabels n2 x
-    inLabels _ _ = False
-
-validExpression (MultiDimArray (AlgebraicVector x) m) = validExpression x && validateCardinality x
-  where
-    validateCardinality (Tuple xs) = cardinality m == length xs
-    validateCardinality (Apply (Lambda _ x1) _) = validateCardinality x1
-    validateCardinality _ = cardinality m == 1
+validExpression (Max f) = realCodomain f
+validExpression (Min f) = realCodomain f
 
 validExpression (ElementOf _ _) = True
 
@@ -366,8 +348,18 @@ validExpression (Restriction (SimpleSubset p) f ) =
   validExpression p &&
   domain p == domain f
 
-validExpression (Max f) = realCodomain f
-validExpression (Min f) = realCodomain f
+validExpression (Interior _) = True -- Todo: validate the FSet operand.
+
+validExpression (MultiDimArray v m) = ((isDiscreteFSet m) || (isProductOfDFSs m))  && validateCardinality && validVector v
+  where
+    validateCardinality = (cardinality m == vectorLength v)    
+    isDiscreteFSet (Labels _) = True
+    isDiscreteFSet _ = False
+    isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
+    isProductOfDFSs _ = False
+
+validExpression (Contraction (MultiDimArray) n1 (MultiDimArray) n2) =
+validExpression (Contraction _ _ _ _) = False
 
 validExpression ( KroneckerProduct xs ) = all validTupleOfRealValues xs
   where 
@@ -384,7 +376,31 @@ validExpression (DistributionFromRealisations xs) =
   length (nub (map (simplifyFSet . codomain) xs)) == 1
 
 
--- Utility methods follow
+-- Secondary utility methods follow
+-- | Returns True if vector is valid.
+
+--Todo: Vector construction is just a kind of expression, this really hints at using typeclasses, and having a "isValid" function for Vectors, Expressions and FSets.
+validVector :: SimpleVector -> Boolean
+validVector (IntegerParameterVector xs (Labels intLabels)) =
+  all (inLabels intLabels) xs
+  where
+    inLabels (IntegerRange x1 x2) x = x >= x1 && x <= x2
+    inLabels Integers x = True
+    inLabels (DiscreteSetUnion n1 n2) x = inLabels n1 x || inLabels n2 x
+    inLabels (Intersection n1 n2) x = inLabels n1 x && inLabels n2 x
+    inLabels _ _ = False
+
+validVector _ = True
+
+-- | Returns the length of the various types of vectors.
+vectorLength :: SimpleVector -> Int
+vectorLength (AlgebraicVector (Tuple xs)) = length xs
+vectorLength (AlgebraicVector (Apply (Lambda _ x1)) ) = vectorLength x1
+vectorLength (AlgebraicVector _) = 1
+vectorLength (RealParameterVector xs) = length xs
+vectorLength (IntegerParameterVector xs _) = length xs
+
+
 fSetOfVariable :: Expression -> FSet
 fSetOfVariable (GeneralVariable _ a) = a
 
