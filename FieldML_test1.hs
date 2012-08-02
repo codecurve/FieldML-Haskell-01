@@ -4,8 +4,8 @@ module FieldML_test1
 where
 
 import FieldML.Core
-import FieldML.Library01
-import FieldML.Library02
+import qualified FieldML.Library01
+import qualified FieldML.Library02
 import FieldML.Utility01
 
 import Control.Monad (unless)
@@ -23,11 +23,11 @@ testMain = do
 
 elementIds = IntegerRange 1 4
   
-m2 = CartesianProduct [real2, Labels elementIds]
+m2 = CartesianProduct [FieldML.Library01.real2, Labels elementIds]
 
 x = GeneralVariable "x" Reals
   
-SimpleSubset expression1 = unitLineSegment
+SimpleSubset expression1 = FieldML.Library01.unitLineSegment
 
 -- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 -- But perhaps the chart is just the tuple that represents a value in the topological space (Tuples can consist of named variables).
@@ -43,7 +43,7 @@ prop_test_BooleanExpression1c = (freeVariables expression1_lambdaRhs == [General
 prop_test_BooleanExpression1d = (domain expression1 == Reals)
 prop_test_BooleanExpression1e = (codomain expression1 == Booleans)
 
-prop_test_Subset1a = (canonicalSuperset unitLineSegment == Reals)
+prop_test_Subset1a = (canonicalSuperset FieldML.Library01.unitLineSegment == Reals)
 
 -- As above, but more inline:
 unitLineSegment' = 
@@ -51,7 +51,7 @@ unitLineSegment' =
     Lambda x ((x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x))
   )
 
-prop_test_match1a = (unitLineSegment == unitLineSegment')
+prop_test_match1a = (FieldML.Library01.unitLineSegment == unitLineSegment')
 
 xy = Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]
   
@@ -71,23 +71,23 @@ prop_test_2dTupleMapDomain1c = (freeVariables expression2_lambdaRhs == [GeneralV
   
 prop_test_2dTupleMapDomain1d = (validExpression expression2)
 
-xi1 = GeneralVariable "ξ1" unitLineSegment  
+xi1 = GeneralVariable "ξ1" FieldML.Library01.unitLineSegment  
 
-prop_test_LambdaTuple_domain = ( domain basis1dLinearLagrange == unitLineSegment )
-prop_test_LambdaTuple_codomain = ( canonicalSuperset (codomain basis1dLinearLagrange) == real2 )
-prop_test_LambdaTuple_freeVariables = ( freeVariables basis1dLinearLagrange == [] )
-prop_test_LambdaTuple_valid = ( validExpression basis1dLinearLagrange )
+prop_test_LambdaTuple_domain = ( domain FieldML.Library01.basis1dLinearLagrange == FieldML.Library01.unitLineSegment )
+prop_test_LambdaTuple_codomain = ( canonicalSuperset (codomain FieldML.Library01.basis1dLinearLagrange) == FieldML.Library01.real2 )
+prop_test_LambdaTuple_freeVariables = ( freeVariables FieldML.Library01.basis1dLinearLagrange == [] )
+prop_test_LambdaTuple_valid = ( validExpression FieldML.Library01.basis1dLinearLagrange )
 
-expression3c = basis1dLinearLagrange
+expression3c = FieldML.Library01.basis1dLinearLagrange
 
 Lambda _ expression3c_lambdaRhs = expression3c
 prop_test_Tuple_freeVariables = ( freeVariables expression3c_lambdaRhs == [ xi1 ] )
 
-SimpleSubset expression4 = simplex2d
+SimpleSubset expression4 = FieldML.Library01.simplex2d
 
 prop_test_Simplex2dPredicate = (domain expression4 == CartesianProduct[Reals, Reals])
   
-SimpleSubset expression5 = unitSquare
+SimpleSubset expression5 = FieldML.Library01.unitSquare
 
 prop_test_UnitSquarePredicate_domain = (domain expression5 == CartesianProduct [Reals,Reals] )
 prop_test_UnitSquarePredicate_valid = (validExpression expression5)
@@ -98,15 +98,15 @@ prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVari
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
 labels1to5 = IntegerRange 1 5
-d1 = DisjointUnion labels1to10 (DomainMapConstant unitSquare)
+d1 = DisjointUnion labels1to10 (DomainMapConstant FieldML.Library01.unitSquare)
 
 d2 = 
   DisjointUnion 
     (IntegerRange 1 10) 
     (DomainMapIf 
       (IntegerRange 1 5) 
-      (DomainMapConstant unitSquare) 
-      (DomainMapConstant simplex2d)
+      (DomainMapConstant FieldML.Library01.unitSquare) 
+      (DomainMapConstant FieldML.Library01.simplex2d)
     )
 
 d3 = 
@@ -114,11 +114,12 @@ d3 =
     (IntegerRange 1 10) 
     (DomainMapIf 
       (IntegerRange 1 5) 
-      (DomainMapConstant unitSquare) 
+      (DomainMapConstant FieldML.Library01.unitSquare) 
       (DomainMapConstant d2)
     )
 
 -- Partial application
+-- Todo: place in library
 polarToCartesian = 
   Lambda (Tuple [GeneralVariable "radius" Reals, GeneralVariable "θ" Reals]) (
     Tuple
@@ -144,7 +145,7 @@ prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == R
 
 circleConnectionMap =
   Restriction
-  unitLineSegment
+  FieldML.Library01.unitLineSegment
   (Lambdify (Modulus (GeneralVariable "theta" Reals) Pi ))
 
 prop_test_RestrictionForCircle = (validExpression circleConnectionMap)
@@ -226,13 +227,13 @@ levelSet1 = SimpleSubset predicate2b
 
 -- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
 
-basis1dLinearLagrange_xi1 = Apply basis1dLinearLagrange (GeneralVariable "ξ1" unitLineSegment)
+basis1dLinearLagrange_xi1 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "ξ1" FieldML.Library01.unitLineSegment)
 
 prop_test_PartialApplication = (validExpression basis1dLinearLagrange_xi1)
 
-prop_test_KroneckerProduct2d = (validExpression basis2dLinearLagrange)
+prop_test_KroneckerProduct2d = (validExpression FieldML.Library01.basis2dLinearLagrange)
 
-prop_test_KroneckerProduct3d = (validExpression basis3dLinearLagrange)
+prop_test_KroneckerProduct3d = (validExpression FieldML.Library01.basis3dLinearLagrange)
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
 
@@ -308,7 +309,7 @@ variance1 = RealConstant 0.2
 statement1 = 
   (GeneralVariable "xr" Reals) 
   `DistributedAccordingTo` 
-  (Apply normalDistribution (Tuple [mean1, variance1]))
+  (Apply FieldML.Library02.normalDistribution (Tuple [mean1, variance1]))
 
 prop_test_normallyDistributedVariable1 = (validExpression statement1)
 
@@ -334,7 +335,7 @@ elementIdLabels = IntegerRange 1 2
 mesh_SansConnectivity = 
   DisjointUnion 
     elementIdLabels
-    (DomainMapConstant unitSquare) 
+    (DomainMapConstant FieldML.Library01.unitSquare) 
 
 -- Local element edge numbering
 --  +-4-+
@@ -376,32 +377,34 @@ localToGlobalEdges = MultiDimArray
   (CartesianProduct [ elementIdFSet, localEdgeFSet ])
 
 loc1 = (GeneralVariable "loc1" mesh_SansConnectivity)
+
+xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
    
 edge2Predicate = Lambda
-  (GeneralVariable "ξ" unitSquare)
-  ((Project 1 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 0.0))
+  xi
+  ((Project 1 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
 
 edge3Predicate = Lambda
-  (GeneralVariable "ξ" unitSquare) 
-  ((Project 1 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 1.0))
+  xi
+  ((Project 1 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
 
 edge1Predicate = Lambda
-  (GeneralVariable "ξ" unitSquare) 
-  ((Project 2 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 0.0))
+  xi
+  ((Project 2 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
 
 edge4Predicate = Lambda
-  (GeneralVariable "ξ" unitSquare) 
-  ((Project 2 (GeneralVariable "ξ" unitSquare)) `Equal` (RealConstant 1.0))
+  xi
+  ((Project 2 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
 
 -- Todo: This belongs in the library.
 -- Todo: This has an problem: each corner is mapped to only one of the two edges.
 unitSquareXiToLocalEdgeId = 
   Lambda 
-  (GeneralVariable "ξ" unitSquare)
-  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge1Predicate)) (LabelValue (IntegerLabel 1 localEdgeLabels))
-  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge2Predicate)) (LabelValue (IntegerLabel 2 localEdgeLabels))
-  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge3Predicate)) (LabelValue (IntegerLabel 3 localEdgeLabels))
-  (If ((GeneralVariable "ξ" unitSquare) `ElementOf` (SimpleSubset edge4Predicate)) (LabelValue (IntegerLabel 4 localEdgeLabels))
+  xi
+  (If (xi `ElementOf` (SimpleSubset edge1Predicate)) (LabelValue (IntegerLabel 1 localEdgeLabels))
+  (If (xi `ElementOf` (SimpleSubset edge2Predicate)) (LabelValue (IntegerLabel 2 localEdgeLabels))
+  (If (xi `ElementOf` (SimpleSubset edge3Predicate)) (LabelValue (IntegerLabel 3 localEdgeLabels))
+  (If (xi `ElementOf` (SimpleSubset edge4Predicate)) (LabelValue (IntegerLabel 4 localEdgeLabels))
   (Unspecified localEdgeFSet)
   ))))
 
@@ -410,12 +413,12 @@ equivalenceInducer1 =
     (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity)
     (Apply 
       (PartialApplication localToGlobalEdges 1 (GeneralVariable "elementId" elementIdFSet) ) 
-      (Apply unitSquareXiToLocalEdgeId (GeneralVariable "ξ" unitSquare))
+      (Apply unitSquareXiToLocalEdgeId xi)
     )
   )
   `Where` [
     ( (GeneralVariable "elementId" elementIdFSet) `Equal` (Project 1 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) )),
-    ( (GeneralVariable "ξ" unitSquare)            `Equal` (Project 2 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) ))
+    ( xi                                          `Equal` (Project 2 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) ))
   ]
   
 prop_test_Where = ((freeVariables equivalenceInducer1) == [])
