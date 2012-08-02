@@ -434,6 +434,7 @@ Project n x4a = x3b
 prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
 
 
+
 -- Field template
 localToGlobalNodesMapSignature = SignatureSpace (CartesianProduct [ elementIdFSet, localNodeFSet ]) meshGlobalNodesFSet
 localToGlobalNodesVar = (GeneralVariable "localToGlobalNodes" localToGlobalNodesMapSignature)
@@ -444,11 +445,13 @@ dofSourceVar = (GeneralVariable "dofSource" dofSourceSignature)
 mesh1NodalDofsForElement = 
   Lambda 
   (Tuple [
+      dofSourceVar,      
+      localToGlobalNodesVar,            
       elementId,
-      localToGlobalNodesVar,
-      dofSourceVar
+      localNode
   ]) 
-  (Apply dofSourceVar (PartialApplication localToGlobalNodesVar 1 elementId))
+  (Apply dofSourceVar ((Apply localToGlobalNodesVar (Tuple [elementId, localNode]))))
 
 
--- Lambda (Tuple [elementId, dofSource]
+prop_test_nodalDofs = (validExpression mesh1NodalDofsForElement)
+
