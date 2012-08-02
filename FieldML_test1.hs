@@ -442,16 +442,44 @@ localToGlobalNodesVar = (GeneralVariable "localToGlobalNodes" localToGlobalNodes
 dofSourceSignature = SignatureSpace meshGlobalNodesFSet Reals
 dofSourceVar = (GeneralVariable "dofSource" dofSourceSignature)
                          
-mesh1NodalDofsForElement = 
+mesh1NodalDofsForElementExpr = 
   Lambda 
   (Tuple [
-      dofSourceVar,      
-      localToGlobalNodesVar,            
-      elementId,
-      localNode
+    dofSourceVar,      
+    localToGlobalNodesVar,            
+    elementId,
+    localNode
   ]) 
   (Apply dofSourceVar ((Apply localToGlobalNodesVar (Tuple [elementId, localNode]))))
 
+prop_test_nodalDofs = (validExpression mesh1NodalDofsForElementExpr)
 
-prop_test_nodalDofs = (validExpression mesh1NodalDofsForElement)
+mesh1NodalDofsForElementSignature = SignatureSpace (Domain mesh1NodalDofsForElementExpr) (Codomain mesh1NodalDofsForElementExpr)
+mesh1NodalDofsForElementVar = GeneralVariable "mesh1NodalDofsForElementVar" mesh1NodalDofsForElementSignature
 
+mesh1FieldTemplate = 
+  Lambda
+  (Tuple [
+    dofSourceVar,
+    mesh1NodalDofsForElementVar,
+    elementId,
+    xi
+  ])
+  (Contraction
+    (Lambda 
+      localNode
+      (Apply 
+        (Tuple [
+          dofSourceVar,      
+          localToGlobalNodesVar,            
+          elementId,
+          localNode
+        ]) 
+        mesh1NodalDofsForElementVar 
+      )
+    )
+    1
+      
+    (Apply FieldML.Library01.basis2dLinearLagrange xi)
+    1
+  )
