@@ -32,6 +32,7 @@ Todo list:
 - Change to using HUnit rather than QuickTest
 - Validation:
 -- Other validation
+-- When validation fails, report the reason.
 
 - Represent derivative continuity intention at connected points
 - "Versions", i.e. different values for a field at a node to be used for interpolation of a field, depending on which element.
@@ -52,7 +53,9 @@ Todo list:
 
 
 Done:
-- Tensor product basis functions-- - Disjoint Union
+- Contraction
+- Tensor product basis functions
+- Disjoint Union
 - Read a bit about f5 (fibrebundle.net).
 - Validation:
 -- Validate Maps like "And" to check that both operands have consistent domains, and codomains are boolean.
