@@ -29,6 +29,7 @@ What about expressions that evaluate to an FSet? E.g. f::Reals → FSet s.t. f(x
 
 Todo list:
 - Ensure that there is a sensible way to create a value for each FSet, for example, a Tuple is used to represent a value of a disjoint union, but currenty it is treated as taking values on a Cartesian product.
+- Introduce closures?  Or is the "where" construction sufficient?
 - Change to using HUnit rather than QuickTest
 - Validation:
 -- Other validation
