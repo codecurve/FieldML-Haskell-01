@@ -418,7 +418,7 @@ validVector _ = True
 vectorLength :: SimpleVector -> Int
 vectorLength (AlgebraicVector (Tuple xs)) = length xs
 
-vectorLength (AlgebraicVector (Apply (Lambda _ x1)) ) = vectorLength x1 -- Todo: This is along the lines of algebraic manipulation of the expression, and should probably be extracted.
+vectorLength (AlgebraicVector (Apply (Lambda _ x1) _) ) = vectorLength (AlgebraicVector x1) -- Todo: This is along the lines of algebraic manipulation of the expression, and should probably be extracted.
 
 vectorLength (AlgebraicVector _) = 1
 vectorLength (RealParameterVector xs) = length xs
