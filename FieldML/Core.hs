@@ -226,11 +226,12 @@ data Expression =
   -- f is a lambda from m to the value type of v's elements.
   MultiDimArray SimpleVector FSet |
 
-  -- | Contraction x1 i1 x2 i2 requires x1 and x2 to be "MultiDimArray"s. 
-  -- It represents the sum over i of x1_i * x2_i, where x1 is indexed by its i1'th index, and x2 by its i2'th index.
-  -- The result is indexed by the remaining indices of x1 and x2.
+  -- | Contraction x1 i1 x2 i2 requires x1 and x2 to be lambda-like expressions where the contraction parameters are 'compatible'.
+  -- In the case where the contraction parameters are from a discrete FSet, 
+  -- it represents the sum over i of x1_i * x2_i, where x1 is 'indexed' by its i1'th 'index', and x2 by its i2'th 'index'.
+  -- The term index here is because contraction usually refers to MultiDimArray expressions, which are a special case of suitable lambda-like expressions.
+  -- The result is 'indexed' by the remaining 'indices' of x1 and x2.
   -- I.e. the result is a lambda from CartesianProduct m1 m2, where m1 is the domain of x1 with the i1'th factor removed, and similarly for m2.
-  -- x1 and x2 are expected to be "MultiDimArray"s.
   Contraction Expression Int Expression Int |
 
   -- | y = KroneckerProduct xs requires each x in xs to be a MultiDimArray with a single index (essentially a vector).

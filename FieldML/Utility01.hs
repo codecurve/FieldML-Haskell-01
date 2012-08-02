@@ -371,7 +371,9 @@ validExpression (MultiDimArray v m) = ((isDiscreteFSet m) || (isProductOfDFSs m)
     isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
     isProductOfDFSs _ = False
 
-validExpression (Contraction a1@(MultiDimArray v1 m1) n1 a2@(MultiDimArray v2 m2) n2) = 
+validExpression (Contraction a1 n1 a2 n2) = 
+  lambdaLike a1 &&
+  lambdaLike a2 &&
   validExpression a1 &&
   validExpression a2 &&
   codomain a1 == Reals &&
@@ -379,8 +381,9 @@ validExpression (Contraction a1@(MultiDimArray v1 m1) n1 a2@(MultiDimArray v2 m2
   n1 <= factorCount m1 &&
   n2 <= factorCount m2 &&
   getFactor n1 m1 == getFactor n2 m2
-
-validExpression (Contraction _ _ _ _) = False
+  where
+    m1 = domain a1 
+    m2 = domain a2 
 
 validExpression ( KroneckerProduct xs ) = all validTupleOfRealValues xs
   where 
