@@ -24,19 +24,21 @@ simplifyFSet (CartesianProduct [m]) = m
 simplifyFSet (SignatureSpace UnitSpace m) = m
 simplifyFSet m = m
 
+
 freeVariables :: Expression -> [Expression]
 freeVariables UnitElement = []
 freeVariables (BooleanConstant _) = []
 freeVariables (RealConstant _ ) = []
 freeVariables (LabelValue _) = []
 freeVariables f@(GeneralVariable _ _ ) = [f]
-freeVariables (Unspecified m) = []
+freeVariables (Unspecified _) = []
 freeVariables (Tuple xs) = nub (concatMap freeVariables xs) 
-freeVariables (Project n x) = freeVariables x
+freeVariables (Project _ x) = freeVariables x
 
 -- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
 freeVariables (Lambda t@(Tuple _) expr1) =  (freeVariables expr1) \\ (freeVariables t)
 freeVariables (Lambda x@(GeneralVariable _ _) expr1 ) = delete x (freeVariables expr1)
+freeVariables x@(Lambda _ _) = error ("freeVariables not implemented yet for Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x)
 freeVariables (Inverse f) = freeVariables f
 freeVariables (Lambdify _) = []
 freeVariables (Apply f x) = nub ((freeVariables f) ++ (freeVariables x) )
@@ -75,11 +77,12 @@ freeVariables (Interior _) = [] -- Todo: definition of m in Interior m may have 
 
 freeVariables (MultiDimArray (AlgebraicVector x) _) = freeVariables x
 freeVariables (MultiDimArray _ _) = []
-
+freeVariables (Contraction a1 _ a2 _) = (freeVariables a1) ++ (freeVariables a2) -- Todo: This assumes that the index selector is always "hard coded", we will possibly in future want to support using an integer expression for the index.
 freeVariables (KroneckerProduct xs) = freeVariables $ Tuple xs
 freeVariables (DistributedAccordingTo x f) = freeVariables $ Tuple [ x, f ]
 freeVariables (DistributionFromRealisations xs) = freeVariables $ Tuple xs
 
+freeVariables x = error ("freeVariables not implemented yet for this constructor. Args:" ++ show x)
 
 -- | Returns the FSet from which a function maps values. Unless it is actually a function, the expression is treated as a value, which is treated as a function from UnitSpace.
 
@@ -96,12 +99,12 @@ domain (GeneralVariable _ _) = UnitSpace
 domain (Unspecified _) = UnitSpace
 domain (Tuple _) = UnitSpace
 domain (Project n (Tuple fs)) = simplifyFSet $ domain (fs!!(n-1))
-domain (Project n x) = error ("Not implemented yet: Project for anything other than Tuple. Args:" ++ show n ++ ", " ++ show x)
+domain x@(Project _ _) = error ("domain not implemented yet for Project from anything other than Tuple. Args:" ++ show x)
 
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda x@(GeneralVariable _ _) _ ) = simplifyFSet $ codomain x
 domain (Lambda t@(Tuple _) _ ) = simplifyFSet $ codomain t
-domain (Lambda x expr ) = error ("Not implemented yet: Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x ++ ", " ++ show expr )
+domain x@(Lambda _ _ ) = error ("domain not implemented yet for Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x)
 domain (Inverse f) = simplifyFSet (codomain f)
 domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (freeVariables expr)
 domain (Apply f _) = effectiveResultingDomain $ (simplifyFSet (codomain f))
@@ -140,14 +143,22 @@ domain (ElementOf _ _) = UnitSpace
 domain (Exists _ _) = UnitSpace
 domain (Restriction m _ ) = simplifyFSet m
 domain (Interior (SimpleSubset l@(Lambda _ _)) ) = simplifyFSet $ domain l
-domain (Interior f) = error ("Not implemented yet: Interior for anything other than SimpleSubset of a Lambda. Args:" ++ show f ++ ", " ++ show expr )
+domain x@(Interior _) = error ("domain not implemented yet for Interior for anything other than SimpleSubset of a Lambda. Args:" ++ show x)
 domain (MultiDimArray _ m) = simplifyFSet m
+domain (Contraction a1 n1 a2 n2) = 
+  CartesianProduct [
+    domain (PartialApplication a1 n1 boundIndexVariable),
+    domain (PartialApplication a2 n2 boundIndexVariable)
+  ]
+  where
+    boundIndexVariable = GeneralVariable "boundIndexVariable" (getFactor n1 (domain a1)) --Todo: Assumes this is the same as (getFactor n2 (domain a2)).
+    
 domain (KroneckerProduct _) = UnitSpace
 domain (DistributedAccordingTo _ _ ) = UnitSpace
 domain (DistributionFromRealisations xs ) = simplifyFSet $ codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validExpression.
 -- Todo: breaks if xs is []
 
-domain x = error ("Not implemented yet for this constructor. Args:" ++ show x)
+domain x = error ("domain not implemented yet for this constructor. Args:" ++ show x)
 
 -- | Returns the FSet to which a function maps values. Even if it is actually just a value expression, rather than a function, the expression is treated as a function from UnitSpace, and then the codomain is the 'type' of the value.
 
@@ -207,18 +218,19 @@ codomain (MultiDimArray (RealParameterVector _) _) = Reals
 codomain (MultiDimArray (IntegerParameterVector _ m) _) = m
 codomain (MultiDimArray (AlgebraicVector (Tuple (x:xs))) _) = expressionType x
 codomain (MultiDimArray (AlgebraicVector x) _) = expressionType x
+codomain (Contraction _ _ _ _) = Reals
 codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
   where
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
     tupleLength (Apply _ (Lambda _ (Tuple gs))) = length gs
-    tupleLength x = error ("Not implemented yet for this constructor. Args:" ++ show x)
+    tupleLength x = error ("codomain.tupleLength not implemented yet for this constructor. Args:" ++ show x)
     -- Todo: Should consider perhaps having an expression simplifier that performs the substitution that an Apply represents. See also validTupleOfRealValues.
 
 codomain (DistributedAccordingTo _ _ ) = Booleans
 codomain (DistributionFromRealisations _) = Reals
 
-codomain x = error ("Not implemented yet for this constructor. Args:" ++ show x)
+codomain x = error ("codomain not implemented yet for this constructor. Args:" ++ show x)
 
 
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
@@ -358,7 +370,15 @@ validExpression (MultiDimArray v m) = ((isDiscreteFSet m) || (isProductOfDFSs m)
     isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
     isProductOfDFSs _ = False
 
-validExpression (Contraction (MultiDimArray) n1 (MultiDimArray) n2) =
+validExpression (Contraction a1@(MultiDimArray v1 m1) n1 a2@(MultiDimArray v2 m2) n2) = 
+  validExpression a1 &&
+  validExpression a2 &&
+  codomain a1 == Reals &&
+  codomain a2 == Reals &&
+  n1 <= factorCount m1 &&
+  n2 <= factorCount m2 &&
+  getFactor n1 m1 == getFactor n2 m2
+
 validExpression (Contraction _ _ _ _) = False
 
 validExpression ( KroneckerProduct xs ) = all validTupleOfRealValues xs
@@ -380,7 +400,7 @@ validExpression (DistributionFromRealisations xs) =
 -- | Returns True if vector is valid.
 
 --Todo: Vector construction is just a kind of expression, this really hints at using typeclasses, and having a "isValid" function for Vectors, Expressions and FSets.
-validVector :: SimpleVector -> Boolean
+validVector :: SimpleVector -> Bool
 validVector (IntegerParameterVector xs (Labels intLabels)) =
   all (inLabels intLabels) xs
   where
@@ -395,7 +415,7 @@ validVector _ = True
 -- | Returns the length of the various types of vectors.
 vectorLength :: SimpleVector -> Int
 vectorLength (AlgebraicVector (Tuple xs)) = length xs
-vectorLength (AlgebraicVector (Apply (Lambda _ x1)) ) = vectorLength x1
+vectorLength (AlgebraicVector (Apply (Lambda _ (Tuple xs)) _) ) = length xs -- Todo: This is along the lines of algebraic manipulation of the expression, and should probably be extracted.
 vectorLength (AlgebraicVector _) = 1
 vectorLength (RealParameterVector xs) = length xs
 vectorLength (IntegerParameterVector xs _) = length xs
