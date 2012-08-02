@@ -160,6 +160,7 @@ domain (DistributionFromRealisations xs ) = simplifyFSet $ codomain (head xs) --
 
 domain x = error ("domain not implemented yet for this constructor. Args:" ++ show x)
 
+
 -- | Returns the FSet to which a function maps values. Even if it is actually just a value expression, rather than a function, the expression is treated as a function from UnitSpace, and then the codomain is the 'type' of the value.
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.  
@@ -401,6 +402,7 @@ validExpression (DistributionFromRealisations xs) =
 
 --Todo: Vector construction is just a kind of expression, this really hints at using typeclasses, and having a "isValid" function for Vectors, Expressions and FSets.
 validVector :: SimpleVector -> Bool
+
 validVector (IntegerParameterVector xs (Labels intLabels)) =
   all (inLabels intLabels) xs
   where
@@ -415,7 +417,9 @@ validVector _ = True
 -- | Returns the length of the various types of vectors.
 vectorLength :: SimpleVector -> Int
 vectorLength (AlgebraicVector (Tuple xs)) = length xs
-vectorLength (AlgebraicVector (Apply (Lambda _ (Tuple xs)) _) ) = length xs -- Todo: This is along the lines of algebraic manipulation of the expression, and should probably be extracted.
+
+vectorLength (AlgebraicVector (Apply (Lambda _ x1)) ) = vectorLength x1 -- Todo: This is along the lines of algebraic manipulation of the expression, and should probably be extracted.
+
 vectorLength (AlgebraicVector _) = 1
 vectorLength (RealParameterVector xs) = length xs
 vectorLength (IntegerParameterVector xs _) = length xs
