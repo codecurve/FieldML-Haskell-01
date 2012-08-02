@@ -432,3 +432,23 @@ Equal x3a x3b = x1b
 Project n x4a = x3b
 
 prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
+
+
+-- Field template
+localToGlobalNodesMapSignature = SignatureSpace (CartesianProduct [ elementIdFSet, localNodeFSet ]) meshGlobalNodesFSet
+localToGlobalNodesVar = (GeneralVariable "localToGlobalNodes" localToGlobalNodesMapSignature)
+
+dofSourceSignature = SignatureSpace meshGlobalNodesFSet Reals
+dofSourceVar = (GeneralVariable "dofSource" dofSourceSignature)
+                         
+mesh1NodalDofsForElement = 
+  Lambda 
+  (Tuple [
+      elementId,
+      localToGlobalNodesVar,
+      dofSourceVar
+  ]) 
+  (Apply dofSourceVar (PartialApplication localToGlobalNodesVar 1 elementId))
+
+
+-- Lambda (Tuple [elementId, dofSource]
