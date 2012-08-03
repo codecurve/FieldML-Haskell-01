@@ -31,7 +31,7 @@ Todo list:
 - Instance Show to make expressions pretty (new lines, indentation)
 - Use singular names for FSets, as agreed at FieldML meeting on 30 July 2012.
 - Ensure that there is a sensible way to create a value for each FSet, for example, a Tuple is used to represent a value of a disjoint union, but currenty it is treated as taking values on a Cartesian product.
-- Introduce closures?  Or is the "where" construction sufficient?
+- Introduce closures?  Or is the "where" construction sufficient? Since NamedExpression is a valid expression type, this would require implement the model itself, which would have a list of FieldML objects, an assignment of names to expressions would be one way, the other way is to have assignments equating general variables with expressions.
 - Change to using HUnit rather than QuickTest
 - Validation:
 -- Other validation
