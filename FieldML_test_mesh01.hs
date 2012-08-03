@@ -106,13 +106,13 @@ fieldTemplate =
     (Lambda 
       localNode
       (Apply 
+        nodalDofsForElementVar 
         (Tuple [
           dofSourceVar,      
           localToGlobalNodesVar,            
           elementId,
           localNode
         ]) 
-        nodalDofsForElementVar 
       )
     )
     1
