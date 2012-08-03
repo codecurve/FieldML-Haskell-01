@@ -224,7 +224,7 @@ codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
   where
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
-    tupleLength (Apply _ (Lambda _ (Tuple gs))) = length gs
+    tupleLength (Apply (Lambda _ (Tuple gs)) _ ) = length gs
     tupleLength x = error ("codomain.tupleLength not implemented yet for this constructor. Args:" ++ show x)
     -- Todo: Should consider perhaps having an expression simplifier that performs the substitution that an Apply represents. See also validTupleOfRealValues.
 
