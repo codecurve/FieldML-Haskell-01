@@ -8,6 +8,9 @@ import qualified FieldML.Library01
 import qualified FieldML.Library02
 import FieldML.Utility01
 
+import qualified FieldML_test_mesh01
+
+
 import Control.Monad (unless)
 import Data.List (stripPrefix)
 import qualified Data.Set as Set
@@ -20,11 +23,6 @@ testMain = do
 
 
 -- Tests
-
-elementIds = IntegerRange 1 4
-  
-m2 = CartesianProduct [FieldML.Library01.real2, Labels elementIds]
-
 x = GeneralVariable "x" Reals
   
 SimpleSubset expression1 = FieldML.Library01.unitLineSegment
@@ -95,6 +93,7 @@ prop_test_UnitSquarePredicate_valid = (validExpression expression5)
 -- Validate that lambda's do not need the RHS to contain the bound variables
 prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
     
+
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
 labels1to5 = IntegerRange 1 5
@@ -141,6 +140,7 @@ polarToCartesianFixedRadius =
 
 prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == Reals )
   
+
 -- Topology, connectivity using Quotient: Circle topology from unit line    
 
 circleConnectionMap =
@@ -152,54 +152,24 @@ prop_test_RestrictionForCircle = (validExpression circleConnectionMap)
 
 circle = Quotient circleConnectionMap
 
+
 -- Some simplification
 prop_testResult8 = ( simplifyFSet (Factor 3 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
 
--- Parameter map test: Global nodes:
--- 4 5 6
--- 1 2 3
+prop_test_IntParam_01a = (domain FieldML_test_mesh01.localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
 
-meshGlobalNodesFSet = Labels (IntegerRange 1 6)
-elementIdFSet = Labels (IntegerRange 1 2)
-localNodeFSet = Labels (IntegerRange 1 4)
-elementId = GeneralVariable "elementId" elementIdFSet
-localNode = GeneralVariable "localNode" localNodeFSet
-
--- Todo: codomain here is Integers, and should be meshGlobalNodesFSet (i.e. the IDs of the global nodes).  
--- Could introduce a constructor syntax, i.e. facility to define constructor and facility to use constructor.
-localToGlobalNodes = MultiDimArray  
-  (IntegerParameterVector
-    [ 1, 2, 4, 5, 
-      2, 3, 5, 6 ]
-    meshGlobalNodesFSet
-  )
-  (CartesianProduct [ elementIdFSet, localNodeFSet ])
-
-prop_test_IntParam_01a = (domain localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
-
-prop_test_IntParam_01b = (validExpression localToGlobalNodes)
+prop_test_IntParam_01b = (validExpression FieldML_test_mesh01.localToGlobalNodes)
 
 brokenParamTest = MultiDimArray
   (IntegerParameterVector  
     [ 1, 2, 3, 4, 5 ]
-    meshGlobalNodesFSet
+    FieldML_test_mesh01.globalNodesFSet
   )  
-  (CartesianProduct [ elementIdFSet, localNodeFSet ])
+  (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, FieldML_test_mesh01.localNodeFSet ])
 
 prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
 
--- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
-globalNodeFSet = Labels (IntegerRange 1 6)
-globalNode = GeneralVariable "globalNode" globalNodeFSet
-
-pressureAtNodes = MultiDimArray 
-  (RealParameterVector
-     [  0.1,      0.5,  55.9, 
-        -0.4,   -100.9,  19.0 ] 
-  )
-  globalNodeFSet
-
-prop_test_IntParam_01d = ( validExpression pressureAtNodes )
+prop_test_IntParam_01d = ( validExpression FieldML_test_mesh01.pressureAtNodes )
 
 -- Demonstrating equations.  For now, this is just a Map to Boolean, but an extra construct could be added that means that this is asserted to be true.
 xy1 = GeneralVariable "xy" (CartesianProduct [Reals, Reals])
@@ -208,9 +178,11 @@ g1 = Tuple [ GeneralVariable "x" Reals, RealConstant 1.93 ]
 -- - This one has free variables xy and x, and whether it is true depends on values for xy and x. If there were a way of asserting that it must be true, then that constrains what valid values of xy and x are.
 equation1Style1 = xy1 `Equal` g1
 
+
 -- Demonstrating function space
 -- Todo: commented out example of use of Signature space, while trying to decide what to do regarding relationship to topological space.
 -- f1 = GeneralVariable "f" (SignatureSpace unitSquare Reals)
+
 
 -- Inverse of non-invertible function produces a set.
 y = GeneralVariable "y" Reals
@@ -225,6 +197,7 @@ prop_test_Predicate2b = (validExpression predicate2b)
 
 levelSet1 = SimpleSubset predicate2b
 
+
 -- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
 
 basis1dLinearLagrange_xi1 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "ξ1" FieldML.Library01.unitLineSegment)
@@ -234,6 +207,7 @@ prop_test_PartialApplication = (validExpression basis1dLinearLagrange_xi1)
 prop_test_KroneckerProduct2d = (validExpression FieldML.Library01.basis2dLinearLagrange)
 
 prop_test_KroneckerProduct3d = (validExpression FieldML.Library01.basis3dLinearLagrange)
+
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
 
@@ -313,29 +287,11 @@ statement1 =
 
 prop_test_normallyDistributedVariable1 = (validExpression statement1)
 
-{-
-pressureField = 
-  Lambda 
-    (Tuple [GeneralVariable "elementId" elementIdFSet, GeneralVariable "ξ ])
--}
-
--- MultiDimArray s are Lambda s, hence indexing is by means of application, and slices and slabs can be retrieved via partial application.
-elementIdToGlobalNodes = 
-  Lambda 
-  (GeneralVariable "elementId" elementIdFSet)
-  (PartialApplication localToGlobalNodes 1 (GeneralVariable "elementId" elementIdFSet))
 
 
 
 -- Mesh connectivity
 
--- Todo: Should this be stronly typed as the element IDs?  We want to enforce that the range is discrete. Perhaps just use an FSet, and check that it's discrete as part of validation?
-elementIdLabels = IntegerRange 1 2 
-
-mesh_SansConnectivity = 
-  DisjointUnion 
-    elementIdLabels
-    (DomainMapConstant FieldML.Library01.unitSquare) 
 
 -- Local element edge numbering
 --  +-4-+
@@ -346,7 +302,7 @@ mesh_SansConnectivity =
 
 localEdgeLabels = IntegerRange 1 4
 
-localEdgeFSet = Labels (IntegerRange 1 4)
+localEdgeFSet = Labels localEdgeLabels
 
 -- Global mesh element edge numbering, but first example below collapses edge number 4 to a single point.
 --  +-6-+-7-+
@@ -374,9 +330,9 @@ localToGlobalEdges = MultiDimArray
       2, 4, 5, 7 ]
     globalEdgeFSet
   )
-  (CartesianProduct [ elementIdFSet, localEdgeFSet ])
+  (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, localEdgeFSet ])
 
-loc1 = (GeneralVariable "loc1" mesh_SansConnectivity)
+loc1 = (GeneralVariable "loc1" FieldML_test_mesh01.mesh_SansConnectivity)
 
 xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
    
@@ -410,15 +366,22 @@ unitSquareXiToLocalEdgeId =
 
 equivalenceInducer1 = 
   (Lambda
-    (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity)
+    (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
     (Apply 
-      (PartialApplication localToGlobalEdges 1 (GeneralVariable "elementId" elementIdFSet) ) 
+      (PartialApplication localToGlobalEdges 1 (GeneralVariable "elementId" FieldML_test_mesh01.elementIdFSet) ) 
       (Apply unitSquareXiToLocalEdgeId xi)
     )
   )
   `Where` [
-    ( (GeneralVariable "elementId" elementIdFSet) `Equal` (Project 1 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) )),
-    ( xi                                          `Equal` (Project 2 (GeneralVariable "mesh_SansConnectivity_location" mesh_SansConnectivity) ))
+    ( (GeneralVariable "elementId" FieldML_test_mesh01.elementIdFSet) 
+      `Equal` 
+      (Project 1 (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity) )
+    ),
+    
+    ( xi                                          
+      `Equal` 
+      (Project 2 (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity) )
+    )
   ]
   
 prop_test_Where = ((freeVariables equivalenceInducer1) == [])
@@ -436,50 +399,7 @@ prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
 
 
 -- Field template
-localToGlobalNodesMapSignature = SignatureSpace (CartesianProduct [ elementIdFSet, localNodeFSet ]) meshGlobalNodesFSet
-localToGlobalNodesVar = (GeneralVariable "localToGlobalNodes" localToGlobalNodesMapSignature)
 
-dofSourceSignature = SignatureSpace meshGlobalNodesFSet Reals
-dofSourceVar = (GeneralVariable "dofSource" dofSourceSignature)
-                         
-mesh1NodalDofsForElementExpr = 
-  Lambda 
-  (Tuple [
-    dofSourceVar,      
-    localToGlobalNodesVar,            
-    elementId,
-    localNode
-  ]) 
-  (Apply dofSourceVar ((Apply localToGlobalNodesVar (Tuple [elementId, localNode]))))
+prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementExpr)
 
-prop_test_nodalDofs = (validExpression mesh1NodalDofsForElementExpr)
-
-mesh1NodalDofsForElementSignature = SignatureSpace (Domain mesh1NodalDofsForElementExpr) (Codomain mesh1NodalDofsForElementExpr)
-mesh1NodalDofsForElementVar = GeneralVariable "mesh1NodalDofsForElementVar" mesh1NodalDofsForElementSignature
-
-mesh1FieldTemplate = 
-  Lambda
-  (Tuple [
-    dofSourceVar,
-    mesh1NodalDofsForElementVar,
-    elementId,
-    xi
-  ])
-  (Contraction
-    (Lambda 
-      localNode
-      (Apply 
-        (Tuple [
-          dofSourceVar,      
-          localToGlobalNodesVar,            
-          elementId,
-          localNode
-        ]) 
-        mesh1NodalDofsForElementVar 
-      )
-    )
-    1
-      
-    (Apply FieldML.Library01.basis2dLinearLagrange xi)
-    1
-  )
+prop_test_fieldTemplate = (validExpression FieldML_test_mesh01.fieldTemplate)
