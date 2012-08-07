@@ -37,8 +37,8 @@ data FSet =
   -- | Note that this is equivalent to CartesianProduct []
   UnitSpace |
   
-  Reals |
   Booleans |
+  Reals |
   Labels SetOfLabels |
   CartesianProduct [FSet] |
   
@@ -120,8 +120,12 @@ data Expression =
   -- | Represents a possible result when the result of mapping a point is unknown, or left unspecified. 
   Unspecified FSet |
 
+  -- | Cast x m is used to allow an expression x to represent a value for an FSet m which is not its natural codomain, 
+  -- For example Cast (RealConstant 1.5) m1 if m1 was the subset of non-negative Reals.
+  Cast Expression FSet |
+
   Tuple [Expression] |
-  
+
   -- | Project n x assumes x is a Tuple, and represents the n'th factor of the tuple.
   Project Int Expression |
 

@@ -32,6 +32,7 @@ freeVariables (RealConstant _ ) = []
 freeVariables (LabelValue _) = []
 freeVariables f@(GeneralVariable _ _ ) = [f]
 freeVariables (Unspecified _) = []
+freeVariables (Cast x _) = freeVariables x -- Todo: currently ignoring free variables in definition of FSet.
 freeVariables (Tuple xs) = nub (concatMap freeVariables xs) 
 freeVariables (Project _ x) = freeVariables x
 
@@ -97,6 +98,8 @@ domain (LabelValue _ ) = UnitSpace
 domain (GeneralVariable _ (SignatureSpace m _)) = simplifyFSet m
 domain (GeneralVariable _ _) = UnitSpace
 domain (Unspecified _) = UnitSpace
+domain (Cast _ (SignatureSpace m _)) = m
+domain (Cast _ _) = UnitSpace
 domain (Tuple _) = UnitSpace
 domain (Project n (Tuple fs)) = simplifyFSet $ domain (fs!!(n-1))
 domain x@(Project _ _) = error ("domain not implemented yet for Project from anything other than Tuple. Args:" ++ show x)
@@ -175,6 +178,8 @@ codomain (LabelValue (IntegerLabel _ m)) = Labels m
 
 codomain (GeneralVariable _ m) = m
 codomain (Unspecified m) = m
+codomain (Cast _ (SignatureSpace _ m)) = m
+codomain (Cast _ m) = m
 codomain (Tuple fs) = CartesianProduct (map codomain fs)
 codomain (Project n f) = getFactor n (codomain f)
 codomain (Lambda _ expr ) 
@@ -252,6 +257,8 @@ validExpression (LabelValue (IntegerLabel x (Intersection n1 n2))) =
 
 validExpression (GeneralVariable _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
 validExpression (Unspecified _) = True
+validExpression (Cast x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
+
 validExpression (Tuple xs) = all validExpression xs
 validExpression (Project n x) = 
   validExpression x  && 
