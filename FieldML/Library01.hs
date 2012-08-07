@@ -12,74 +12,79 @@ module FieldML.Library01 (
 
 ) where
 
-import FieldML.Core
+import qualified FieldML.Core as C
 
-real2 = CartesianProduct [Reals, Reals]
-real3 = CartesianProduct [Reals, Reals, Reals]
+real2 = C.CartesianProduct [C.Reals, C.Reals]
+real3 = C.CartesianProduct [C.Reals, C.Reals, C.Reals]
 
-x = GeneralVariable "x" Reals
+x = C.GeneralVariable () "x" C.Reals
 
-unitLinePredicate =  Lambda x
-  (  (x `LessThan` (RealConstant 1) )
-     `And` 
-     ( (RealConstant 0) `LessThan` x)
+lessThan = C.LessThan ()
+and1 = C.And ()
+minus = C.Minus ()
+plus = C.Plus ()
+
+unitLinePredicate =  C.Lambda () x
+  (  (x `lessThan` (C.RealConstant () 1) )
+     `and1` 
+     ( (C.RealConstant () 0) `lessThan` x)
   )   
 
-unitLineSegment = SimpleSubset unitLinePredicate
+unitLineSegment = C.SimpleSubset unitLinePredicate
 
-xi1 = GeneralVariable "ξ1" unitLineSegment
+xi1 = C.GeneralVariable () "ξ1" unitLineSegment
 
-phi1 = (RealConstant 1) `Minus` xi1
+phi1 = (C.RealConstant () 1) `minus` xi1
 
 phi2 =  xi1
 
-basis1dLinearLagrange = Lambda xi1 (Tuple [phi1, phi2])
+basis1dLinearLagrange = C.Lambda () xi1 (C.Tuple () [phi1, phi2])
 
 
---Todo: Aother way of looking at this is that this assumes that 'equations' for Lambda's may use pattern matching.
-xy = Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]
+--Todo: Aother way of looking at this is that this assumes that 'equations' for C.Lambda's may use pattern matching.
+xy = C.Tuple () [C.GeneralVariable () "x" C.Reals, C.GeneralVariable () "y" C.Reals]
 
 simplex2dPredicate = 
-  Lambda xy (
-    ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals )
-    `And`
-    ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals )
-    `And`
-    ( ( GeneralVariable "x" Reals `Plus` GeneralVariable "y" Reals ) `LessThan` (RealConstant 1) )
+  C.Lambda () xy (
+    ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "x" C.Reals )
+    `and1`
+    ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "y" C.Reals )
+    `and1`
+    ( ( C.GeneralVariable () "x" C.Reals `plus` C.GeneralVariable () "y" C.Reals ) `lessThan` (C.RealConstant () 1) )
   )
 
-simplex2d = SimpleSubset simplex2dPredicate
+simplex2d = C.SimpleSubset simplex2dPredicate
 
 unitSquarePredicate = 
-  Lambda xy (
-    (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
-    `And`
-    (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
+  C.Lambda () xy (
+    (C.GeneralVariable () "x" C.Reals `lessThan` (C.RealConstant () 1))  `and1` ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "x" C.Reals) 
+    `and1`
+    (C.GeneralVariable () "y" C.Reals `lessThan` (C.RealConstant () 1))  `and1` ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "y" C.Reals)
   )
 
-unitSquare = SimpleSubset unitSquarePredicate
+unitSquare = C.SimpleSubset unitSquarePredicate
 
-basis1dLinearLagrange_xi1 = Apply basis1dLinearLagrange (GeneralVariable "ξ1" unitLineSegment)
-basis1dLinearLagrange_xi2 = Apply basis1dLinearLagrange (GeneralVariable "ξ2" unitLineSegment)
-basis1dLinearLagrange_xi3 = Apply basis1dLinearLagrange (GeneralVariable "ξ3" unitLineSegment)
+basis1dLinearLagrange_xi1 = C.Apply () basis1dLinearLagrange (C.GeneralVariable () "ξ1" unitLineSegment)
+basis1dLinearLagrange_xi2 = C.Apply () basis1dLinearLagrange (C.GeneralVariable () "ξ2" unitLineSegment)
+basis1dLinearLagrange_xi3 = C.Apply () basis1dLinearLagrange (C.GeneralVariable () "ξ3" unitLineSegment)
 
-basis2dLinearLagrange = Lambda 
-  (Tuple [
-    (GeneralVariable "ξ1" unitLineSegment), 
-    (GeneralVariable "ξ2" unitLineSegment)
+basis2dLinearLagrange = C.Lambda ()
+  (C.Tuple () [
+    (C.GeneralVariable () "ξ1" unitLineSegment), 
+    (C.GeneralVariable () "ξ2" unitLineSegment)
   ]) 
-  (KroneckerProduct [
+  (C.KroneckerProduct () [
     basis1dLinearLagrange_xi1, 
     basis1dLinearLagrange_xi2
   ])
 
-basis3dLinearLagrange = Lambda
-  (Tuple [
-    (GeneralVariable "ξ1" unitLineSegment), 
-    (GeneralVariable "ξ2" unitLineSegment), 
-    (GeneralVariable "ξ3" unitLineSegment)
+basis3dLinearLagrange = C.Lambda ()
+  (C.Tuple () [
+    (C.GeneralVariable () "ξ1" unitLineSegment), 
+    (C.GeneralVariable () "ξ2" unitLineSegment), 
+    (C.GeneralVariable () "ξ3" unitLineSegment)
   ])   
-  (KroneckerProduct [
+  (C.KroneckerProduct () [
     basis1dLinearLagrange_xi1, 
     basis1dLinearLagrange_xi2, 
     basis1dLinearLagrange_xi3 
