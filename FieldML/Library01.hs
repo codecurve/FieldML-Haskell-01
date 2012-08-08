@@ -13,28 +13,25 @@ module FieldML.Library01 (
 ) where
 
 import qualified FieldML.Core as C
+import qualified FieldML.Utility.CoreInfixExpressions as I
 
 real2 = C.CartesianProduct [C.Reals, C.Reals]
 real3 = C.CartesianProduct [C.Reals, C.Reals, C.Reals]
 
 x = C.GeneralVariable () "x" C.Reals
 
-lessThan = C.LessThan ()
-and1 = C.And ()
-minus = C.Minus ()
-plus = C.Plus ()
 
 unitLinePredicate =  C.Lambda () x
-  (  (x `lessThan` (C.RealConstant () 1) )
-     `and1` 
-     ( (C.RealConstant () 0) `lessThan` x)
+  (  (x `I.lessThan` (C.RealConstant () 1) )
+     `I.and'` 
+     ( (C.RealConstant () 0) `I.lessThan` x)
   )   
 
 unitLineSegment = C.SimpleSubset unitLinePredicate
 
 xi1 = C.GeneralVariable () "ξ1" unitLineSegment
 
-phi1 = (C.RealConstant () 1) `minus` xi1
+phi1 = (C.RealConstant () 1) `I.minus` xi1
 
 phi2 =  xi1
 
@@ -46,20 +43,20 @@ xy = C.Tuple () [C.GeneralVariable () "x" C.Reals, C.GeneralVariable () "y" C.Re
 
 simplex2dPredicate = 
   C.Lambda () xy (
-    ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "x" C.Reals )
-    `and1`
-    ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "y" C.Reals )
-    `and1`
-    ( ( C.GeneralVariable () "x" C.Reals `plus` C.GeneralVariable () "y" C.Reals ) `lessThan` (C.RealConstant () 1) )
+    ( (C.RealConstant () 0) `I.lessThan` C.GeneralVariable () "x" C.Reals )
+    `I.and'`
+    ( (C.RealConstant () 0) `I.lessThan` C.GeneralVariable () "y" C.Reals )
+    `I.and'`
+    ( ( C.GeneralVariable () "x" C.Reals `I.plus` C.GeneralVariable () "y" C.Reals ) `I.lessThan` (C.RealConstant () 1) )
   )
 
 simplex2d = C.SimpleSubset simplex2dPredicate
 
 unitSquarePredicate = 
   C.Lambda () xy (
-    (C.GeneralVariable () "x" C.Reals `lessThan` (C.RealConstant () 1))  `and1` ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "x" C.Reals) 
-    `and1`
-    (C.GeneralVariable () "y" C.Reals `lessThan` (C.RealConstant () 1))  `and1` ( (C.RealConstant () 0) `lessThan` C.GeneralVariable () "y" C.Reals)
+    (C.GeneralVariable () "x" C.Reals `I.lessThan` (C.RealConstant () 1))  `I.and'` ( (C.RealConstant () 0) `I.lessThan` C.GeneralVariable () "x" C.Reals) 
+    `I.and'`
+    (C.GeneralVariable () "y" C.Reals `I.lessThan` (C.RealConstant () 1))  `I.and'` ( (C.RealConstant () 0) `I.lessThan` C.GeneralVariable () "y" C.Reals)
   )
 
 unitSquare = C.SimpleSubset unitSquarePredicate
