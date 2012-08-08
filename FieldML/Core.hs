@@ -228,7 +228,7 @@ data Expression a =
   -- f = MultiDimArray v m assumes that m is an discrete FSet, or the CartesianProduct of n discrete FSets,
   -- with a total cardinality equal to length v.
   -- f is a lambda from m to the value type of v's elements.
-  MultiDimArray a SimpleVector FSet |
+  MultiDimArray a (SimpleVector a) FSet |
 
   -- | Contraction x1 i1 x2 i2 requires x1 and x2 to be lambda-like expressions where the contraction parameters are 'compatible'.
   -- In the case where the contraction parameters are from a discrete FSet, 
@@ -270,7 +270,7 @@ data Expression a =
 -- It also allows Tuples to be represented as a vector.
 
 -- Todo: Consider just having these 3 constructors under Expression.
-data SimpleVector = 
+data SimpleVector a = 
   -- | A prototype placeholder for the numerical data that will be available from external sources, e.g. HDF5 etc.
   RealParameterVector [Double] | 
 
@@ -282,7 +282,7 @@ data SimpleVector =
   -- Otherwise, AlgebraicVector x represents a vector with a single element
 
   -- Todo: Consider just having Tuple for this, and validation checks for homogeneity.
-  AlgebraicVector (Expression ())
+  AlgebraicVector (Expression a)
 
   deriving (Show, Eq)
 
