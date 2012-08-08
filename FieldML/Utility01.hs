@@ -244,178 +244,59 @@ codomain x = error ("codomain not implemented yet for this constructor. Args:" +
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
 
 -- | Apply a visitor to an expression tree to get a new expression tree with the results of visiting each node of the expressin tree stored at the corresponding node in the new Expression tree.
-applyVisitor :: (Show a, Show b) => (Expression a -> b) -> Expression a -> Expression b
+applyVisitor :: (Show a, Show b, Eq a, Eq b) => (Expression a -> b) -> Expression a -> Expression b
 
 applyVisitor v x1@(UnitElement _) = UnitElement (v x1)
 applyVisitor v x1@(BooleanConstant _ x) = BooleanConstant (v x1) x
 applyVisitor v x1@(RealConstant _ x) = RealConstant (v x1) x
-
 applyVisitor v t@(Tuple _ xs) = Tuple (v t) (map (applyVisitor v) xs)
 applyVisitor v x1@(Project _ n x) = Project (v x1) n (applyVisitor v x)
-{-
-
-applyVisitor (Lambda _ x expr ) = Lambda validity (applyVisitor x) (applyVisitor expr)
-  where 
-    validity = 
-      (isVariableTuple x) && 
-      (validExpression x) && 
-      (validExpression expr)
-
-    isVariableTuple (GeneralVariable _ _) = True
-    isVariableTuple (Tuple xs) = all isVariableTuple xs
-    isVariableTuple _ = False
+applyVisitor v x1@(Lambda _ x expr ) = Lambda (v x1) (applyVisitor v x) (applyVisitor v expr)
 
 -- Todo: Other expressions are lambda like, and can be inverted, add their cases.  Probably will treat inverse of values that are not lambda-like as invalid though.
-applyVisitor (Inverse _ f) = Inverse v (applyVisitor f)
-  where v = validExpression f && lambdaLike f
+applyVisitor v x1@(Inverse _ f) = Inverse (v x1) (applyVisitor v f)
+applyVisitor v x1@(Lambdify _ expr) = Lambdify (v x1) (applyVisitor v expr)
+applyVisitor v x1@(Apply _ f x) = Apply (v x1) (applyVisitor v f) (applyVisitor v x)
+applyVisitor v x1@(Compose _ f g) = Compose (v x1) (applyVisitor v f) (applyVisitor v g)
+applyVisitor v x1@(PartialApplication _ f n x) = PartialApplication (v x1) (applyVisitor v f) n (applyVisitor v x)
+applyVisitor v x1@(Where _ expr locals) = Where (v x1) (applyVisitor v expr) (map (applyVisitor v) locals)
 
-applyVisitor (Lambdify _ expr) = Lambdify v (applyVisitor expr)
-  where v = validExpression expr && not (lambdaLike expr) -- Todo: Not sure if the restriction that expr is "not lambda-like" is necessary.
+applyVisitor v x1@(And       _ x y) = And       (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Or        _ x y) = Or        (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(LessThan  _ x y) = LessThan  (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Equal     _ x y) = Equal     (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Plus      _ x y) = Plus      (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Minus     _ x y) = Minus     (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Times     _ x y) = Times     (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Divide    _ x y) = Divide    (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Modulus   _ x y) = Modulus   (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Power     _ x y) = Power     (v x1) (applyVisitor v x) (applyVisitor v y)
+applyVisitor v x1@(Exists    _ x y) = Exists    (v x1) (applyVisitor v x) (applyVisitor v y)
 
-applyVisitor (Apply f x) = Apply v (applyVisitor f) (applyVisitor x)
-  where v = 
-    lambdaLike f &&
-    codomain x == domain f &&
-    validExpression f &&
-    validExpression x
+applyVisitor v x1@(Not    _ x) = Not    (v x1) (applyVisitor v x)
+applyVisitor v x1@(Negate _ x) = Negate (v x1) (applyVisitor v x)
+applyVisitor v x1@(Sin    _ x) = Sin    (v x1) (applyVisitor v x)
+applyVisitor v x1@(Cos    _ x) = Cos    (v x1) (applyVisitor v x)
+applyVisitor v x1@(Exp    _ x) = Exp    (v x1) (applyVisitor v x)
+applyVisitor v x1@(Min    _ x) = Min    (v x1) (applyVisitor v x)
+applyVisitor v x1@(Max    _ x) = Max    (v x1) (applyVisitor v x)
 
-applyVisitor (Compose f g) = Compose v (applyVisitor f) (applyVisitor g)
-  where v = 
-    lambdaLike f &&
-    lambdaLike g &&
-    validExpression f &&
-    validExpression g &&
-    codomain g == domain f
+applyVisitor v x1@(ElementOf _ x m) = ElementOf (v x1) (applyVisitor v x) m
+applyVisitor v x1@(Pi _) = Pi (v x1)
+applyVisitor v x1@(If _ x vt vf) = If (v x1) (applyVisitor v x) (applyVisitor v vt) (applyVisitor v vf)
+applyVisitor v x1@(Restriction _ s f ) = Restriction (v x1) s (applyVisitor v f)
+applyVisitor v x1@(Interior _ m) = Interior (v x1) m
 
-applyVisitor (PartialApplication _ f n x) = PartialApplication v (Validatedexpression f) n (Validatedexpression x)
-  where v =
-    lambdaLike f &&
-    factorCount (domain f) >= n &&
-    canonicalSuperset (codomain x) == getFactor n (domain f) &&
-    validExpression f &&
-    validExpression x
+applyVisitor v x1@(MultiDimArray _ (AlgebraicVector x)            m) = MultiDimArray (v x1) (AlgebraicVector (applyVisitor v x)) m
+applyVisitor v x1@(MultiDimArray _ (RealParameterVector xs)       m) = MultiDimArray (v x1) (RealParameterVector xs)             m
+applyVisitor v x1@(MultiDimArray _ (IntegerParameterVector xs m1) m) = MultiDimArray (v x1) (IntegerParameterVector xs m1)       m
 
-applyVisitor (Where _ expr locals) = Where v (applyVisitor expr) (map applyVisitor locals)
-  where 
-    v = 
-      validExpression expr && 
-      all validExpression locals &&
-      all localVarAssignment locals
+applyVisitor v x1@(Contraction _ a1 n1 a2 n2) = Contraction (v x1) (applyVisitor v a1) n1 (applyVisitor v a2) n2
+applyVisitor v x1@(KroneckerProduct _ xs) = KroneckerProduct (v x1) (map (applyVisitor v) xs)
+applyVisitor v x1@(DistributedAccordingTo _ expr f) = DistributedAccordingTo (v x1) (applyVisitor v expr) (applyVisitor v f)
+applyVisitor v x1@(DistributionFromRealisations _ xs) = DistributionFromRealisations (v x1) (map (applyVisitor v) xs)
 
-    localVarAssignment (Equal _ (GeneralVariable _ _ _) _) = True
-    localVarAssignment _ = False
 
-applyVisitor (And _ x y) = And v (applyVisitor x) (applyVisitor y)
-  where v = validBinaryOp Booleans x y
-
-applyVisitor (Or  _ x y) = Or  v (applyVisitor x) (applyVisitor y)
-  where v = validBinaryOp Booleans x y
-
-applyVisitor (Not _ x) = Not v (applyVisitor x)
-  where v = 
-    validExpression x &&
-    codomain x == Booleans &&
-    not (lambdaLike x)
-
-applyVisitor (LessThan _ x y) = LessThan v (applyVisitor x) (applyVisitor y)
-  where v = validBinaryOp Reals x y
-
-applyVisitor (Equal _ x y) = Equal v (applyVisitor x) (applyVisitor y)
-  where v = 
-    validExpression x &&
-    validExpression y &&
-    canonicalSuperset (codomain x) == canonicalSuperset (codomain y) &&
-    not (lambdaLike x) &&
-    not (lambdaLike y)
-
-applyVisitor (Plus    _ x y) = Plus    (validBinaryOp Reals x y) (applyVisitor x) (applyVisitor y)
-applyVisitor (Minus   _ x y) = Minus   (validBinaryOp Reals x y) (applyVisitor x) (applyVisitor y)
-applyVisitor (Times   _ x y) = Times   (validBinaryOp Reals x y) (applyVisitor x) (applyVisitor y)
-applyVisitor (Divide  _ x y) = Divide  (validBinaryOp Reals x y) (applyVisitor x) (applyVisitor y)
-applyVisitor (Modulus _ x y) = Modulus (validBinaryOp Reals x y) (applyVisitor x) (applyVisitor y)
-applyVisitor (Power   _ x y) = Power   (validBinaryOp Reals x y) (applyVisitor x) (applyVisitor y)
-
-applyVisitor (Negate _ x) = Negate (validUnaryOp Reals x) (applyVisitor x)
-applyVisitor (Sin    _ x) = Sin    (validUnaryOp Reals x) (applyVisitor x)
-applyVisitor (Cos    _ x) = Cos    (validUnaryOp Reals x) (applyVisitor x)
-applyVisitor (Exp    _ x) = Exp    (validUnaryOp Reals x) (applyVisitor x)
-
-applyVisitor Pi _ =  Pi True
-
-applyVisitor (If _ x vt vf) = If v (applyVisitor x) (applyVisitor vt) (applyVisitor vf)
-  where v = 
-    validExpression x && 
-    validExpression vt && 
-    validExpression vf && 
-    codomain vt == codomain vf &&
-    codomain x == Booleans &&
-    not (lambdaLike x)
-
-applyVisitor (Max _ f) = Max (realCodomain f) (applyVisitor f)
-applyVisitor (Min _ f) = Min (realCodomain f) (applyVisitor f)
-
-applyVisitor (ElementOf _ x y) = ElementOf True (applyVisitor x) (applyVisitor y)
-
-applyVisitor (Exists _ x@(GeneralVariable _ _ _) f) = Exists v (applyVisitor x) (applyVisitor f)
-  where v = 
-    codomain f ==  Booleans &&
-    validExpression f
-  
-validExpression x@(Exists _ _ _) = error ("applyVisitor not implemented yet for Exists for case where bound variable is anything other than GeneralVariable. Args:" ++ show x)
-
-applyVisitor (Restriction _ s@(SimpleSubset p) f ) = Restriction v s (applyVisitor f)
-  where v = 
-    lambdaLike f &&
-    validExpression f &&
-    validExpression p &&
-    domain p == domain f
-  
-validExpression x@(Restriction _ _ _) = error ("applyVisitor not implemented yet for Restriction for case where restriction FSet is anything other than SimpleSubset. Args:" ++ show x)
-
-applyVisitor (Interior _ m) = Interior True m -- Todo: validate the FSet operand.
-
-applyVisitor (MultiDimArray _ v m) = MultiDimArray validity (applyVisitor v) m
-  where
-    validity = ((isDiscreteFSet m) || (isProductOfDFSs m))  && validateCardinality && validVector v
-    validateCardinality = (cardinality m == vectorLength v)    
-    isDiscreteFSet (Labels _) = True
-    isDiscreteFSet _ = False
-    isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
-    isProductOfDFSs _ = False
-
-applyVisitor (Contraction _ a1 n1 a2 n2) = Contraction v (applyVisitor a1) n1 (applyVisitor a2) n2
-  where v =
-    lambdaLike a1 &&
-    lambdaLike a2 &&
-    validExpression a1 &&
-    validExpression a2 &&
-    codomain a1 == Reals &&
-    codomain a2 == Reals &&
-    n1 <= factorCount m1 &&
-    n2 <= factorCount m2 &&
-    getFactor n1 m1 == getFactor n2 m2
-    m1 = domain a1 
-    m2 = domain a2 
-
-applyVisitor (KroneckerProduct _ xs) = KroneckerProduct v (map applyVisitor xs)
-  where 
-    v = all validTupleOfRealValues xs
-    validTupleOfRealValues (Tuple ys) = all validRealValue ys
-    validTupleOfRealValues (Apply (Lambda _ expr) _) = validTupleOfRealValues expr
-    -- Todo: see comment made at codomain for KroneckerProduct
-
-applyVisitor (DistributedAccordingTo _ expr f) = DistributedAccordingTo v (applyVisitor expr) (applyVisitor f)
-  where v = 
-    realCodomain f && 
-    domain f == codomain expr
-
-applyVisitor (DistributionFromRealisations _ xs) = DistributionFromRealisations v (map applyVisitor xs)
-  where v =  
-    all validExpression xs &&
-    length (nub (map (simplifyFSet . codomain) xs)) == 1
-
-applyVisitor v x = v x 
--}
 -- Secondary utility methods follow
 validatingVisitor :: (Show a, Eq a) => (Expression a) -> Bool
 validatingVisitor (UnitElement _) = True
