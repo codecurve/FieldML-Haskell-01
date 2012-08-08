@@ -243,20 +243,15 @@ codomain x = error ("codomain not implemented yet for this constructor. Args:" +
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
 
 -- | Apply a visitor to an expression tree to get a new expression tree with the results of visiting each node of the expressin tree stored at the corresponding node in the new Expression tree.
-applyVisitor :: (Expression a -> b) -> Expression a -> Expression b
+applyVisitor :: (Show a, Show b) => (Expression a -> b) -> Expression a -> Expression b
 
 applyVisitor v x1@(UnitElement _) = UnitElement (v x1)
 applyVisitor v x1@(BooleanConstant _ x) = BooleanConstant (v x1) x
 applyVisitor v x1@(RealConstant _ x) = RealConstant (v x1) x
 
-
-
 applyVisitor v t@(Tuple _ xs) = Tuple (v t) (map (applyVisitor v) xs)
-
+applyVisitor v x1@(Project _ n x) = Project (v x1) n (applyVisitor v x)
 {-
-applyVisitor (Project _ n x) = Project validity n (applyVisitor x)
-  where
-    validity = (validExpression x) && factorCount (codomain x) >= n
 
 applyVisitor (Lambda _ x expr ) = Lambda validity (applyVisitor x) (applyVisitor expr)
   where 
@@ -421,10 +416,12 @@ applyVisitor (DistributionFromRealisations _ xs) = DistributionFromRealisations 
 applyVisitor v x = v x 
 -}
 -- Secondary utility methods follow
-validatingVisitor :: (Expression a) -> Bool
+validatingVisitor :: (Show a) => (Expression a) -> Bool
 validatingVisitor (UnitElement _) = True
 validatingVisitor (BooleanConstant _ x) = True
 validatingVisitor (RealConstant _ x) = True
+
+
 {-
 validatingVisitor (LabelValue _ c@(StringLabel  x  (StringLabels xs) )) = LabelValue validity c
   where
@@ -451,9 +448,179 @@ validatingVisitor (GeneralVariable _ _ x) = True -- Todo: Could validate the nam
 validatingVisitor (Unspecified _ m) = True -- Todo: Could validate the FSet m when FSet validation is implemented one day.
 
 validatingVisitor (Tuple _ xs) = all validatingVisitor xs
+validatingVisitor (Project _ n x) = (validatingVisitor x) && factorCount (codomain x) >= n
 
 -- validatingVisitor (Cast _ x s@(SignatureSpace m n)) = Cast (validExpression x) (applyVisitor x) s -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
 
+-- **************************************************************************************
+-- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
+validExpression :: (Show a) => Expression a -> Bool
+
+validExpression (UnitElement _) = True
+validExpression (BooleanConstant _ _) = True
+validExpression (RealConstant _ _ ) = True
+validExpression (LabelValue _ (StringLabel  x  (StringLabels xs) )) = x `elem` (Set.toList xs)
+validExpression (LabelValue _ (IntegerLabel x (IntegerRange a b) )) = a <= x && x <= b
+validExpression (LabelValue _(IntegerLabel _ Integers )) = True
+validExpression (LabelValue _ (IntegerLabel x (DiscreteSetUnion n1 n2))) = 
+  validExpression (LabelValue () (IntegerLabel x n1))  ||
+  validExpression (LabelValue () (IntegerLabel x n2))
+validExpression (LabelValue _ (IntegerLabel x (Intersection n1 n2))) = 
+  validExpression (LabelValue () (IntegerLabel x n1))  &&
+  validExpression (LabelValue () (IntegerLabel x n2))
+
+validExpression (GeneralVariable _ _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
+validExpression (Unspecified _ _) = True
+validExpression (Cast _ x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
+
+validExpression (Tuple _ xs) = all validExpression xs
+validExpression (Project _ n x) = 
+  validExpression x  && 
+  factorCount (codomain x) >= n
+
+validExpression (Lambda _ x expr ) = (isVariableTuple x) && (validExpression expr)
+  where 
+    isVariableTuple (GeneralVariable _ _ _) = True
+    isVariableTuple (Tuple _ xs) = all isVariableTuple xs
+    isVariableTuple _ = False
+
+-- Todo: Other expressions are lambda like, and can be inverted, add their cases.  Probably will treat inverse of values that are not lambda-like as invalid though.
+validExpression (Inverse _ f) = 
+  validExpression f &&
+  lambdaLike f
+
+validExpression (Lambdify _ expr) = validExpression expr && not (lambdaLike expr) -- Todo: Not sure if the restriction that expr is "not lambda-like" is necessary.
+
+validExpression (Apply _ f x) = 
+  lambdaLike f &&
+  codomain x == domain f &&
+  validExpression f &&
+  validExpression x
+
+validExpression (Compose _ f g) = 
+  lambdaLike f &&
+  lambdaLike g &&
+  validExpression f &&
+  validExpression g &&
+  codomain g == domain f
+
+validExpression (PartialApplication _ f n x) =
+  lambdaLike f &&
+  factorCount (domain f) >= n &&
+  canonicalSuperset (codomain x) == getFactor n (domain f) &&
+  validExpression f &&
+  validExpression x
+
+validExpression (Where _ expr locals) = 
+  validExpression expr &&
+  all validExpression locals &&
+  all localVarAssignment locals
+    where 
+      localVarAssignment (Equal  _ (GeneralVariable  _ _ _) _) = True
+      localVarAssignment _ = False
+  
+validExpression (And _ a b) = validBinaryOp Booleans a b
+
+validExpression (Or _ a b) = validBinaryOp Booleans a b
+
+validExpression (Not _ a) =
+  validExpression a &&
+  codomain a == Booleans &&
+  not (lambdaLike a)
+
+validExpression (LessThan _ a b) = validBinaryOp Reals a b
+
+validExpression (Equal _ a b) =
+  validExpression a &&
+  validExpression b &&
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
+
+validExpression (Plus _ a b) = validBinaryOp Reals a b
+
+validExpression (Minus _ a b) = validBinaryOp Reals a b
+
+validExpression (Negate _ a) = validUnaryOp Reals a
+
+validExpression (Times _ a b) = validBinaryOp Reals a b
+
+validExpression (Divide _ a b) = validBinaryOp Reals a b
+
+validExpression (Modulus _ a b) = validBinaryOp Reals a b
+
+validExpression (Sin _ x) = validUnaryOp Reals x
+
+validExpression (Cos _ x) = validUnaryOp Reals x
+  
+validExpression (Exp _ x) = validUnaryOp Reals x
+
+validExpression (Power _ x y) = validBinaryOp Reals x y
+
+validExpression (Pi _) =  True
+
+validExpression (If _ x a b ) = 
+  validExpression a && 
+  validExpression b && 
+  validExpression x && 
+  codomain a == codomain b &&
+  codomain x == Booleans &&
+  not (lambdaLike x)
+
+validExpression (Max _ f) = realCodomain f
+validExpression (Min _ f) = realCodomain f
+
+validExpression (ElementOf _ _ _) = True
+
+validExpression (Exists _ (GeneralVariable _ _ _) f) = 
+  codomain f ==  Booleans &&
+  validExpression f
+
+validExpression (Restriction _ (SimpleSubset p) f ) = 
+  lambdaLike f &&
+  validExpression f &&
+  validExpression p &&
+  domain p == domain f
+
+validExpression (Interior _ _) = True -- Todo: validate the FSet operand.
+
+validExpression (MultiDimArray _ v m) = ((isDiscreteFSet m) || (isProductOfDFSs m))  && validateCardinality && validVector v
+  where
+    validateCardinality = (cardinality m == vectorLength v)    
+    isDiscreteFSet (Labels _) = True
+    isDiscreteFSet _ = False
+    isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
+    isProductOfDFSs _ = False
+
+validExpression (Contraction _ a1 n1 a2 n2) = 
+  lambdaLike a1 &&
+  lambdaLike a2 &&
+  validExpression a1 &&
+  validExpression a2 &&
+  codomain a1 == Reals &&
+  codomain a2 == Reals &&
+  n1 <= factorCount m1 &&
+  n2 <= factorCount m2 &&
+  getFactor n1 m1 == getFactor n2 m2
+  where
+    m1 = domain a1 
+    m2 = domain a2 
+
+validExpression (KroneckerProduct _ xs) = all validTupleOfRealValues xs
+  where 
+    validTupleOfRealValues (Tuple _ ys) = all validRealValue ys
+    validTupleOfRealValues (Apply _ (Lambda _ _ expr) _) = validTupleOfRealValues expr
+    -- Todo: see comment made at codomain for KroneckerProduct
+
+validExpression (DistributedAccordingTo _ expr f) = 
+  realCodomain f &&
+  domain f == codomain expr
+
+validExpression (DistributionFromRealisations _ xs) =
+  all validExpression xs &&
+  length (nub (map (simplifyFSet . codomain) xs)) == 1
+
+-- **************************************************************************************
 
 
 
@@ -540,24 +707,24 @@ canonicalSuperset m = m
 -- | Checks that both expressions are of the same codomain, and are each valid, and are each value-like, not lambda-like.
 
 -- Todo: add a flag to indicate whether lambda's are considered valid or not.
-{-
-validBinaryOp :: FSet -> Expression -> Expression -> Bool
-validBinaryOp m a b =
-  validUnaryOp m a &&
-  validUnaryOp m b
+
+validBinaryOp :: (Show a) => FSet -> Expression a -> Expression a -> Bool
+validBinaryOp m x y =
+  validUnaryOp m x &&
+  validUnaryOp m y
 
 
-validUnaryOp :: FSet -> Expression -> Bool
+validUnaryOp :: (Show a) => FSet -> Expression a -> Bool
 validUnaryOp m x = 
   validExpression x && 
   (canonicalSuperset . simplifyFSet . codomain) x == m &&
   not (lambdaLike x)
 
--}
+
 realCodomain :: (Show a) => Expression a -> Bool
 realCodomain x = (canonicalSuperset . simplifyFSet . codomain) x  == Reals
 
-{-
-validRealValue :: Expression -> Bool
+
+validRealValue :: (Show a) => Expression a -> Bool
 validRealValue x = validUnaryOp Reals x
--}
+
