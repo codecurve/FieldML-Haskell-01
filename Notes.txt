@@ -25,7 +25,8 @@ Need to be able to recognise massive homogeneity in order to optimise, e.g. for 
 Note: Maps and Values can be seen as the same thing, a value is just a map whose domain is the UnitSpace. However, it is pragmatic to differentiate between the two. Also, always treating values as maps from UnitSpace is recursive, i.e. v is the same as us → v is the same as us → (us → v), etc.
 
 What about expressions that evaluate to an FSet? E.g. f::Reals → FSet s.t. f(x) = SimpleSubset Reals -x x
-
+Andrew Miller pointed out that "Domains" should be static so that FieldML should be a statically typed language.
+Perhaps expressions that produce FSets can still fit into a statically typed FieldML.
 
 Todo list:
 - Instance Show to make expressions pretty (new lines, indentation)
