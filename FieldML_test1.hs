@@ -57,9 +57,9 @@ xy = Tuple () [GeneralVariable () "x" Reals, GeneralVariable () "y" Reals]
 expression2 :: Expression ()
 expression2 = Lambda () xy
   (  
-    ((Project 1 xy) `lessThan` (RealConstant () 1))  `and'` ( (RealConstant () 0) `lessThan` (Project 1 xy)) 
+    ((Project () 1 xy) `lessThan` (RealConstant () 1))  `and'` ( (RealConstant () 0) `lessThan` (Project () 1 xy)) 
     `and'`
-    ((Project 2 xy) `lessThan` (RealConstant () 1))  `and'` ( (RealConstant () 0) `lessThan` (Project 2 xy))
+    ((Project () 2 xy) `lessThan` (RealConstant () 1))  `and'` ( (RealConstant () 0) `lessThan` (Project () 2 xy))
   )  
 
 prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Reals] )
@@ -147,7 +147,7 @@ prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == R
 circleConnectionMap =
   Restriction ()
   FieldML.Library01.unitLineSegment
-  (Lambdify () (Modulus () (GeneralVariable () "theta" Reals) Pi ))
+  (Lambdify () (Modulus () (GeneralVariable () "theta" Reals) (Pi ()) ))
 
 prop_test_RestrictionForCircle = (validExpression circleConnectionMap)
 
@@ -359,19 +359,19 @@ edge4Predicate = Lambda ()
 unitSquareXiToLocalEdgeId = 
   Lambda () 
   xi
-  (If (xi `elementOf` (SimpleSubset edge1Predicate)) (LabelValue (IntegerLabel 1 localEdgeLabels))
-  (If (xi `elementOf` (SimpleSubset edge2Predicate)) (LabelValue (IntegerLabel 2 localEdgeLabels))
-  (If (xi `elementOf` (SimpleSubset edge3Predicate)) (LabelValue (IntegerLabel 3 localEdgeLabels))
-  (If (xi `elementOf` (SimpleSubset edge4Predicate)) (LabelValue (IntegerLabel 4 localEdgeLabels))
-  (Unspecified localEdgeFSet)
+  (If () (xi `elementOf` (SimpleSubset edge1Predicate)) (LabelValue () (IntegerLabel 1 localEdgeLabels))
+  (If () (xi `elementOf` (SimpleSubset edge2Predicate)) (LabelValue () (IntegerLabel 2 localEdgeLabels))
+  (If () (xi `elementOf` (SimpleSubset edge3Predicate)) (LabelValue () (IntegerLabel 3 localEdgeLabels))
+  (If () (xi `elementOf` (SimpleSubset edge4Predicate)) (LabelValue () (IntegerLabel 4 localEdgeLabels))
+  (Unspecified () localEdgeFSet)
   ))))
 
 equivalenceInducer1 = 
   (Lambda ()
     (GeneralVariable () "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
-    (Apply 
-      (PartialApplication localToGlobalEdges 1 (GeneralVariable () "elementId" FieldML_test_mesh01.elementIdFSet) ) 
-      (Apply unitSquareXiToLocalEdgeId xi)
+    (Apply ()
+      (PartialApplication () localToGlobalEdges 1 (GeneralVariable () "elementId" FieldML_test_mesh01.elementIdFSet) ) 
+      (Apply () unitSquareXiToLocalEdgeId xi)
     )
   )
   `where'` [
