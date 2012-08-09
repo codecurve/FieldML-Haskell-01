@@ -249,6 +249,10 @@ applyVisitor :: (Show a, Show b, Eq a, Eq b) => (Expression a -> b) -> Expressio
 applyVisitor v x1@(UnitElement _) = UnitElement (v x1)
 applyVisitor v x1@(BooleanConstant _ x) = BooleanConstant (v x1) x
 applyVisitor v x1@(RealConstant _ x) = RealConstant (v x1) x
+applyVisitor v x1@(LabelValue _ v1) = LabelValue (v x1) v1
+applyVisitor v x1@(GeneralVariable _ s m) = GeneralVariable (v x1) s m
+applyVisitor v x1@(Unspecified _ m) = Unspecified (v x1) m
+applyVisitor v x1@(Cast _ x m) = Cast (v x1) (applyVisitor v x) m
 applyVisitor v t@(Tuple _ xs) = Tuple (v t) (map (applyVisitor v) xs)
 applyVisitor v x1@(Project _ n x) = Project (v x1) n (applyVisitor v x)
 applyVisitor v x1@(Lambda _ x expr ) = Lambda (v x1) (applyVisitor v x) (applyVisitor v expr)
@@ -296,6 +300,7 @@ applyVisitor v x1@(KroneckerProduct _ xs) = KroneckerProduct (v x1) (map (applyV
 applyVisitor v x1@(DistributedAccordingTo _ expr f) = DistributedAccordingTo (v x1) (applyVisitor v expr) (applyVisitor v f)
 applyVisitor v x1@(DistributionFromRealisations _ xs) = DistributionFromRealisations (v x1) (map (applyVisitor v) xs)
 
+applyVisitor _ x = error ("applyVisitor not implemented yet for this Expression constructor. Args:" ++ show x)
 
 -- Secondary utility methods follow
 validatingVisitor :: (Show a, Eq a) => (Expression a) -> Bool
@@ -354,7 +359,12 @@ validExpression (LabelValue _ (IntegerLabel x (Intersection n1 n2))) =
 validExpression (GeneralVariable _ _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
 validExpression (Unspecified _ _) = True
 validExpression (Cast _ x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
-
+validExpression (Cast _ x (DisjointUnion s m f)) = canonicalSuperset (codomain x) == m
+validExpression x1@(Cast _ x m1) = 
+  case (codomain x) of 
+    DisjointUnion _ m2 _ -> m2 == m1
+    _                    -> error ("validExpression not implemented yet for Cast of this form. Args:" ++ show x1)
+  
 validExpression (Tuple _ xs) = all validExpression xs
 validExpression (Project _ n x) = 
   validExpression x  && 
