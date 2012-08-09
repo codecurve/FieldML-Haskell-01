@@ -5,6 +5,7 @@ where
 
 import FieldML.Core
 import FieldML.Utility.CoreInfixExpressions
+import FieldML.Utility.ExpressionTree
 import qualified FieldML.Library01
 import qualified FieldML.Library02
 import FieldML.Utility01
