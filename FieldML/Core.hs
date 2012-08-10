@@ -220,7 +220,7 @@ data Expression a =
   -- | The given FSet must be a simple subdomain of the domain of the given expression.
   Restriction a FSet (Expression a) |
   
-  -- | Interior _ m assumes m is a subset of m1. The domain of Interior m is m1. f = Interior m represents a lambda i.e. f(x) evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m, otherwise false.
+  -- | Interior m assumes m is a subset of m1. The domain of Interior m is m1. f = Interior m represents a lambda i.e. f(x) evaluates to true for all values x in m1 that are within the part of m1 bounded by m, or on m, otherwise false.
   -- One application of interior is for specifying a region of interest by means of an outline, for example, a map whose image in the xy plane is a polygon can be used as the predicate for SimpleSubset.
   Interior a FSet |
   

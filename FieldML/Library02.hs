@@ -2,39 +2,37 @@ module FieldML.Library02 (
   normalDistribution
 ) where
 
-import qualified FieldML.Core as C
-import qualified FieldML.Utility.CoreInfixExpressions as I
-
+import FieldML.Core
 
 -- Uncertainty 
 normalDistribution = 
-  C.Lambda () (C.Tuple () [ 
-    C.GeneralVariable () "mean" C.Reals, 
-    C.GeneralVariable () "variance" C.Reals
+  Lambda (Tuple[ 
+    GeneralVariable "mean" Reals, 
+    GeneralVariable "variance" Reals
   ])
   (
-    C.Lambda () 
-    (C.GeneralVariable () "x" C.Reals)
+    Lambda 
+    (GeneralVariable "x" Reals)
     (
       (
-        (C.RealConstant () 1.0) 
-        `I.divide` 
-        ( (C.GeneralVariable () "variance" C.Reals) 
-          `I.times` 
-          ( ((C.RealConstant () 2.0) `I.times` C.Pi ()) `I.power` ((C.RealConstant () 1.0) `I.divide` (C.RealConstant () 2.0)) )
+        (RealConstant 1.0) 
+        `Divide` 
+        ( (GeneralVariable "variance" Reals) 
+          `Times` 
+          ( ((RealConstant 2.0) `Times` Pi) `Power` ((RealConstant 1.0) `Divide` (RealConstant 2.0)) )
         )
       )
-     `I.times`
-      ( C.Exp ()
-        ( (C.Negate () ((C.RealConstant () 1) `I.divide` (C.RealConstant () 2)) )
-          `I.times`
-          (I.power 
+     `Times`
+      ( Exp  
+        ( (Negate ((RealConstant 1) `Divide` (RealConstant 2)) )
+          `Times`
+          (Power 
             (
-              ((C.GeneralVariable () "x" C.Reals) `I.minus` (C.GeneralVariable () "mean" C.Reals))
-              `I.divide`
-              (C.GeneralVariable () "variance" C.Reals)
+              ((GeneralVariable "x" Reals) `Minus` (GeneralVariable "mean" Reals))
+              `Divide`
+              (GeneralVariable "variance" Reals)
             )
-            (C.RealConstant () 2)
+            (RealConstant 2)
           ) 
         )
       )

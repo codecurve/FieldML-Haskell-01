@@ -5,7 +5,6 @@ module FieldML.Utility01 (
   expressionType,
   canonicalSuperset,
   simplifyFSet,
-  validatedExpression,
   validExpression
 )
 where
@@ -26,63 +25,63 @@ simplifyFSet (SignatureSpace UnitSpace m) = m
 simplifyFSet m = m
 
 
-freeVariables :: Expression a -> [Expression a]
-freeVariables UnitElement _ = []
-freeVariables (BooleanConstant _ _) = []
-freeVariables (RealConstant _ _ ) = []
-freeVariables (LabelValue _ _) = []
-freeVariables f@(GeneralVariable _ _ _ ) = [f]
-freeVariables (Unspecified _ _) = []
-freeVariables (Cast _ x _) = freeVariables x -- Todo: currently ignoring free variables in definition of FSet.
-freeVariables (Tuple _ xs) = nub (concatMap freeVariables xs) 
-freeVariables (Project _ _ x) = freeVariables x
+freeVariables :: Expression -> [Expression]
+freeVariables UnitElement = []
+freeVariables (BooleanConstant _) = []
+freeVariables (RealConstant _ ) = []
+freeVariables (LabelValue _) = []
+freeVariables f@(GeneralVariable _ _ ) = [f]
+freeVariables (Unspecified _) = []
+freeVariables (Cast x _) = freeVariables x -- Todo: currently ignoring free variables in definition of FSet.
+freeVariables (Tuple xs) = nub (concatMap freeVariables xs) 
+freeVariables (Project _ x) = freeVariables x
 
 -- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
-freeVariables (Lambda a t@(Tuple a _) expr1) =  (freeVariables expr1) \\ (freeVariables t)
-freeVariables (Lambda a x@(GeneralVariable a _ _) expr1 ) = delete x (freeVariables expr1)
-freeVariables x@(Lambda _ _ _) = error ("freeVariables not implemented yet for Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x)
-freeVariables (Inverse _ f) = freeVariables f
-freeVariables (Lambdify _ _) = []
-freeVariables (Apply _ f x) = nub ((freeVariables f) ++ (freeVariables x) )
-freeVariables (Compose a f g) = freeVariables $ Tuple a [ f, g ]
-freeVariables (PartialApplication _ f n x) = nub ( (freeVariables f) ++ (freeVariables x) )
-freeVariables (Where a expr xs) = (freeVariables expr) \\ (localVars xs)
+freeVariables (Lambda t@(Tuple _) expr1) =  (freeVariables expr1) \\ (freeVariables t)
+freeVariables (Lambda x@(GeneralVariable _ _) expr1 ) = delete x (freeVariables expr1)
+freeVariables x@(Lambda _ _) = error ("freeVariables not implemented yet for Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x)
+freeVariables (Inverse f) = freeVariables f
+freeVariables (Lambdify _) = []
+freeVariables (Apply f x) = nub ((freeVariables f) ++ (freeVariables x) )
+freeVariables (Compose f g) = freeVariables $ Tuple [ f, g ]
+freeVariables (PartialApplication f n x) = nub ( (freeVariables f) ++ (freeVariables x) )
+freeVariables (Where expr xs) = (freeVariables expr) \\ (localVars xs)
   where
-    localVars ((Equal a local _):x1s) = (freeVariables local) ++ (localVars x1s)
+    localVars ((local `Equal` _):x1s) = (freeVariables local) ++ (localVars x1s)
     localVars [] = []
 
-freeVariables (And a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Or a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Not _ x) = freeVariables x
-freeVariables (LessThan a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Equal a x y) = freeVariables $ Tuple a [ x, y ]
+freeVariables (And a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Or a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Not a) = freeVariables a
+freeVariables (LessThan a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Equal a b) = freeVariables $ Tuple [ a, b ]
 
-freeVariables (Plus a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Minus a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Negate _ x) = freeVariables x
-freeVariables (Times a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Divide a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Modulus a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables (Sin _ x) = freeVariables x
-freeVariables (Cos _ x) = freeVariables x
-freeVariables (Exp _ x) = freeVariables x
-freeVariables (Power a x y) = freeVariables $ Tuple a [ x, y ]
-freeVariables Pi _ = []
-freeVariables (If a x vt vf ) = freeVariables $ Tuple a [ x, vt, vf ]
-freeVariables (Max _ f) = freeVariables f
-freeVariables (Min _ f) = freeVariables f
+freeVariables (Plus a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Minus a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Negate a) = freeVariables a
+freeVariables (Times a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Divide a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Modulus a b) = freeVariables $ Tuple [ a, b ]
+freeVariables (Sin x) = freeVariables x
+freeVariables (Cos x) = freeVariables x
+freeVariables (Exp x) = freeVariables x
+freeVariables (Power x y) = freeVariables $ Tuple [ x, y ]
+freeVariables Pi = []
+freeVariables (If x a b ) = freeVariables $ Tuple [ x, a, b ]
+freeVariables (Max f) = freeVariables f
+freeVariables (Min f) = freeVariables f
 
-freeVariables (ElementOf _ x m) = freeVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
-freeVariables (Exists a x@(GeneralVariable a _ _) f) = delete x (freeVariables f)
-freeVariables (Restriction _ _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
-freeVariables (Interior _ _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
+freeVariables (ElementOf x m) = freeVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
+freeVariables (Exists x@(GeneralVariable _ _) f) = delete x (freeVariables f)
+freeVariables (Restriction _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
+freeVariables (Interior _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
 
-freeVariables (MultiDimArray _ (AlgebraicVector x) _) = freeVariables x
-freeVariables (MultiDimArray _ _ _) = []
-freeVariables (Contraction _ a1 _ a2 _) = (freeVariables a1) ++ (freeVariables a2) -- Todo: This assumes that the index selector is always "hard coded", we will possibly in future want to support using an integer expression for the index.
-freeVariables (KroneckerProduct a xs) = freeVariables $ Tuple a xs
-freeVariables (DistributedAccordingTo a x f) = freeVariables $ Tuple a [ x, f ]
-freeVariables (DistributionFromRealisations a xs) = freeVariables $ Tuple a xs
+freeVariables (MultiDimArray (AlgebraicVector x) _) = freeVariables x
+freeVariables (MultiDimArray _ _) = []
+freeVariables (Contraction a1 _ a2 _) = (freeVariables a1) ++ (freeVariables a2) -- Todo: This assumes that the index selector is always "hard coded", we will possibly in future want to support using an integer expression for the index.
+freeVariables (KroneckerProduct xs) = freeVariables $ Tuple xs
+freeVariables (DistributedAccordingTo x f) = freeVariables $ Tuple [ x, f ]
+freeVariables (DistributionFromRealisations xs) = freeVariables $ Tuple xs
 
 freeVariables x = error ("freeVariables not implemented yet for this constructor. Args:" ++ show x)
 
@@ -90,76 +89,75 @@ freeVariables x = error ("freeVariables not implemented yet for this constructor
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.
 -- Todo: Explicit patterns all mentioned at this stage there is no 'catch-all', still using this to provide rudimentary debugging, but would look prettier with the UnitSpace case handled by a catch-all.
-domain :: Expression a -> FSet
+domain :: Expression -> FSet
 
 domain UnitElement = UnitSpace
-domain (BooleanConstant _ _) = UnitSpace
-domain (RealConstant _ _ ) = UnitSpace
-domain (LabelValue _ _ ) = UnitSpace
-domain (GeneralVariable _ _ (SignatureSpace m _)) = simplifyFSet m
-domain (GeneralVariable _ _ _) = UnitSpace
-domain (Unspecified _ _) = UnitSpace
-domain (Cast _ _ (SignatureSpace m _)) = m
-domain (Cast _ _ _) = UnitSpace
-domain (Tuple _ _) = UnitSpace
-domain (Project _ n x) = simplifyFSet (domain x)
-domain x@(Project _ _ _) = error ("domain not implemented yet for Project from anything other than Tuple. Args:" ++ show x)
+domain (BooleanConstant _) = UnitSpace
+domain (RealConstant _ ) = UnitSpace
+domain (LabelValue _ ) = UnitSpace
+domain (GeneralVariable _ (SignatureSpace m _)) = simplifyFSet m
+domain (GeneralVariable _ _) = UnitSpace
+domain (Unspecified _) = UnitSpace
+domain (Cast _ (SignatureSpace m _)) = m
+domain (Cast _ _) = UnitSpace
+domain (Tuple _) = UnitSpace
+domain (Project n x) = simplifyFSet (domain x)
 
 domain (Lambda UnitElement _) = UnitSpace 
 domain (Lambda x@(GeneralVariable _ _) _ ) = simplifyFSet $ codomain x
 domain (Lambda t@(Tuple _) _ ) = simplifyFSet $ codomain t
 domain x@(Lambda _ _ ) = error ("domain not implemented yet for Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x)
-domain (Inverse _ f) = simplifyFSet (codomain f)
-domain (Lambdify _ expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (freeVariables expr)
-domain (Apply _ f _) = effectiveResultingDomain $ (simplifyFSet (codomain f))
+domain (Inverse f) = simplifyFSet (codomain f)
+domain (Lambdify expr) = simplifyFSet $ CartesianProduct $ map fSetOfVariable (freeVariables expr)
+domain (Apply f _) = effectiveResultingDomain $ (simplifyFSet (codomain f))
   where
     effectiveResultingDomain (SignatureSpace m _) = m
     effectiveResultingDomain _ = UnitSpace
 
-domain (Compose _ _ g) = simplifyFSet $ domain g
-domain (PartialApplication _ f n _) = simplifyFSet $ CartesianProduct ((take (n-1) fFactors) ++ (drop n fFactors))
+domain (Compose _ g) = simplifyFSet $ domain g
+domain (PartialApplication f n _) = simplifyFSet $ CartesianProduct ((take (n-1) fFactors) ++ (drop n fFactors))
   where
     fFactors = getFactors (domain f)
     getFactors (CartesianProduct ms) = ms
     getFactors m = [m]
 
-domain (Where _ expr _) = simplifyFSet $ domain expr
-domain (And _ _ _) = UnitSpace
-domain (Or _ _ _) = UnitSpace
-domain (Not _ _) = UnitSpace
-domain (LessThan _ _ _) = UnitSpace
-domain (Equal _ _ _) = UnitSpace
-domain (Plus _ _ _) = UnitSpace
-domain (Minus _ _ _) = UnitSpace
-domain (Negate _ _) = UnitSpace
-domain (Times _ _ _) = UnitSpace
-domain (Divide _ _ _) = UnitSpace
-domain (Modulus _ _ _) = UnitSpace
-domain (Sin _ _) = UnitSpace
-domain (Cos _ _) = UnitSpace
-domain (Exp _ _) = UnitSpace
-domain (Power _ _ _) = UnitSpace
-domain Pi _ = UnitSpace
-domain (If _ _ _ _ ) = UnitSpace
-domain (Max _ _) = UnitSpace
-domain (Min _ _) = UnitSpace
-domain (ElementOf _ _ _) = UnitSpace
-domain (Exists _ _ _) = UnitSpace
-domain (Restriction _ m _ ) = simplifyFSet m
-domain (Interior a (SimpleSubset l@(Lambda a _ _)) ) = simplifyFSet $ domain l
-domain x@(Interior _ _) = error ("domain not implemented yet for Interior for anything other than SimpleSubset of a Lambda. Args:" ++ show x)
-domain (MultiDimArray a _ m) = simplifyFSet m
-domain (Contraction a a1 n1 a2 n2) = 
+domain (Where expr _) = simplifyFSet $ domain expr
+domain (And _ _) = UnitSpace
+domain (Or _ _) = UnitSpace
+domain (Not _) = UnitSpace
+domain (LessThan _ _) = UnitSpace
+domain (Equal _ _) = UnitSpace
+domain (Plus _ _) = UnitSpace
+domain (Minus _ _) = UnitSpace
+domain (Negate _) = UnitSpace
+domain (Times _ _) = UnitSpace
+domain (Divide _ _) = UnitSpace
+domain (Modulus _ _) = UnitSpace
+domain (Sin _) = UnitSpace
+domain (Cos _) = UnitSpace
+domain (Exp _) = UnitSpace
+domain (Power _ _) = UnitSpace
+domain Pi = UnitSpace
+domain (If _ _ _ ) = UnitSpace
+domain (Max _) = UnitSpace
+domain (Min _) = UnitSpace
+domain (ElementOf _ _) = UnitSpace
+domain (Exists _ _) = UnitSpace
+domain (Restriction m _ ) = simplifyFSet m
+domain (Interior (SimpleSubset l@(Lambda _ _)) ) = simplifyFSet $ domain l
+domain x@(Interior _) = error ("domain not implemented yet for Interior for anything other than SimpleSubset of a Lambda. Args:" ++ show x)
+domain (MultiDimArray _ m) = simplifyFSet m
+domain (Contraction a1 n1 a2 n2) = 
   CartesianProduct [
-    domain (PartialApplication a a1 n1 boundIndexVariable),
-    domain (PartialApplication a a2 n2 boundIndexVariable)
+    domain (PartialApplication a1 n1 boundIndexVariable),
+    domain (PartialApplication a2 n2 boundIndexVariable)
   ]
   where
-    boundIndexVariable = GeneralVariable a "boundIndexVariable" (getFactor n1 (domain a1)) --Todo: Assumes this is the same as (getFactor n2 (domain a2)).
+    boundIndexVariable = GeneralVariable "boundIndexVariable" (getFactor n1 (domain a1)) --Todo: Assumes this is the same as (getFactor n2 (domain a2)).
     
-domain (KroneckerProduct _ _) = UnitSpace
-domain (DistributedAccordingTo _ _ _ ) = UnitSpace
-domain (DistributionFromRealisations _ xs ) = simplifyFSet $ codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validatedExpression.
+domain (KroneckerProduct _) = UnitSpace
+domain (DistributedAccordingTo _ _ ) = UnitSpace
+domain (DistributionFromRealisations xs ) = simplifyFSet $ codomain (head xs) -- Note: this Assumes all xs also have codomain same as head xs.  This is checked by validExpression.
 -- Todo: breaks if xs is []
 
 domain x = error ("domain not implemented yet for this constructor. Args:" ++ show x)
@@ -169,284 +167,246 @@ domain x = error ("domain not implemented yet for this constructor. Args:" ++ sh
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.  
 -- Todo: make it so that it can be assumed that codomain has simplified the FSet before returning it, same for domain
-codomain :: Expression a -> FSet
+codomain :: Expression -> FSet
 
-codomain UnitElement _ = UnitSpace
-codomain (BooleanConstant _ _) = Booleans
-codomain (RealConstant _ _ ) = Reals
-codomain (LabelValue _ (StringLabel _ m)) = Labels m
-codomain (LabelValue _ (IntegerLabel _ m)) = Labels m
+codomain UnitElement = UnitSpace
+codomain (BooleanConstant _) = Booleans
+codomain (RealConstant _ ) = Reals
+codomain (LabelValue (StringLabel _ m)) = Labels m
+codomain (LabelValue (IntegerLabel _ m)) = Labels m
 
-codomain (GeneralVariable _ _ m) = m
-codomain (Unspecified _ m) = m
-codomain (Cast _ _ (SignatureSpace _ m)) = m
-codomain (Cast _ _ m) = m
-codomain (Tuple _ fs) = CartesianProduct (map codomain fs)
-codomain (Project _ n f) = getFactor n (codomain f)
-codomain (Lambda _ _ expr ) 
+codomain (GeneralVariable _ m) = m
+codomain (Unspecified m) = m
+codomain (Cast _ (SignatureSpace _ m)) = m
+codomain (Cast _ m) = m
+codomain (Tuple fs) = CartesianProduct (map codomain fs)
+codomain (Project n f) = getFactor n (codomain f)
+codomain (Lambda _ expr ) 
   | lambdaLike expr = SignatureSpace (domain expr) (codomain expr)
   | otherwise = codomain expr
-codomain (Inverse _ f) = domain f
-codomain (Lambdify _ expr) = codomain expr
+codomain (Inverse f) = domain f
+codomain (Lambdify expr) = codomain expr
 
-codomain (Apply _ f _) = effectiveResultingCodomain $ (simplifyFSet (codomain f))
+codomain (Apply f _) = effectiveResultingCodomain $ (simplifyFSet (codomain f))
   where
     effectiveResultingCodomain (SignatureSpace _ n) = n
     effectiveResultingCodomain _ = simplifyFSet $ codomain f
 
-codomain (Compose _ f _) = simplifyFSet $ codomain f
-codomain (PartialApplication _ f _ _) = simplifyFSet $ codomain f
-codomain (Where _ expr _) = simplifyFSet $ codomain expr
+codomain (Compose f _) = simplifyFSet $ codomain f
+codomain (PartialApplication f _ _) = simplifyFSet $ codomain f
+codomain (Where expr _) = simplifyFSet $ codomain expr
 
-codomain (And _ _ _) = Booleans
-codomain (Or _ _ _) = Booleans
-codomain (Not _ _) = Booleans
-codomain (LessThan _ _ _) = Booleans
-codomain (Equal _ _ _) = Booleans
-codomain (Plus _ _ _) = Reals
-codomain (Minus _ _ _) = Reals
-codomain (Negate _ _) = Reals
-codomain (Times _ _ _) = Reals
-codomain (Divide _ _ _) = Reals
-codomain (Modulus _ _ _) = Reals
-codomain (Sin _ _) = Reals
-codomain (Cos _ _) = Reals
-codomain (Exp _ _) = Reals
-codomain (Power _ _ _) = Reals
-codomain Pi _ = Reals
-codomain (If _ _ x _ ) = codomain x
-codomain (Max _ _) = Reals
-codomain (Min _ _) = Reals
-codomain (ElementOf _ _ _) = Booleans
-codomain (Exists _ _ _) = Booleans
-codomain (Restriction _ _ f ) = codomain f
-codomain (Interior _ _) = Booleans
-codomain (MultiDimArray _ (RealParameterVector _) _) = Reals
-codomain (MultiDimArray _ (IntegerParameterVector _ m) _) = m
-codomain (MultiDimArray a (AlgebraicVector (Tuple a (x:xs))) _) = expressionType x
-codomain (MultiDimArray _ (AlgebraicVector x) _) = expressionType x
-codomain (Contraction _ _ _ _ _) = Reals
-codomain (KroneckerProduct a fs ) = CartesianProduct (replicate m Reals)
+codomain (And _ _) = Booleans
+codomain (Or _ _) = Booleans
+codomain (Not _) = Booleans
+codomain (LessThan _ _) = Booleans
+codomain (Equal _ _) = Booleans
+codomain (Plus _ _) = Reals
+codomain (Minus _ _) = Reals
+codomain (Negate _) = Reals
+codomain (Times _ _) = Reals
+codomain (Divide _ _) = Reals
+codomain (Modulus _ _) = Reals
+codomain (Sin _) = Reals
+codomain (Cos _) = Reals
+codomain (Exp _) = Reals
+codomain (Power _ _) = Reals
+codomain Pi = Reals
+codomain (If _ a _ ) = codomain a
+codomain (Max _) = Reals
+codomain (Min _) = Reals
+codomain (ElementOf _ _) = Booleans
+codomain (Exists _ _) = Booleans
+codomain (Restriction _ f ) = codomain f
+codomain (Interior _) = Booleans
+codomain (MultiDimArray (RealParameterVector _) _) = Reals
+codomain (MultiDimArray (IntegerParameterVector _ m) _) = m
+codomain (MultiDimArray (AlgebraicVector (Tuple (x:xs))) _) = expressionType x
+codomain (MultiDimArray (AlgebraicVector x) _) = expressionType x
+codomain (Contraction _ _ _ _) = Reals
+codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
   where
     m = product ( map tupleLength fs )
-    tupleLength (Tuple a gs) = length gs
-    tupleLength (Apply a (Lambda a _ (Tuple a gs)) _ ) = length gs
+    tupleLength (Tuple gs) = length gs
+    tupleLength (Apply (Lambda _ (Tuple gs)) _ ) = length gs
     tupleLength x = error ("codomain.tupleLength not implemented yet for this constructor. Args:" ++ show x)
     -- Todo: Should consider perhaps having an expression simplifier that performs the substitution that an Apply represents. See also validTupleOfRealValues.
 
-codomain (DistributedAccordingTo _ _ _ ) = Booleans
-codomain (DistributionFromRealisations _ _) = Reals
+codomain (DistributedAccordingTo _ _ ) = Booleans
+codomain (DistributionFromRealisations _) = Reals
 
 codomain x = error ("codomain not implemented yet for this constructor. Args:" ++ show x)
 
 
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
-validatedExpression :: Expression a -> Expression Bool
+validExpression :: Expression -> Bool
 
-validatedExpression UnitElement _ = UnitElement True
-validatedExpression (BooleanConstant _ x) = BooleanConstant True x
-validatedExpression (RealConstant _ x) = RealConstant True x
-validatedExpression (LabelValue _ c@(StringLabel  x  (StringLabels xs) )) = LabelValue validity c
-  where
-    validity = x `elem` (Set.toList xs)
+validExpression UnitElement = True
+validExpression (BooleanConstant _) = True
+validExpression (RealConstant _ ) = True
+validExpression (LabelValue (StringLabel  x  (StringLabels xs) )) = x `elem` (Set.toList xs)
+validExpression (LabelValue (IntegerLabel x (IntegerRange a b) )) = a <= x && x <= b
+validExpression (LabelValue (IntegerLabel _ Integers )) = True
+validExpression (LabelValue (IntegerLabel x (DiscreteSetUnion n1 n2))) = 
+  validExpression (LabelValue (IntegerLabel x n1))  ||
+  validExpression (LabelValue (IntegerLabel x n2))
+validExpression (LabelValue (IntegerLabel x (Intersection n1 n2))) = 
+  validExpression (LabelValue (IntegerLabel x n1))  &&
+  validExpression (LabelValue (IntegerLabel x n2))
 
-validatedExpression (LabelValue c@(IntegerLabel x (IntegerRange a b) )) = LabelValue validity c
-  where
-    validity = a <= x && x <= b
+validExpression (GeneralVariable _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
+validExpression (Unspecified _) = True
+validExpression (Cast x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
 
-validatedExpression (LabelValue _ c@(IntegerLabel _ Integers )) = LabelValue True c
-validatedExpression (LabelValue _ c@(IntegerLabel x (DiscreteSetUnion n1 n2))) = LabelValue validity c
-  where
-    validity = 
-      validExpression (LabelValue () (IntegerLabel x n1)) ||
-      validExpression (LabelValue () (IntegerLabel x n2))
+validExpression (Tuple xs) = all validExpression xs
+validExpression (Project n x) = 
+  validExpression x  && 
+  factorCount (codomain x) >= n
 
-validatedExpression (LabelValue c@(IntegerLabel x (Intersection n1 n2))) = LabelValue validity c
-  where
-    validity =
-      validExpression (LabelValue () (IntegerLabel x n1)) &&
-      validExpression (LabelValue () (IntegerLabel x n2))
-
-validatedExpression (GeneralVariable _ x) = GeneralVariable True x -- Todo: Could validate the name of the variable according to some rules for identifier names.
-validatedExpression (Unspecified _ m) = Unspecified True m -- Todo: Could validate the FSet m when FSet validation is implemented one day.
-
-validatedExpression (Cast _ x s@(SignatureSpace m n)) = Cast (validExpression x) (validatedExpression x) s -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
-
-validatedExpression (Tuple _ xs) = Tuple (all validExpression xs) (map validatedExpression xs)
-    
-validatedExpression (Project _ n x) = Project validity n (validatedExpression x)
-  where
-    validity = (validExpression x) && factorCount (codomain x) >= n
-
-validatedExpression (Lambda _ x expr ) = Lambda validity (validatedExpression x) (validatedExpression expr)
+validExpression (Lambda x expr ) = (isVariableTuple x) && (validExpression expr)
   where 
-    validity = 
-      (isVariableTuple x) && 
-      (validExpression x) && 
-      (validExpression expr)
-
     isVariableTuple (GeneralVariable _ _) = True
     isVariableTuple (Tuple xs) = all isVariableTuple xs
     isVariableTuple _ = False
 
 -- Todo: Other expressions are lambda like, and can be inverted, add their cases.  Probably will treat inverse of values that are not lambda-like as invalid though.
-validatedExpression (Inverse _ f) = Inverse v (validatedExpression f)
-  where v = validExpression f && lambdaLike f
+validExpression (Inverse f) = 
+  validExpression f &&
+  lambdaLike f
 
-validatedExpression (Lambdify _ expr) = Lambdify v (validatedExpression expr)
-  where v = validExpression expr && not (lambdaLike expr) -- Todo: Not sure if the restriction that expr is "not lambda-like" is necessary.
+validExpression (Lambdify expr) = validExpression expr && not (lambdaLike expr) -- Todo: Not sure if the restriction that expr is "not lambda-like" is necessary.
 
-validatedExpression (Apply f x) = Apply v (validatedExpression f) (validatedExpression x)
-  where v = 
-    lambdaLike f &&
-    codomain x == domain f &&
-    validExpression f &&
-    validExpression x
+validExpression (Apply f x) = 
+  lambdaLike f &&
+  codomain x == domain f &&
+  validExpression f &&
+  validExpression x
 
-validatedExpression (Compose f g) = Compose v (validatedExpression f) (validatedExpression g)
-  where v = 
-    lambdaLike f &&
-    lambdaLike g &&
-    validExpression f &&
-    validExpression g &&
-    codomain g == domain f
+validExpression (Compose f g) = 
+  lambdaLike f &&
+  lambdaLike g &&
+  validExpression f &&
+  validExpression g &&
+  codomain g == domain f
 
-validatedExpression (PartialApplication _ f n x) = PartialApplication v (Validatedexpression f) n (Validatedexpression x)
-  where v =
-    lambdaLike f &&
-    factorCount (domain f) >= n &&
-    canonicalSuperset (codomain x) == getFactor n (domain f) &&
-    validExpression f &&
-    validExpression x
+validExpression (PartialApplication f n x) =
+  lambdaLike f &&
+  factorCount (domain f) >= n &&
+  canonicalSuperset (codomain x) == getFactor n (domain f) &&
+  validExpression f &&
+  validExpression x
 
-validatedExpression (Where _ expr locals) = Where v (validatedExpression expr) (map validatedExpression locals)
-  where 
-    v = 
-      validExpression expr && 
-      all validExpression locals &&
-      all localVarAssignment locals
-
-    localVarAssignment (Equal _ (GeneralVariable _ _ _) _) = True
-    localVarAssignment _ = False
-
-validatedExpression (And _ x y) = And v (validatedExpression x) (validatedExpression y)
-  where v = validBinaryOp Booleans x y
-
-validatedExpression (Or  _ x y) = Or  v (validatedExpression x) (validatedExpression y)
-  where v = validBinaryOp Booleans x y
-
-validatedExpression (Not _ x) = Not v (validatedExpression x)
-  where v = 
-    validExpression x &&
-    codomain x == Booleans &&
-    not (lambdaLike x)
-
-validatedExpression (LessThan _ x y) = LessThan v (validatedExpression x) (validatedExpression y)
-  where v = validBinaryOp Reals x y
-
-validatedExpression (Equal _ x y) = Equal v (validatedExpression x) (validatedExpression y)
-  where v = 
-    validExpression x &&
-    validExpression y &&
-    canonicalSuperset (codomain x) == canonicalSuperset (codomain y) &&
-    not (lambdaLike x) &&
-    not (lambdaLike y)
-
-validatedExpression (Plus    _ x y) = Plus    (validBinaryOp Reals x y) (validatedExpression x) (validatedExpression y)
-validatedExpression (Minus   _ x y) = Minus   (validBinaryOp Reals x y) (validatedExpression x) (validatedExpression y)
-validatedExpression (Times   _ x y) = Times   (validBinaryOp Reals x y) (validatedExpression x) (validatedExpression y)
-validatedExpression (Divide  _ x y) = Divide  (validBinaryOp Reals x y) (validatedExpression x) (validatedExpression y)
-validatedExpression (Modulus _ x y) = Modulus (validBinaryOp Reals x y) (validatedExpression x) (validatedExpression y)
-validatedExpression (Power   _ x y) = Power   (validBinaryOp Reals x y) (validatedExpression x) (validatedExpression y)
-
-validatedExpression (Negate _ x) = Negate (validUnaryOp Reals x) (validatedExpression x)
-validatedExpression (Sin    _ x) = Sin    (validUnaryOp Reals x) (validatedExpression x)
-validatedExpression (Cos    _ x) = Cos    (validUnaryOp Reals x) (validatedExpression x)
-validatedExpression (Exp    _ x) = Exp    (validUnaryOp Reals x) (validatedExpression x)
-
-validatedExpression Pi _ =  Pi True
-
-validatedExpression (If _ x vt vf) = If v (validatedExpression x) (validatedExpression vt) (validatedExpression vf)
-  where v = 
-    validExpression x && 
-    validExpression vt && 
-    validExpression vf && 
-    codomain vt == codomain vf &&
-    codomain x == Booleans &&
-    not (lambdaLike x)
-
-validatedExpression (Max _ f) = Max (realCodomain f) (validatedExpression f)
-validatedExpression (Min _ f) = Min (realCodomain f) (validatedExpression f)
-
-validatedExpression (ElementOf _ x y) = ElementOf True (validatedExpression x) (validatedExpression y)
-
-validatedExpression (Exists _ x@(GeneralVariable _ _ _) f) = Exists v (validatedExpression x) (validatedExpression f)
-  where v = 
-    codomain f ==  Booleans &&
-    validExpression f
+validExpression (Where expr locals) = 
+  validExpression expr &&
+  all validExpression locals &&
+  all localVarAssignment locals
+    where 
+      localVarAssignment (Equal (GeneralVariable _ _) _) = True
+      localVarAssignment _ = False
   
-validExpression x@(Exists _ _ _) = error ("validatedExpression not implemented yet for Exists for case where bound variable is anything other than GeneralVariable. Args:" ++ show x)
+validExpression (And a b) = validBinaryOp Booleans a b
 
-validatedExpression (Restriction _ s@(SimpleSubset p) f ) = Restriction v s (validatedExpression f)
-  where v = 
-    lambdaLike f &&
-    validExpression f &&
-    validExpression p &&
-    domain p == domain f
+validExpression (Or a b) = validBinaryOp Booleans a b
+
+validExpression (Not a) =
+  validExpression a &&
+  codomain a == Booleans &&
+  not (lambdaLike a)
+
+validExpression (LessThan a b) = validBinaryOp Reals a b
+
+validExpression (Equal a b) =
+  validExpression a &&
+  validExpression b &&
+  canonicalSuperset (codomain a) == canonicalSuperset (codomain b) &&
+  not (lambdaLike a) &&
+  not (lambdaLike b)
+
+validExpression (Plus a b) = validBinaryOp Reals a b
+
+validExpression (Minus a b) = validBinaryOp Reals a b
+
+validExpression (Negate a) = validUnaryOp Reals a
+
+validExpression (Times a b) = validBinaryOp Reals a b
+
+validExpression (Divide a b) = validBinaryOp Reals a b
+
+validExpression (Modulus a b) = validBinaryOp Reals a b
+
+validExpression (Sin x) = validUnaryOp Reals x
+
+validExpression (Cos x) = validUnaryOp Reals x
   
-validExpression x@(Restriction _ _ _) = error ("validatedExpression not implemented yet for Restriction for case where restriction FSet is anything other than SimpleSubset. Args:" ++ show x)
+validExpression (Exp x) = validUnaryOp Reals x
 
-validatedExpression (Interior _ m) = Interior True m -- Todo: validate the FSet operand.
+validExpression (Power x y) = validBinaryOp Reals x y
 
-validatedExpression (MultiDimArray _ v m) = MultiDimArray validity (validatedExpression v) m
+validExpression Pi =  True
+
+validExpression (If x a b ) = 
+  validExpression a && 
+  validExpression b && 
+  validExpression x && 
+  codomain a == codomain b &&
+  codomain x == Booleans &&
+  not (lambdaLike x)
+
+validExpression (Max f) = realCodomain f
+validExpression (Min f) = realCodomain f
+
+validExpression (ElementOf _ _) = True
+
+validExpression (Exists (GeneralVariable _ _) f) = 
+  codomain f ==  Booleans &&
+  validExpression f
+
+validExpression (Restriction (SimpleSubset p) f ) = 
+  lambdaLike f &&
+  validExpression f &&
+  validExpression p &&
+  domain p == domain f
+
+validExpression (Interior _) = True -- Todo: validate the FSet operand.
+
+validExpression (MultiDimArray v m) = ((isDiscreteFSet m) || (isProductOfDFSs m))  && validateCardinality && validVector v
   where
-    validity = ((isDiscreteFSet m) || (isProductOfDFSs m))  && validateCardinality && validVector v
     validateCardinality = (cardinality m == vectorLength v)    
     isDiscreteFSet (Labels _) = True
     isDiscreteFSet _ = False
     isProductOfDFSs (CartesianProduct ms) = all isDiscreteFSet ms
     isProductOfDFSs _ = False
 
-validatedExpression (Contraction _ a1 n1 a2 n2) = Contraction v (validatedExpression a1) n1 (validatedExpression a2) n2
-  where v =
-    lambdaLike a1 &&
-    lambdaLike a2 &&
-    validExpression a1 &&
-    validExpression a2 &&
-    codomain a1 == Reals &&
-    codomain a2 == Reals &&
-    n1 <= factorCount m1 &&
-    n2 <= factorCount m2 &&
-    getFactor n1 m1 == getFactor n2 m2
+validExpression (Contraction a1 n1 a2 n2) = 
+  lambdaLike a1 &&
+  lambdaLike a2 &&
+  validExpression a1 &&
+  validExpression a2 &&
+  codomain a1 == Reals &&
+  codomain a2 == Reals &&
+  n1 <= factorCount m1 &&
+  n2 <= factorCount m2 &&
+  getFactor n1 m1 == getFactor n2 m2
+  where
     m1 = domain a1 
     m2 = domain a2 
 
-validatedExpression (KroneckerProduct _ xs) = KroneckerProduct v (map validatedExpression xs)
+validExpression ( KroneckerProduct xs ) = all validTupleOfRealValues xs
   where 
-    v = all validTupleOfRealValues xs
     validTupleOfRealValues (Tuple ys) = all validRealValue ys
     validTupleOfRealValues (Apply (Lambda _ expr) _) = validTupleOfRealValues expr
     -- Todo: see comment made at codomain for KroneckerProduct
 
-validatedExpression (DistributedAccordingTo _ expr f) = DistributedAccordingTo v (validatedExpression expr) (validatedExpression f)
-  where v = 
-    realCodomain f && 
-    domain f == codomain expr
+validExpression (DistributedAccordingTo expr f) = 
+  realCodomain f &&
+  domain f == codomain expr
 
-validatedExpression (DistributionFromRealisations _ xs) = DistributionFromRealisations v (map validatedExpression xs)
-  where v =  
-    all validExpression xs &&
-    length (nub (map (simplifyFSet . codomain) xs)) == 1
+validExpression (DistributionFromRealisations xs) =
+  all validExpression xs &&
+  length (nub (map (simplifyFSet . codomain) xs)) == 1
 
 
 -- Secondary utility methods follow
--- | Given an expression, return True if the expression is valid, false otherwise.
-validExpression :: Expression _ -> Bool
-validExpression x = v
-  where
-   Expression v = validExpression x
-
-
 -- | Returns True if vector is valid.
 
 --Todo: Vector construction is just a kind of expression, this really hints at using typeclasses, and having a "isValid" function for Vectors, Expressions and FSets.
