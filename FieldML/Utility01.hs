@@ -26,7 +26,7 @@ simplifyFSet (SignatureSpace UnitSpace m) = m
 simplifyFSet m = m
 
 
-freeVariables :: (Show a, Eq a) => Expression a -> [Expression a]
+freeVariables :: (Show a) => Expression a -> [Expression a]
 freeVariables (UnitElement _) = []
 freeVariables (BooleanConstant _ _) = []
 freeVariables (RealConstant _ _ ) = []
@@ -34,23 +34,23 @@ freeVariables (LabelValue _ _) = []
 freeVariables f@(GeneralVariable _ _ _ ) = [f]
 freeVariables (Unspecified _ _) = []
 freeVariables (Cast _ x _) = freeVariables x -- Todo: currently ignoring free variables in definition of FSet.
-freeVariables (Tuple _ xs) = nub (concatMap freeVariables xs) 
+-- freeVariables (Tuple _ xs) = nub (concatMap freeVariables xs) 
 freeVariables (Project _ _ x) = freeVariables x
 
 -- Note, could have used more general pattern for Lambda, but the lack of exhaustive pattern matching is serving in the interim as poor man's validation.
-freeVariables (Lambda _ t@(Tuple _ _) expr1) =  (freeVariables expr1) \\ (freeVariables t)
-freeVariables (Lambda _ x@(GeneralVariable a _ _) expr1 ) = delete x (freeVariables expr1)
+-- freeVariables (Lambda _ t@(Tuple _ _) expr1) =  (freeVariables expr1) \\ (freeVariables t)
+-- freeVariables (Lambda _ x@(GeneralVariable a _ _) expr1 ) = delete x (freeVariables expr1)
 freeVariables x@(Lambda _ _ _) = error ("freeVariables not implemented yet for Lambda for case where bound variable is anything other than variable Tuple. Args:" ++ show x)
 freeVariables (Inverse _ f) = freeVariables f
 freeVariables (Lambdify _ _) = []
-freeVariables (Apply _ f x) = nub ((freeVariables f) ++ (freeVariables x) )
+-- freeVariables (Apply _ f x) = nub ((freeVariables f) ++ (freeVariables x) )
 freeVariables (Compose a f g) = freeVariables $ Tuple a [ f, g ]
-freeVariables (PartialApplication _ f n x) = nub ( (freeVariables f) ++ (freeVariables x) )
-freeVariables (Where a expr xs) = (freeVariables expr) \\ (localVars xs)
+-- freeVariables (PartialApplication _ f n x) = nub ( (freeVariables f) ++ (freeVariables x) )
+{-freeVariables (Where a expr xs) = (freeVariables expr) \\ (localVars xs)
   where
     localVars ((Equal a local _):x1s) = (freeVariables local) ++ (localVars x1s)
     localVars [] = []
-
+-}
 freeVariables (And a x y) = freeVariables $ Tuple a [ x, y ]
 freeVariables (Or a x y) = freeVariables $ Tuple a [ x, y ]
 freeVariables (Not _ x) = freeVariables x
@@ -73,7 +73,7 @@ freeVariables (Max _ f) = freeVariables f
 freeVariables (Min _ f) = freeVariables f
 
 freeVariables (ElementOf _ x m) = freeVariables x -- Todo: What if there are free variables in the definition of m? Assuming here and elsewhere that there are not. Could merge FSet and Expression, so that an expression may represent an FSet?
-freeVariables (Exists _ x@(GeneralVariable _ _ _) f) = delete x (freeVariables f)
+-- freeVariables (Exists _ x@(GeneralVariable _ _ _) f) = delete x (freeVariables f)
 freeVariables (Restriction _ _ f) = freeVariables f -- Todo: What if the restriction fixes one of the variables? Is it still free, but only valid if it has that value?
 freeVariables (Interior _ _) = [] -- Todo: definition of m in Interior m may have free variables, but we aren't yet processing defintions of FSet.
 
@@ -86,12 +86,11 @@ freeVariables (DistributionFromRealisations a xs) = freeVariables $ Tuple a xs
 
 freeVariables x = error ("freeVariables not implemented yet for this constructor. Args:" ++ show x)
 
-
 -- | Returns the FSet from which a function maps values. Unless it is actually a function, the expression is treated as a value, which is treated as a function from UnitSpace.
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.
 -- Todo: Explicit patterns all mentioned at this stage there is no 'catch-all', still using this to provide rudimentary debugging, but would look prettier with the UnitSpace case handled by a catch-all.
-domain :: (Show a, Eq a) => Expression a -> FSet
+domain :: (Show a) => Expression a -> FSet
 
 domain (UnitElement _) = UnitSpace
 domain (BooleanConstant _ _) = UnitSpace
@@ -170,7 +169,7 @@ domain x = error ("domain not implemented yet for this constructor. Args:" ++ sh
 
 -- Todo: make "return type" "Either FSet or InvalidExpression" so that validation can be built in.  
 -- Todo: make it so that it can be assumed that codomain has simplified the FSet before returning it, same for domain
-codomain :: (Show a, Eq a) => (Expression a) -> FSet
+codomain :: (Show a) => (Expression a) -> FSet
 
 codomain (UnitElement _) = UnitSpace
 codomain (BooleanConstant _ _) = Booleans
@@ -417,7 +416,7 @@ applyVisitor (DistributionFromRealisations _ xs) = DistributionFromRealisations 
 applyVisitor v x = v x 
 -}
 -- Secondary utility methods follow
-validatingVisitor :: (Show a, Eq a) => (Expression a) -> Bool
+validatingVisitor :: (Show a) => (Expression a) -> Bool
 validatingVisitor (UnitElement _) = True
 validatingVisitor (BooleanConstant _ x) = True
 validatingVisitor (RealConstant _ x) = True
@@ -455,7 +454,7 @@ validatingVisitor (Project _ n x) = (validatingVisitor x) && factorCount (codoma
 
 -- **************************************************************************************
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
-validExpression :: (Show a, Eq a) => Expression a -> Bool
+validExpression :: (Show a) => Expression a -> Bool
 
 validExpression (UnitElement _) = True
 validExpression (BooleanConstant _ _) = True
@@ -665,7 +664,7 @@ fSetOfVariable :: Expression a -> FSet
 fSetOfVariable (GeneralVariable _ _ m) = m
 
 -- | Simply wraps a lambda like expression's domain and codomain in SignatureSpace, and for all others, the codomain FSet is returned directly.
-expressionType :: (Show a, Eq a) => Expression a -> FSet
+expressionType :: (Show a) => Expression a -> FSet
 expressionType x
   | lambdaLike x = SignatureSpace (domain x) (codomain x)
   | otherwise = simplifyFSet (codomain x)
@@ -693,7 +692,7 @@ cardinality (CartesianProduct fs) = product (map cardinality fs)
 cardinality _ = 0
 
 
-lambdaLike :: (Show a, Eq a) => Expression a -> Bool
+lambdaLike :: (Show a) => Expression a -> Bool
 lambdaLike x = not (domain x == UnitSpace)
 
 
@@ -709,23 +708,23 @@ canonicalSuperset m = m
 
 -- Todo: add a flag to indicate whether lambda's are considered valid or not.
 
-validBinaryOp :: (Show a, Eq a) => FSet -> Expression a -> Expression a -> Bool
+validBinaryOp :: (Show a) => FSet -> Expression a -> Expression a -> Bool
 validBinaryOp m x y =
   validUnaryOp m x &&
   validUnaryOp m y
 
 
-validUnaryOp :: (Show a, Eq a) => FSet -> Expression a -> Bool
+validUnaryOp :: (Show a) => FSet -> Expression a -> Bool
 validUnaryOp m x = 
   validExpression x && 
   (canonicalSuperset . simplifyFSet . codomain) x == m &&
   not (lambdaLike x)
 
 
-realCodomain :: (Show a, Eq a) => Expression a -> Bool
+realCodomain :: (Show a) => Expression a -> Bool
 realCodomain x = (canonicalSuperset . simplifyFSet . codomain) x  == Reals
 
 
-validRealValue :: (Show a, Eq a) => Expression a -> Bool
+validRealValue :: (Show a) => Expression a -> Bool
 validRealValue x = validUnaryOp Reals x
 
