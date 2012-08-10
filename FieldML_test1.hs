@@ -98,11 +98,16 @@ prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVari
 -- Disjoint union
 labels1to10 = IntegerRange 1 10
 labels1to5 = IntegerRange 1 5
-d1 = DisjointUnion labels1to10 (DomainMapConstant FieldML.Library01.unitSquare)
+
+d1 = DisjointUnion
+  labels1to10
+  (CartesianProduct [Labels labels1to10, FieldML.Library01.unitSquare])
+  (DomainMapConstant FieldML.Library01.unitSquare)
 
 d2 = 
   DisjointUnion 
     (IntegerRange 1 10) 
+    (CartesianProduct [Labels labels1to10, FieldML.Library01.unitSquare])    
     (DomainMapIf 
       (IntegerRange 1 5) 
       (DomainMapConstant FieldML.Library01.unitSquare) 
@@ -111,7 +116,8 @@ d2 =
 
 d3 = 
   DisjointUnion 
-    (IntegerRange 1 10) 
+    (IntegerRange 1 10)
+    (CartesianProduct [Labels labels1to10, FieldML.Library01.unitSquare])
     (DomainMapIf 
       (IntegerRange 1 5) 
       (DomainMapConstant FieldML.Library01.unitSquare) 
@@ -376,12 +382,22 @@ equivalenceInducer1 =
   `Where` [
     ( (GeneralVariable "elementId" FieldML_test_mesh01.elementIdFSet) 
       `Equal` 
-      (Project 1 (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity) )
+      (Project 1
+        (Cast
+          (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
+          (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, FieldML.Library01.unitSquare ])
+        )
+      )
     ),
     
     ( xi                                          
       `Equal` 
-      (Project 2 (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity) )
+      (Project 2 
+        (Cast
+          (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
+          (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, FieldML.Library01.unitSquare ])
+        )
+      )
     )
   ]
   

@@ -257,6 +257,11 @@ validExpression (LabelValue (IntegerLabel x (Intersection n1 n2))) =
 validExpression (GeneralVariable _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
 validExpression (Unspecified _) = True
 validExpression (Cast x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
+validExpression (Cast x (DisjointUnion s m f)) = canonicalSuperset (codomain x) == m
+validExpression x1@(Cast x m1) = 
+  case (codomain x) of 
+    DisjointUnion _ m2 _ -> m2 == m1
+    _                    -> error ("validExpression not implemented yet for Cast of this form. Args:" ++ show x1)
 
 validExpression (Tuple xs) = all validExpression xs
 validExpression (Project n x) = 
