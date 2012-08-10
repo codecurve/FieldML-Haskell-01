@@ -46,7 +46,7 @@ data FSet =
   Factor Int FSet |
 
   -- | DisjointUnion represents the set resulting from forming the disjoint union of other sets.
-  -- | Given n = DisjointUnion s m f, n represents the set resulting from forming the disjoint union of other sets.
+  -- Given n = DisjointUnion s m f, n represents the set resulting from forming the disjoint union of other sets.
   -- Each label in s is the label for the part of the union given by the DomainMap f.
   -- m is a 'like' n in terms of how a tuple can be used to represent values of n, i.e.
   -- if v is a Tuple, and v is used to represent a value in n, then v will be valid as a value of m.
