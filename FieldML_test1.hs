@@ -18,6 +18,8 @@ import qualified Data.Set as Set
 import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
 
+main = testMain
+
 testMain = do
     allPass <- $quickCheckAll -- Run QuickCheck on all prop_ functions
     unless allPass exitFailure
@@ -86,11 +88,6 @@ SimpleSubset expression4 = FieldML.Library01.simplex2d
 
 prop_test_Simplex2dPredicate = (domain expression4 == CartesianProduct[Reals, Reals])
   
-SimpleSubset expression5 = FieldML.Library01.unitSquare
-
-prop_test_UnitSquarePredicate_domain = (domain expression5 == CartesianProduct [Reals,Reals] )
-prop_test_UnitSquarePredicate_valid = (validExpression expression5)
-
 -- Validate that lambda's do not need the RHS to contain the bound variables
 prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
     
@@ -423,3 +420,24 @@ prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementEx
 prop_test_fieldTemplate = (validExpression FieldML_test_mesh01.fieldTemplate)
 -- This might be useful for debugging this:
 -- putStrLn (Data.Tree.drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
+
+unitSquarePredicate' = 
+  Lambda xy (
+    (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
+    `And`
+    (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
+  )
+
+unitSquare' = SimpleSubset unitSquarePredicate' -- Todo: need to somehow have symbolic analysis that can deduce that unitSquare' is equivalent to unitSquare?
+
+prop_test_Subset_CommutesWith_CartesianProduct_Case = (unitSquare' == FieldML.Library01.unitSquare)
+
+prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare1 = (validExpression (Apply FieldML.Library01.basis2dLinearLagrange (Tuple [xi,xi])))
+
+prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare2 = 
+  (validExpression 
+    (Apply 
+      FieldML.Library01.basis2dLinearLagrange 
+      (GeneralVariable "ξ" FieldML.Library01.unitSquare)
+    )
+  )

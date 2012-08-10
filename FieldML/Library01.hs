@@ -4,7 +4,8 @@ module FieldML.Library01 (
   
   unitLineSegment,
   unitSquare,
-  simplex2d,  
+  simplex2d,
+  unitCube,
   
   basis1dLinearLagrange,
   basis2dLinearLagrange,
@@ -50,14 +51,7 @@ simplex2dPredicate =
 
 simplex2d = SimpleSubset simplex2dPredicate
 
-unitSquarePredicate = 
-  Lambda xy (
-    (GeneralVariable "x" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "x" Reals) 
-    `And`
-    (GeneralVariable "y" Reals `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` GeneralVariable "y" Reals)
-  )
-
-unitSquare = SimpleSubset unitSquarePredicate
+unitSquare = CartesianProduct [unitLineSegment, unitLineSegment]
 
 basis1dLinearLagrange_xi1 = Apply basis1dLinearLagrange (GeneralVariable "ξ1" unitLineSegment)
 basis1dLinearLagrange_xi2 = Apply basis1dLinearLagrange (GeneralVariable "ξ2" unitLineSegment)
@@ -72,6 +66,8 @@ basis2dLinearLagrange = Lambda
     basis1dLinearLagrange_xi1, 
     basis1dLinearLagrange_xi2
   ])
+
+unitCube = CartesianProduct [unitLineSegment, unitLineSegment, unitLineSegment]
 
 basis3dLinearLagrange = Lambda
   (Tuple [
