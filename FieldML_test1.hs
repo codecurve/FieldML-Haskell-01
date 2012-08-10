@@ -414,6 +414,7 @@ Project () n x4a = x3b
 
 prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
 
+prop_test_Project_NonTuple = (validExpression equivalenceInducer1)
 
 
 -- Field template
