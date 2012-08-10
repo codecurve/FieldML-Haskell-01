@@ -9,8 +9,7 @@ module FieldML.Utility.CoreInfixExpressions (
   lessThan,
   and',
   or',
-  where',
-  elementOf
+  where'
 ) where
 
 import FieldML.Core
