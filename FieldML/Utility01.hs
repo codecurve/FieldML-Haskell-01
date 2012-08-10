@@ -6,7 +6,8 @@ module FieldML.Utility01 (
   canonicalSuperset,
   simplifyFSet,
   validExpression,
-  lambdaLike
+  lambdaLike,
+  cardinality
 )
 where
 
@@ -469,8 +470,9 @@ factorCount _ = 1
 cardinality :: FSet -> Int
 cardinality UnitSpace = 1
 cardinality (Labels (IntegerRange a b) ) = b - a + 1
+cardinality (Labels (StringLabels a)) = Set.size a
 cardinality (CartesianProduct fs) = product (map cardinality fs)
-cardinality _ = 0
+cardinality x = error ("cardinality not implemented this constructor. Args: " ++ show x)
 
 
 lambdaLike :: Expression -> Bool
