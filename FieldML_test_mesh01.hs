@@ -9,7 +9,8 @@ module FieldML_test_mesh01
     localToGlobalNodes,
     nodalDofsForElementExpr,
     fieldTemplate,
-    pressureAtNodes
+    pressureAtNodes,
+    pressureDofsForElementExpr1
   )
 where
 
@@ -120,3 +121,14 @@ fieldTemplate =
     (Apply FieldML.Library01.basis2dLinearLagrange xi)
     1
   )
+
+
+-- Direct Field, without intermediate template style.
+pressureDofsForElementExpr1 = 
+  Lambda 
+  (Tuple [
+    elementId,
+    localNode
+  ]) 
+  (Apply pressureAtNodes ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
+
