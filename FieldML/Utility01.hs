@@ -5,7 +5,8 @@ module FieldML.Utility01 (
   expressionType,
   canonicalSuperset,
   simplifyFSet,
-  validExpression
+  validExpression,
+  lambdaLike
 )
 where
 
@@ -18,10 +19,11 @@ import qualified Data.Set as Set
 
 -- | simplifyFSet m will attempt to produce a new FSet that is equivalent to m, but has a simpler definition.
 simplifyFSet :: FSet -> FSet
-simplifyFSet (Factor n (CartesianProduct ys)) = ys !! (n-1)
+simplifyFSet (Factor n (CartesianProduct ys)) = simplifyFSet (ys !! (n-1))
 simplifyFSet (CartesianProduct []) = UnitSpace
-simplifyFSet (CartesianProduct [m]) = m
-simplifyFSet (SignatureSpace UnitSpace m) = m
+simplifyFSet (CartesianProduct [m]) = simplifyFSet m
+simplifyFSet (SignatureSpace UnitSpace m) = simplifyFSet m
+simplifyFSet (Domain (Lambda x _)) = simplifyFSet (codomain x)
 simplifyFSet m = m
 
 
