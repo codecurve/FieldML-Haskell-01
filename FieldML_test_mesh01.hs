@@ -11,6 +11,7 @@ module FieldML_test_mesh01
     fieldTemplate,
     pressureAtNodes,
     pressureFieldExpression1,
+    coordinatesAtNodes,
     geometricFieldExpression1
   )
 where
