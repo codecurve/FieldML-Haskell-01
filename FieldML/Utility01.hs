@@ -103,7 +103,7 @@ domain (Unspecified _ _) = UnitSpace
 domain (Cast _ _ (SignatureSpace m _)) = m
 domain (Cast _ _ _) = UnitSpace
 domain (Tuple _ _) = UnitSpace
-domain (Project _ n (Tuple _ fs)) = simplifyFSet $ domain (fs!!(n-1))
+domain (Project _ n x) = simplifyFSet (domain x)
 domain x@(Project _ _ _) = error ("domain not implemented yet for Project from anything other than Tuple. Args:" ++ show x)
 
 domain (Lambda _ (UnitElement _) _) = UnitSpace 
