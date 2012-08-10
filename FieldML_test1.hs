@@ -422,4 +422,4 @@ prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementEx
 
 prop_test_fieldTemplate = (validExpression FieldML_test_mesh01.fieldTemplate)
 -- This might be useful for debugging this:
--- putStrLn (drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
+-- putStrLn (Data.Tree.drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
