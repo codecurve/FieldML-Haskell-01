@@ -5,8 +5,8 @@ module FieldML.Utility01 (
   expressionType,
   canonicalSuperset,
   simplifyFSet,
-  applyVisitor,
-  validExpression
+  applyVisitor
+--  validExpression
 )
 where
 
