@@ -10,7 +10,8 @@ module FieldML_test_mesh01
     nodalDofsForElementExpr,
     fieldTemplate,
     pressureAtNodes,
-    pressureDofsForElementExpr1
+    pressureFieldExpression1,
+    geometricFieldExpression1
   )
 where
 
@@ -37,10 +38,19 @@ mesh_SansConnectivity =
 
 xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
 
+-- Local nodes
+--  3---4
+--  |   |
+--  |   |
+--  |   |
+--  1---2
 
--- Parameter map test: Global nodes:
--- 4 5 6
--- 1 2 3
+-- Global nodes for mesh
+--  4---5---6
+--  |   |   |
+--  | 1 | 2 |
+--  |   |   |
+--  1---2---3
 
 -- Todo: codomain here is Integers, and should be globalNodesFSet (i.e. the IDs of the global nodes).  
 -- Could introduce a constructor syntax, i.e. facility to define constructor and facility to use constructor.
@@ -56,10 +66,14 @@ localToGlobalNodes = MultiDimArray
 globalNode = GeneralVariable "globalNode" globalNodesFSet
 
 pressureAtNodes = MultiDimArray 
-  (RealParameterVector
-     [  0.1,      0.5,  55.9, 
-        -0.4,   -100.9,  19.0 ] 
-  )
+  (RealParameterVector [ 
+    0.1,
+    0.5,
+    55.9,
+    -0.4,
+    -100.9,
+    19.0
+  ])
   globalNodesFSet
 
 {-
@@ -124,7 +138,7 @@ fieldTemplate =
 
 
 -- Direct Field, without intermediate template style.
-pressureDofsForElementExpr1 = 
+pressureFieldExpression1 = 
   Lambda 
   (Tuple [
     elementId,
@@ -132,3 +146,32 @@ pressureDofsForElementExpr1 =
   ]) 
   (Apply pressureAtNodes ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
 
+
+
+-- Geometry field (x, y) coordinates at each node.
+
+coordinatesAtNodes = MultiDimArray 
+  (RealParameterVector [ 
+    0.0, 0.0,
+    0.5, 0.0,
+    1.0, 0.0,
+    
+    0.0, 0.5,
+    0.5, 0.5,
+    1.0, 0.5
+  ])
+  (CartesianProduct [FieldML.Library01.rc2dCoordLabels, globalNodesFSet])
+
+coordinateLabel = GeneralVariable "coordinateLabel" FieldML.Library01.rc2dCoordLabels
+
+geometricFieldExpression1 = 
+  Lambda 
+  (Tuple [
+    coordinateLabel,  
+    elementId,
+    localNode
+  ]) 
+  (Apply 
+    (PartialApplication coordinatesAtNodes 1 coordinateLabel)
+    ((Apply localToGlobalNodes (Tuple [elementId, localNode])))
+  )

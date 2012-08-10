@@ -413,9 +413,14 @@ prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
 prop_test_Project_NonTuple = (validExpression equivalenceInducer1)
 
 
--- Simple Field
+-- Simple scalar Field
 
-prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureDofsForElementExpr1)
+prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureFieldExpression1)
+
+
+-- Simple-ish geometric field.
+
+prop_test_simpleGeometricField = (validExpression FieldML_test_mesh01.geometricFieldExpression1)
 
 
 -- Field template
