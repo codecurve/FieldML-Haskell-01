@@ -24,7 +24,7 @@ testMain = do
 
 
 -- Tests
-x = GeneralVariable () "x" Reals
+x = GeneralVariable "x" Reals
   
 SimpleSubset expression1 = FieldML.Library01.unitLineSegment
 
