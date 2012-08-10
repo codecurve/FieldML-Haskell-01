@@ -420,6 +420,7 @@ prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementEx
 prop_test_fieldTemplate = (validExpression FieldML_test_mesh01.fieldTemplate)
 -- This might be useful for debugging this:
 -- putStrLn (Data.Tree.drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
+-- putStrLn (Data.Tree.drawTree (fmap (\x -> Data.List.intercalate "\n" [show (validExpression x), show x, show (domain x), show (codomain x)]) (expressionTree FieldML_test_mesh01.fieldTemplate)))
 
 unitSquarePredicate' = 
   Lambda xy (
