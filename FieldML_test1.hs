@@ -421,3 +421,5 @@ prop_test_Project_NonTuple = (validExpression equivalenceInducer1)
 prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementExpr)
 
 prop_test_fieldTemplate = (validExpression FieldML_test_mesh01.fieldTemplate)
+-- This might be useful for debugging this:
+-- putStrLn (drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
