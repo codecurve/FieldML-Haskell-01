@@ -1,4 +1,5 @@
 module FieldML.Library01 (
+  rc2dCoordLabels,
   real2,
   real3,
   
@@ -14,8 +15,15 @@ module FieldML.Library01 (
 ) where
 
 import FieldML.Core
+import qualified Data.Set as Set
 
+-- | Rectangular Cartesian 2-dimensional coordinate labels.
+rc2dCoordLabels = Labels (StringLabels (Set.fromList ["x", "y"]))
+
+-- | 2 dimensional Euclidean plane
 real2 = CartesianProduct [Reals, Reals]
+
+-- | 3 dimensional Euclidean plane
 real3 = CartesianProduct [Reals, Reals, Reals]
 
 x = GeneralVariable "x" Reals
