@@ -22,8 +22,8 @@ globalNodesFSet = Labels (IntegerRange 1 6)
 elementIdLabels = IntegerRange 1 2 
 elementIdFSet = Labels elementIdLabels
 localNodeFSet = Labels (IntegerRange 1 4)
-elementId = GeneralVariable () "elementId" elementIdFSet
-localNode = GeneralVariable () "localNode" localNodeFSet
+elementId = GeneralVariable "elementId" elementIdFSet
+localNode = GeneralVariable "localNode" localNodeFSet
 
 -- Todo: Should this be stronly typed as the element IDs?  We want to enforce that the range is discrete. Perhaps just use an FSet, and check that it's discrete as part of validation?  Will have to wait until FSet validation is implemented.
 
@@ -33,7 +33,7 @@ mesh_SansConnectivity =
     elementIdLabels
     (DomainMapConstant FieldML.Library01.unitSquare) 
 
-xi = (GeneralVariable () "ξ" FieldML.Library01.unitSquare) 
+xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
 
 
 
@@ -43,7 +43,7 @@ xi = (GeneralVariable () "ξ" FieldML.Library01.unitSquare)
 
 -- Todo: codomain here is Integers, and should be globalNodesFSet (i.e. the IDs of the global nodes).  
 -- Could introduce a constructor syntax, i.e. facility to define constructor and facility to use constructor.
-localToGlobalNodes = MultiDimArray ()
+localToGlobalNodes = MultiDimArray  
   (IntegerParameterVector
     [ 1, 2, 4, 5, 
       2, 3, 5, 6 ]
@@ -52,9 +52,9 @@ localToGlobalNodes = MultiDimArray ()
   (CartesianProduct [ elementIdFSet, localNodeFSet ])
 
 -- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
-globalNode = GeneralVariable () "globalNode" globalNodesFSet
+globalNode = GeneralVariable "globalNode" globalNodesFSet
 
-pressureAtNodes = MultiDimArray ()
+pressureAtNodes = MultiDimArray 
   (RealParameterVector
      [  0.1,      0.5,  55.9, 
         -0.4,   -100.9,  19.0 ] 
@@ -69,45 +69,45 @@ pressureField =
 
 -- MultiDimArray s are Lambda s, hence indexing is by means of application, and slices and slabs can be retrieved via partial application.
 elementIdToGlobalNodes = 
-  Lambda ()
-  (GeneralVariable () "elementId" elementIdFSet)
-  (PartialApplication () localToGlobalNodes 1 (GeneralVariable () "elementId" elementIdFSet))
+  Lambda 
+  (GeneralVariable "elementId" elementIdFSet)
+  (PartialApplication localToGlobalNodes 1 (GeneralVariable "elementId" elementIdFSet))
 
 
 -- Field template
 localToGlobalNodesMapSignature = SignatureSpace (CartesianProduct [ elementIdFSet, localNodeFSet ]) globalNodesFSet
-localToGlobalNodesVar = (GeneralVariable () "localToGlobalNodes" localToGlobalNodesMapSignature)
+localToGlobalNodesVar = (GeneralVariable "localToGlobalNodes" localToGlobalNodesMapSignature)
 
 dofSourceSignature = SignatureSpace globalNodesFSet Reals
-dofSourceVar = (GeneralVariable () "dofSource" dofSourceSignature)
+dofSourceVar = (GeneralVariable "dofSource" dofSourceSignature)
                          
 nodalDofsForElementExpr = 
-  Lambda ()
-  (Tuple () [
+  Lambda 
+  (Tuple [
     dofSourceVar,      
     localToGlobalNodesVar,            
     elementId,
     localNode
   ]) 
-  (Apply () dofSourceVar ((Apply () localToGlobalNodesVar (Tuple () [elementId, localNode]))))
+  (Apply dofSourceVar ((Apply localToGlobalNodesVar (Tuple [elementId, localNode]))))
 
 nodalDofsForElementSignature = SignatureSpace (Domain nodalDofsForElementExpr) (Codomain nodalDofsForElementExpr)
-nodalDofsForElementVar = GeneralVariable () "nodalDofsForElementVar" nodalDofsForElementSignature
+nodalDofsForElementVar = GeneralVariable "nodalDofsForElementVar" nodalDofsForElementSignature
 
 fieldTemplate = 
-  Lambda ()
-  (Tuple () [
+  Lambda
+  (Tuple [
     dofSourceVar,
     nodalDofsForElementVar,
     elementId,
     xi
   ])
-  (Contraction ()
-    (Lambda ()
+  (Contraction
+    (Lambda 
       localNode
-      (Apply ()
+      (Apply 
         nodalDofsForElementVar 
-        (Tuple () [
+        (Tuple [
           dofSourceVar,      
           localToGlobalNodesVar,            
           elementId,
@@ -117,6 +117,6 @@ fieldTemplate =
     )
     1
       
-    (Apply () FieldML.Library01.basis2dLinearLagrange xi)
+    (Apply FieldML.Library01.basis2dLinearLagrange xi)
     1
   )
