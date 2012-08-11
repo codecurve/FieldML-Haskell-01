@@ -414,16 +414,18 @@ prop_test_Project_NonTuple = (validExpression equivalenceInducer1)
 
 
 -- Simple scalar Field
-
 prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureFieldExpression1)
 
 
--- Simple-ish geometric field.
+-- Simple template for scalar field
+prop_test_simpleScalarField = (validExpression FieldML_test_mesh01.scalarFieldTemplate)
 
+
+-- Simple-ish geometric field.
 prop_test_simpleGeometricField = (validExpression FieldML_test_mesh01.geometricFieldExpression1)
 
 
--- Field template
+-- Generalised field template
 
 prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementExpr)
 
