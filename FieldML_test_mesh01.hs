@@ -152,8 +152,11 @@ pressureFieldExpression1 =
 scalarFieldTemplate =
   Lambda 
   (Tuple [
-    elementId,
-    localNode
+    dofSourceVar,
+    (Tuple [
+      elementId,
+      localNode
+    ])
   ]) 
   (Apply dofSourceVar ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
 
