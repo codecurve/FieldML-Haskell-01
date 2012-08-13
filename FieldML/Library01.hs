@@ -1,6 +1,8 @@
 module FieldML.Library01 (
   rc2dCoordLabels,
+  rc3dCoordLabels,
   real2,
+  real2',
   real3,
   
   unitLineSegment,
@@ -23,7 +25,13 @@ rc2dCoordLabels = Labels (StringLabels (Set.fromList ["x", "y"]))
 -- | 2 dimensional Euclidean plane
 real2 = CartesianProduct [Reals, Reals]
 
--- | 3 dimensional Euclidean plane
+-- | Alternate type for point in 2-dimensional Euclidian plane dimensional 
+real2' = SignatureSpace rc2dCoordLabels Reals -- Todo: Perhaps it is necessary to decide between the two alternatives.  Or, there need to be dictionaries somewhere that group the alternatives that are deemed equivalent.
+
+-- | Rectangular Cartesian 3-dimensional coordinate labels.
+rc3dCoordLabels = Labels (StringLabels (Set.fromList ["x", "y", "z"]))
+
+-- | 3 dimensional Euclidean space
 real3 = CartesianProduct [Reals, Reals, Reals]
 
 x = GeneralVariable "x" Reals
