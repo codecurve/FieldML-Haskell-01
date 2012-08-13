@@ -5,10 +5,10 @@ This prototype is an attempt at using Haskell to prototype FieldML design ideas.
 These ideas are based on discussions of the FieldML design work group at the Auckland Bioengineering Institute at Auckland University.  Current members of the FieldML design group are: Poul Nielsen, Richard Christie, Andrew Miller, Alan Wu and myself (Randall Britten).
 In the past, others have also contributed to these discussions, notably Caton Little, Chris Bradley and Peter Hunter.
 
-The key structures are in FieldML/Core.hs
-Some examples are in FieldML_test_mesh01.hs and FieldML_test1.hs.
-The unit tests can be run using "runhaskell FieldML_test1.hs".
-Recent results of the unit tests are in "test-log.txt". 
+ * The key structures are in FieldML/Core.hs
+ * Some examples are in FieldML_test_mesh01.hs and FieldML_test1.hs.
+ * The unit tests can be run using "runhaskell FieldML_test1.hs".
+ * Recent results of the unit tests are in "test-log.txt". 
 
 Comparison with ModML
 ---------------------
@@ -101,6 +101,7 @@ Original idea sketch
 The goal was to be able to represent things similar to the following:
 (As at 2012-07-25, this goal has actually essentially been achieved)
 
+```
     M1 :: FSet
     M1 = Reals
 
@@ -116,23 +117,33 @@ The goal was to be able to represent things similar to the following:
     domain(f2) == CartesianProduct[Reals, Reals]
     codomain(f2) = Reals
     f2 x = Project(1, x) + Project(2, x)
+```
+
 Or
+
+```
     f2 = lambda x → Project(1, x) + Project(2, x)
+```
 
 Naming Expressions so that we can write point free composition?
 
 Tensor product:
+
+```
     f3 = Tuple[1-x, x]
     TensorProduct(f3, f3)
+```
 
 Would hopefully be:
+
+```
     Tuple[
       (1-x)(1-y)
       x(1-y)
       (1-x)y
       xy
     ]
-
+```
 
 Mapping to OpenCMISS
 --------------------
