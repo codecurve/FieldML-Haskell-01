@@ -12,6 +12,10 @@ module FieldML_test_mesh01
     pressureAtNodes,
     pressureForElementAtLocalNode,
     pressureAtLocalNodesViaTemplate,
+    p1,
+    p2,
+    p3,
+    p4,
     scalarFieldTemplate,
     coordinatesAtNodes,
     geometricFieldExpression1
@@ -167,6 +171,10 @@ scalarFieldTemplate =
 -- pressureAtLocalNodesViaTemplate
 pressureAtLocalNodesViaTemplate = PartialApplication scalarFieldTemplate 1 pressureAtNodes
   
+p1 = PartialApplication pressureAtLocalNodesViaTemplate 1 elementId
+p2 = Apply FieldML.Library01.basis2dLinearLagrange xi
+p3 = Contraction p1 1 p2 1
+p4 = Lambda (Tuple [elementId, xi]) p3
 
 -- Geometry field (x, y) coordinates at each node.
 
