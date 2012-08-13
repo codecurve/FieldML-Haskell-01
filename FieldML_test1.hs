@@ -429,6 +429,7 @@ prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureFor
 -- Simple template for scalar field
 prop_test_simpleScalarField = (validExpression FieldML_test_mesh01.scalarFieldTemplate)
 
+prop_test_localNodePressureViaTemplate = (validExpression FieldML_test_mesh01.pressureAtLocalNodesViaTemplate)
 
 -- Simple-ish geometric field.
 prop_test_simpleGeometricField = (validExpression FieldML_test_mesh01.geometricFieldExpression1)

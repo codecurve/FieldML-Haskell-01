@@ -11,6 +11,7 @@ module FieldML_test_mesh01
     fieldTemplate,
     pressureAtNodes,
     pressureForElementAtLocalNode,
+    pressureAtLocalNodesViaTemplate,
     scalarFieldTemplate,
     coordinatesAtNodes,
     geometricFieldExpression1
@@ -163,6 +164,9 @@ scalarFieldTemplate =
   ]) 
   (Apply dofSourceVar ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
 
+-- pressureAtLocalNodesViaTemplate
+pressureAtLocalNodesViaTemplate = PartialApplication scalarFieldTemplate 1 pressureAtNodes
+  
 
 -- Geometry field (x, y) coordinates at each node.
 
