@@ -228,7 +228,7 @@ codomain (MultiDimArray (IntegerParameterVector _ m) _) = m
 codomain (MultiDimArray (AlgebraicVector (Tuple (x:xs))) _) = expressionType x
 codomain (MultiDimArray (AlgebraicVector x) _) = expressionType x
 codomain (Contraction _ _ _ _) = Reals
-codomain (KroneckerProduct fs ) = CartesianProduct (replicate m Reals)
+codomain (KroneckerProduct fs ) = SignatureSpace (Labels (IntegerRange 1 m)) Reals
   where
     m = product ( map tupleLength fs )
     tupleLength (Tuple gs) = length gs
