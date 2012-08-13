@@ -22,6 +22,7 @@ import qualified Data.Set as Set
 simplifyFSet :: FSet -> FSet
 simplifyFSet (Factor n (CartesianProduct ys)) = simplifyFSet (ys !! (n-1))
 simplifyFSet (CartesianProduct []) = UnitSpace
+simplifyFSet (CartesianProduct (UnitSpace:ms)) = simplifyFSet (CartesianProduct ms)
 simplifyFSet (CartesianProduct [m]) = simplifyFSet m
 simplifyFSet (SignatureSpace UnitSpace m) = simplifyFSet m
 simplifyFSet (Domain (Lambda x _)) = simplifyFSet (codomain x)
@@ -151,10 +152,12 @@ domain (Interior (SimpleSubset l@(Lambda _ _)) ) = simplifyFSet $ domain l
 domain x@(Interior _) = error ("domain not implemented yet for Interior for anything other than SimpleSubset of a Lambda. Args:" ++ show x)
 domain (MultiDimArray _ m) = simplifyFSet m
 domain (Contraction a1 n1 a2 n2) = 
-  CartesianProduct [
-    domain (PartialApplication a1 n1 boundIndexVariable),
-    domain (PartialApplication a2 n2 boundIndexVariable)
-  ]
+  simplifyFSet (
+    CartesianProduct [
+      domain (PartialApplication a1 n1 boundIndexVariable),
+      domain (PartialApplication a2 n2 boundIndexVariable)
+    ]
+  )
   where
     boundIndexVariable = GeneralVariable "boundIndexVariable" (getFactor n1 (domain a1)) --Todo: Assumes this is the same as (getFactor n2 (domain a2)).
     
