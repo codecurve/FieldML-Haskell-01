@@ -7,19 +7,12 @@ module FieldML_test_mesh01
     elementId,
     localNode,
     localToGlobalNodes,
-    nodalDofsForElementExpr,
 
-    pressureAtNodes,
-    pressureForElementAtLocalNode,
-    pressureAtLocalNodesViaTemplate,
-    p1, -- Exported for testing
-    p2, -- Exported for testing
-    pressureViaTemplate1,
+    pressureAtGlobalNodes,  -- Exported for testing
 
     t1, -- Exported for testing
     t2, -- Exported for testing
-    t3, -- Exported for testing
-    pressureViaTemplate2,
+    pressureViaTemplate,
     
     coordinatesAtNodes,
     geometricFieldExpression    
@@ -63,6 +56,8 @@ xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare)
 --  |   |   |
 --  1---2---3
 
+-- Todo: include xi directions on above diagram, and check that basis functions are actually being matched up to the correct nodes.
+
 -- Todo: codomain here is Integers, and should be globalNodesFSet (i.e. the IDs of the global nodes).  
 -- Could introduce a constructor syntax, i.e. facility to define constructor and facility to use constructor.
 localToGlobalNodes = MultiDimArray  
@@ -76,7 +71,7 @@ localToGlobalNodes = MultiDimArray
 -- Todo: perhaps we want the parameters to the IntegerRange constructor to be variables that can be e.g. Map types.
 globalNode = GeneralVariable "globalNode" globalNodesFSet
 
-pressureAtNodes = MultiDimArray 
+pressureAtGlobalNodes = MultiDimArray 
   (RealParameterVector [ 
     0.1,
     0.5,
@@ -87,72 +82,15 @@ pressureAtNodes = MultiDimArray
   ])
   globalNodesFSet
 
-{-
-pressureField = 
-  Lambda 
-    (Tuple [GeneralVariable "elementId" elementIdFSet, GeneralVariable "ξ ])
--}
-
--- MultiDimArray s are Lambda s, hence indexing is by means of application, and slices and slabs can be retrieved via partial application.
-elementIdToGlobalNodes = 
-  Lambda 
-  (GeneralVariable "elementId" elementIdFSet)
-  (PartialApplication localToGlobalNodes 1 (GeneralVariable "elementId" elementIdFSet))
-
 
 -- Field template
-localToGlobalNodesMapSignature = SignatureSpace (CartesianProduct [ elementIdFSet, localNodeFSet ]) globalNodesFSet
-localToGlobalNodesVar = (GeneralVariable "localToGlobalNodes" localToGlobalNodesMapSignature)
-
 dofSourceSignature = SignatureSpace globalNodesFSet Reals
 dofSourceVar = (GeneralVariable "dofSource" dofSourceSignature)
                          
-nodalDofsForElementExpr = 
-  Lambda 
-  (Tuple [
-    dofSourceVar,      
-    localToGlobalNodesVar,            
-    elementId,
-    localNode
-  ]) 
-  (Apply dofSourceVar ((Apply localToGlobalNodesVar (Tuple [elementId, localNode]))))
-
-nodalDofsForElementSignature = SignatureSpace (Domain nodalDofsForElementExpr) (Codomain nodalDofsForElementExpr)
-nodalDofsForElementVar = GeneralVariable "nodalDofsForElementVar" nodalDofsForElementSignature
-
--- Direct Field, without intermediate template style.
-pressureForElementAtLocalNode = 
-  Lambda 
-  (Tuple [
-    elementId,
-    localNode
-  ]) 
-  (Apply pressureAtNodes ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
-
-
-
-
--- Scalar Field, using intermediate template style.
-scalarLocalDofsTemplate =
-  Lambda 
-  (Tuple [
-    dofSourceVar,
-    (Tuple [
-      elementId,
-      localNode
-    ])
-  ]) 
-  (Apply dofSourceVar ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
-
--- pressureAtLocalNodesViaTemplate
-pressureAtLocalNodesViaTemplate = PartialApplication scalarLocalDofsTemplate 1 pressureAtNodes
+-- Currently this is just a convenience so that this snippet can be used within a Lambda later. xi is not intended to be a closure here, but will be bound when this snippet is used in a Lambda later.
 basis2dLLEvaluated = Apply FieldML.Library01.basis2dLinearLagrange xi  
 
-p1 = PartialApplication pressureAtLocalNodesViaTemplate 1 elementId
-p2 = Contraction p1 1 basis2dLLEvaluated 1
-pressureViaTemplate1 = Lambda (Tuple [elementId, xi]) p2
-
--- Field template take 2
+-- | Field template construction step 1: t1 represents the mapping from global nodal DOFs to element local nodal DOFs.
 t1 =
   Lambda 
   (Tuple [
@@ -161,17 +99,20 @@ t1 =
   ]) 
   (Apply dofSourceVar ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
 
-t2 = PartialApplication t1 1 elementId
-t3 = Contraction t2 1 basis2dLLEvaluated 1
-scalarFieldTemplate2 = 
+-- | Field template construction step 2: t2 represents just the DOFs for local nodes of a particular element.
+t2 = PartialApplication t1 1 elementId -- Again: elementId is not intended to be a closure, but will be bound when used in a Lambda later.
+
+-- | Field template construction step 4: scalarFieldTemplate puts it all together so that for any scalar DOF source, the scalar field can be evaluated at any (element,xi).  The scalar field is the inner product, i.e. contraction, of element local node DOFs with evaluated basis functions.
+scalarFieldTemplate = 
   Lambda 
   (Tuple [
     dofSourceVar,
     (Tuple [elementId, xi])
   ])
-  t3
+  (Contraction t2 1 basis2dLLEvaluated 1)
 
-pressureViaTemplate2 = PartialApplication scalarFieldTemplate2 1 pressureAtNodes
+-- | Demonstration of a scalar FEM field: to get an actual scalar field, simply apply the template to actual DOFs.
+pressureViaTemplate = PartialApplication scalarFieldTemplate 1 pressureAtGlobalNodes
 
 
 -- Geometry field (x, y) coordinates at each node.
@@ -190,6 +131,7 @@ coordinatesAtNodes = MultiDimArray
 
 coordinateLabel = GeneralVariable "coordinateLabel" FieldML.Library01.rc2dCoordLabels
 
+-- | Demonstration of a geometric FEM field: achieved via applying a scalar field template to a 'slice' of the DOFs created by partial evaluation.
 geometricFieldExpression =
   Lambda 
   (Tuple [
@@ -202,7 +144,7 @@ geometricFieldExpression =
 
   ( Apply
     ( PartialApplication 
-      scalarFieldTemplate2
+      scalarFieldTemplate
       1 
       (PartialApplication coordinatesAtNodes 1 coordinateLabel)
     )

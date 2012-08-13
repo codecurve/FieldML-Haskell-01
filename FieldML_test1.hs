@@ -173,7 +173,7 @@ brokenParamTest = MultiDimArray
 
 prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
 
-prop_test_IntParam_01d = ( validExpression FieldML_test_mesh01.pressureAtNodes )
+prop_test_IntParam_01d = ( validExpression FieldML_test_mesh01.pressureAtGlobalNodes )
 
 -- Demonstrating equations.  For now, this is just a Map to Boolean, but an extra construct could be added that means that this is asserted to be true.
 xy1 = GeneralVariable "xy" (CartesianProduct [Reals, Reals])
@@ -422,21 +422,12 @@ simpleContraction = Contraction v1 1 v2 1
 prop_test_SimpleContraction = (validExpression simpleContraction)
     
 
--- Scalar DOF at element/localNode
-prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureForElementAtLocalNode)
-
-
 -- Template for scalar field
 
-prop_test_localNodePressureViaTemplate = (validExpression FieldML_test_mesh01.pressureAtLocalNodesViaTemplate)
-prop_test_pressureFieldViaTemplate1 = (validExpression FieldML_test_mesh01.pressureViaTemplate1)
-prop_test_pressureFieldViaTemplate2 = (validExpression FieldML_test_mesh01.pressureViaTemplate2)
+prop_test_pressureFieldViaTemplate2 = (validExpression FieldML_test_mesh01.pressureViaTemplate)
 
 -- Simple-ish geometric field.
 prop_test_geometricFieldViaTemplate = (validExpression FieldML_test_mesh01.geometricFieldExpression)
-
--- Generalised field template
-prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementExpr)
 
 -- This might be useful for debugging this complicated expressions.
 -- putStrLn (Data.Tree.drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
