@@ -151,7 +151,7 @@ pressureForElementAtLocalNode =
 
 
 
--- Direct Field, without intermediate template style.
+-- Direct Field, using intermediate template style.
 scalarFieldTemplate =
   Lambda 
   (Tuple [
