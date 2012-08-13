@@ -413,8 +413,17 @@ prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
 prop_test_Project_NonTuple = (validExpression equivalenceInducer1)
 
 
--- Simple scalar Field
-prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureFieldExpression1)
+-- Simple contraction
+
+v1 = GeneralVariable "v1" FieldML.Library01.real2'
+v2 = GeneralVariable "v2" FieldML.Library01.real2'
+simpleContraction = Contraction v1 1 v2 1
+
+prop_test_SimpleContraction = (validExpression simpleContraction)
+    
+
+-- Scalar DOF at element/localNode
+prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureForElementAtLocalNode)
 
 
 -- Simple template for scalar field

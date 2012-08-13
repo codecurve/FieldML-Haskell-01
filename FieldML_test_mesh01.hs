@@ -10,7 +10,7 @@ module FieldML_test_mesh01
     nodalDofsForElementExpr,
     fieldTemplate,
     pressureAtNodes,
-    pressureFieldExpression1,
+    pressureForElementAtLocalNode,
     scalarFieldTemplate,
     coordinatesAtNodes,
     geometricFieldExpression1
@@ -140,13 +140,16 @@ fieldTemplate =
 
 
 -- Direct Field, without intermediate template style.
-pressureFieldExpression1 = 
+pressureForElementAtLocalNode = 
   Lambda 
   (Tuple [
     elementId,
     localNode
   ]) 
   (Apply pressureAtNodes ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
+
+
+
 
 -- Direct Field, without intermediate template style.
 scalarFieldTemplate =
@@ -188,3 +191,24 @@ geometricFieldExpression1 =
     (PartialApplication coordinatesAtNodes 1 coordinateLabel)
     ((Apply localToGlobalNodes (Tuple [elementId, localNode])))
   )
+
+
+{-
+geometricFieldUsingScalarTemplate =
+  Lambda 
+  (Tuple [
+    coordinateLabel,  
+    elementId,
+    localNode
+  ]) 
+  (Apply
+    scalarFieldTemplate
+    (Tuple [
+      (Tuple [
+        elementId,
+        localNode
+      ])
+    ])
+    )
+  )
+-}
