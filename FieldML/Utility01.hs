@@ -178,6 +178,7 @@ codomain (RealConstant _ ) = Reals
 codomain (LabelValue (StringLabel _ m)) = Labels m
 codomain (LabelValue (IntegerLabel _ m)) = Labels m
 
+codomain (GeneralVariable _ (SignatureSpace _ m)) = simplifyFSet m
 codomain (GeneralVariable _ m) = m
 codomain (Unspecified m) = m
 codomain (Cast _ (SignatureSpace _ m)) = m
