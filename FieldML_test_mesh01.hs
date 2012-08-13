@@ -15,7 +15,12 @@ module FieldML_test_mesh01
     p1,
     p2,
     p3,
-    p4,
+
+    t1,
+    t2,
+    t3,
+    pressureViaTemplate2,
+    
     scalarFieldTemplate,
     coordinatesAtNodes,
     geometricFieldExpression1
@@ -156,7 +161,7 @@ pressureForElementAtLocalNode =
 
 
 
--- Direct Field, using intermediate template style.
+-- Scalar Field, using intermediate template style.
 scalarFieldTemplate =
   Lambda 
   (Tuple [
@@ -170,11 +175,32 @@ scalarFieldTemplate =
 
 -- pressureAtLocalNodesViaTemplate
 pressureAtLocalNodesViaTemplate = PartialApplication scalarFieldTemplate 1 pressureAtNodes
-  
+basis2dLLEvaluated = Apply FieldML.Library01.basis2dLinearLagrange xi  
+
 p1 = PartialApplication pressureAtLocalNodesViaTemplate 1 elementId
-p2 = Apply FieldML.Library01.basis2dLinearLagrange xi
-p3 = Contraction p1 1 p2 1
-p4 = Lambda (Tuple [elementId, xi]) p3
+p2 = Contraction p1 1 basis2dLLEvaluated 1
+p3 = Lambda (Tuple [elementId, xi]) p2
+
+-- Field template take 2
+t1 =
+  Lambda 
+  (Tuple [
+    elementId,
+    localNode
+  ]) 
+  (Apply dofSourceVar ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
+
+t2 = PartialApplication t1 1 elementId
+t3 = Contraction t2 1 basis2dLLEvaluated 1
+scalarFieldTemplate2 = 
+  Lambda 
+  (Tuple [
+    dofSourceVar,
+    (Tuple [elementId, xi])
+  ])
+  t3
+
+pressureViaTemplate2 = PartialApplication scalarFieldTemplate2 1 pressureAtNodes
 
 -- Geometry field (x, y) coordinates at each node.
 
