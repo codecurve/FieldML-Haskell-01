@@ -426,23 +426,19 @@ prop_test_SimpleContraction = (validExpression simpleContraction)
 prop_test_simplePressureField = (validExpression FieldML_test_mesh01.pressureForElementAtLocalNode)
 
 
--- Simple template for scalar field
-prop_test_simpleScalarField = (validExpression FieldML_test_mesh01.scalarFieldTemplate)
-prop_test_localNodePressureViaTemplate = (validExpression FieldML_test_mesh01.pressureAtLocalNodesViaTemplate)
-prop_test_pressureFieldViaTemplate = (validExpression FieldML_test_mesh01.p3)
+-- Template for scalar field
 
+prop_test_localNodePressureViaTemplate = (validExpression FieldML_test_mesh01.pressureAtLocalNodesViaTemplate)
+prop_test_pressureFieldViaTemplate1 = (validExpression FieldML_test_mesh01.pressureViaTemplate1)
 prop_test_pressureFieldViaTemplate2 = (validExpression FieldML_test_mesh01.pressureViaTemplate2)
 
 -- Simple-ish geometric field.
-prop_test_simpleGeometricField = (validExpression FieldML_test_mesh01.geometricFieldExpression1)
-
+prop_test_geometricFieldViaTemplate = (validExpression FieldML_test_mesh01.geometricFieldExpression)
 
 -- Generalised field template
-
 prop_test_nodalDofs = (validExpression FieldML_test_mesh01.nodalDofsForElementExpr)
 
-prop_test_fieldTemplate = (validExpression FieldML_test_mesh01.fieldTemplate)
--- This might be useful for debugging this:
+-- This might be useful for debugging this complicated expressions.
 -- putStrLn (Data.Tree.drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
 -- putStrLn (Data.Tree.drawTree (fmap (\x -> Data.List.intercalate "\n" [show (validExpression x), show x, show (domain x), show (codomain x)]) (expressionTree FieldML_test_mesh01.fieldTemplate)))
 

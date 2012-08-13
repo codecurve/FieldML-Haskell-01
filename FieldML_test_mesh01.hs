@@ -8,22 +8,21 @@ module FieldML_test_mesh01
     localNode,
     localToGlobalNodes,
     nodalDofsForElementExpr,
-    fieldTemplate,
+
     pressureAtNodes,
     pressureForElementAtLocalNode,
     pressureAtLocalNodesViaTemplate,
-    p1,
-    p2,
-    p3,
+    p1, -- Exported for testing
+    p2, -- Exported for testing
+    pressureViaTemplate1,
 
-    t1,
-    t2,
-    t3,
+    t1, -- Exported for testing
+    t2, -- Exported for testing
+    t3, -- Exported for testing
     pressureViaTemplate2,
     
-    scalarFieldTemplate,
     coordinatesAtNodes,
-    geometricFieldExpression1
+    geometricFieldExpression    
   )
 where
 
@@ -121,34 +120,6 @@ nodalDofsForElementExpr =
 nodalDofsForElementSignature = SignatureSpace (Domain nodalDofsForElementExpr) (Codomain nodalDofsForElementExpr)
 nodalDofsForElementVar = GeneralVariable "nodalDofsForElementVar" nodalDofsForElementSignature
 
-fieldTemplate = 
-  Lambda
-  (Tuple [
-    dofSourceVar,
-    nodalDofsForElementVar,
-    elementId,
-    xi
-  ])
-  (Contraction
-    (Lambda 
-      localNode
-      (Apply 
-        nodalDofsForElementVar 
-        (Tuple [
-          dofSourceVar,      
-          localToGlobalNodesVar,            
-          elementId,
-          localNode
-        ]) 
-      )
-    )
-    1
-      
-    (Apply FieldML.Library01.basis2dLinearLagrange xi)
-    1
-  )
-
-
 -- Direct Field, without intermediate template style.
 pressureForElementAtLocalNode = 
   Lambda 
@@ -162,7 +133,7 @@ pressureForElementAtLocalNode =
 
 
 -- Scalar Field, using intermediate template style.
-scalarFieldTemplate =
+scalarLocalDofsTemplate =
   Lambda 
   (Tuple [
     dofSourceVar,
@@ -174,12 +145,12 @@ scalarFieldTemplate =
   (Apply dofSourceVar ((Apply localToGlobalNodes (Tuple [elementId, localNode]))))
 
 -- pressureAtLocalNodesViaTemplate
-pressureAtLocalNodesViaTemplate = PartialApplication scalarFieldTemplate 1 pressureAtNodes
+pressureAtLocalNodesViaTemplate = PartialApplication scalarLocalDofsTemplate 1 pressureAtNodes
 basis2dLLEvaluated = Apply FieldML.Library01.basis2dLinearLagrange xi  
 
 p1 = PartialApplication pressureAtLocalNodesViaTemplate 1 elementId
 p2 = Contraction p1 1 basis2dLLEvaluated 1
-p3 = Lambda (Tuple [elementId, xi]) p2
+pressureViaTemplate1 = Lambda (Tuple [elementId, xi]) p2
 
 -- Field template take 2
 t1 =
@@ -202,6 +173,7 @@ scalarFieldTemplate2 =
 
 pressureViaTemplate2 = PartialApplication scalarFieldTemplate2 1 pressureAtNodes
 
+
 -- Geometry field (x, y) coordinates at each node.
 
 coordinatesAtNodes = MultiDimArray 
@@ -218,35 +190,21 @@ coordinatesAtNodes = MultiDimArray
 
 coordinateLabel = GeneralVariable "coordinateLabel" FieldML.Library01.rc2dCoordLabels
 
-geometricFieldExpression1 = 
+geometricFieldExpression =
   Lambda 
   (Tuple [
-    coordinateLabel,  
-    elementId,
-    localNode
-  ]) 
-  (Apply 
-    (PartialApplication coordinatesAtNodes 1 coordinateLabel)
-    ((Apply localToGlobalNodes (Tuple [elementId, localNode])))
-  )
-
-
-{-
-geometricFieldUsingScalarTemplate =
-  Lambda 
-  (Tuple [
-    coordinateLabel,  
-    elementId,
-    localNode
-  ]) 
-  (Apply
-    scalarFieldTemplate
     (Tuple [
-      (Tuple [
-        elementId,
-        localNode
-      ])
-    ])
+      elementId,
+      xi
+    ]),
+    coordinateLabel
+  ])
+
+  ( Apply
+    ( PartialApplication 
+      scalarFieldTemplate2
+      1 
+      (PartialApplication coordinatesAtNodes 1 coordinateLabel)
     )
+    (Tuple [elementId, xi])
   )
--}

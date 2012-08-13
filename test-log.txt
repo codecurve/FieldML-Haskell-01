@@ -86,23 +86,19 @@
 +++ OK, passed 100 tests.
 === prop_test_simplePressureField on FieldML_test1.hs:426 ===
 +++ OK, passed 100 tests.
-=== prop_test_simpleScalarField on FieldML_test1.hs:430 ===
-+++ OK, passed 100 tests.
 === prop_test_localNodePressureViaTemplate on FieldML_test1.hs:431 ===
 +++ OK, passed 100 tests.
-=== prop_test_pressureFieldViaTemplate on FieldML_test1.hs:432 ===
+=== prop_test_pressureFieldViaTemplate1 on FieldML_test1.hs:432 ===
 +++ OK, passed 100 tests.
-=== prop_test_pressureFieldViaTemplate2 on FieldML_test1.hs:434 ===
+=== prop_test_pressureFieldViaTemplate2 on FieldML_test1.hs:433 ===
 +++ OK, passed 100 tests.
-=== prop_test_simpleGeometricField on FieldML_test1.hs:437 ===
+=== prop_test_geometricFieldViaTemplate on FieldML_test1.hs:436 ===
 +++ OK, passed 100 tests.
-=== prop_test_nodalDofs on FieldML_test1.hs:442 ===
+=== prop_test_nodalDofs on FieldML_test1.hs:439 ===
 +++ OK, passed 100 tests.
-=== prop_test_fieldTemplate on FieldML_test1.hs:444 ===
+=== prop_test_Subset_CommutesWith_CartesianProduct_Case on FieldML_test1.hs:454 ===
 *** Failed! Falsifiable (after 1 test):  
-=== prop_test_Subset_CommutesWith_CartesianProduct_Case on FieldML_test1.hs:458 ===
+=== prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare1 on FieldML_test1.hs:456 ===
 *** Failed! Falsifiable (after 1 test):  
-=== prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare1 on FieldML_test1.hs:460 ===
-*** Failed! Falsifiable (after 1 test):  
-=== prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare2 on FieldML_test1.hs:462 ===
+=== prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare2 on FieldML_test1.hs:458 ===
 +++ OK, passed 100 tests.
