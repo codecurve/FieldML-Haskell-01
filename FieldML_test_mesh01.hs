@@ -119,17 +119,17 @@ pressureViaTemplate = PartialApplication scalarFieldTemplate 1 pressureAtGlobalN
 
 coordinatesAtNodes = MultiDimArray 
   (RealParameterVector [ 
-    0.0, 0.0,
-    0.5, 0.0,
-    1.0, 0.0,
+    0.0, 0.0, 0.5,
+    0.5, 0.0, 0.6,
+    1.0, 0.0, 0.7,
     
-    0.0, 0.5,
-    0.5, 0.5,
-    1.0, 0.5
+    0.0, 0.5, 0.5,
+    0.5, 0.5, 0.6,
+    1.0, 0.5, 0.7
   ])
-  (CartesianProduct [FieldML.Library01.rc2dCoordLabels, globalNodesFSet])
+  (CartesianProduct [FieldML.Library01.rc3dCoordLabels, globalNodesFSet])
 
-coordinateLabel = GeneralVariable "coordinateLabel" FieldML.Library01.rc2dCoordLabels
+coordinateLabel = GeneralVariable "coordinateLabel" FieldML.Library01.rc3dCoordLabels
 
 -- | Demonstration of a geometric FEM field: achieved via applying a scalar field template to a 'slice' of the DOFs created by partial evaluation.
 geometricFieldExpression =

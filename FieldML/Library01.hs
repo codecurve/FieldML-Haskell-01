@@ -4,6 +4,7 @@ module FieldML.Library01 (
   real2,
   real2',
   real3,
+  real3',
   
   unitLineSegment,
   unitSquare,
@@ -33,6 +34,9 @@ rc3dCoordLabels = Labels (StringLabels (Set.fromList ["x", "y", "z"]))
 
 -- | 3 dimensional Euclidean space
 real3 = CartesianProduct [Reals, Reals, Reals]
+
+-- | Alternate type for point in 2-dimensional Euclidian plane dimensional 
+real3' = SignatureSpace rc3dCoordLabels Reals -- Todo: Seen note at real2'
 
 x = GeneralVariable "x" Reals
 
