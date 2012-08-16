@@ -243,11 +243,15 @@ data Expression =
   -- I.e. the result is a lambda from CartesianProduct m1 m2, where m1 is the domain of x1 with the i1'th factor removed, and similarly for m2.
   Contraction Expression Int Expression Int |
 
-  -- | y = KroneckerProduct xs requires each x in xs to be a MultiDimArray with a single index (essentially a vector).
-  -- For AlgebraicVector, each member of the Tuple must have Reals as its codomain.
+  -- | y = KroneckerProduct xs requires each x in xs to essentially be a Tuple of Reals (essentially a vector).
+  -- Note: This is a limitation compared to the conventional Kronecker product, which operates on matrices.
   -- The represented result is a Tuple whose length is the product of the lengths of of each x.
   -- For example, for the case where xs = [x1,x2], and x1 has m members, x2 has n members, then
   -- y_i is x1_j * x2_k, where i = (j-1) * n + k, j=1..m, k=1..n and asterisk means scalar real multiplication, and _ precedes the index.
+  -- So that if x1 represented vector with entries (a1, a2) and x2 (b1, b2, b3), then y would be (a1 b1, a1 b2, a1 b3, a2 b1, a2 b2, a2 b3).
+  
+  -- Todo: Nothing in this structure limits Kronecker product to just tuple/vector operands, perhaps the restriction should be lifted, i.e. allow for matrices.
+  -- Todo: Consider using MultiDimArray rather than Tuple. For AlgebraicVector, the Tuple must be a Tuple of Reals.
   KroneckerProduct [Expression] |
   
   -- | DistributedAccordingTo x f is true if x is distributed according to f, where f meets the requirements to serve 
