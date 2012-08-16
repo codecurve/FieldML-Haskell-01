@@ -50,11 +50,13 @@ xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare)
 --  1---2
 
 -- Global nodes for mesh
---  4---5---6
---  |   |   |
---  | 1 | 2 |
---  |   |   |
---  1---2---3
+--  ^  4---5---6
+--  |  |   |   |
+-- ξ2  | 1 | 2 |
+--  |  |   |   |
+--  |  1---2---3
+--
+-- ----ξ1--->
 
 -- Todo: include xi directions on above diagram, and check that basis functions are actually being matched up to the correct nodes.
 

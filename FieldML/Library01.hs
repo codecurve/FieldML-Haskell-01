@@ -83,8 +83,8 @@ basis2dLinearLagrange = Lambda
     (GeneralVariable "ξ2" unitLineSegment)
   ]) 
   (KroneckerProduct [
-    basis1dLinearLagrange_xi1, 
-    basis1dLinearLagrange_xi2
+    basis1dLinearLagrange_xi2,
+    basis1dLinearLagrange_xi1
   ])
 
 unitCube = CartesianProduct [unitLineSegment, unitLineSegment, unitLineSegment]
@@ -96,7 +96,7 @@ basis3dLinearLagrange = Lambda
     (GeneralVariable "ξ3" unitLineSegment)
   ])   
   (KroneckerProduct [
-    basis1dLinearLagrange_xi1, 
-    basis1dLinearLagrange_xi2, 
-    basis1dLinearLagrange_xi3 
+    basis1dLinearLagrange_xi3,
+    basis1dLinearLagrange_xi2,
+    basis1dLinearLagrange_xi1
   ])
