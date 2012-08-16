@@ -58,7 +58,6 @@ xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare)
 --
 -- ----ξ1--->
 
--- Todo: include xi directions on above diagram, and check that basis functions are actually being matched up to the correct nodes.
 
 -- Todo: codomain here is Integers, and should be globalNodesFSet (i.e. the IDs of the global nodes).  
 -- Could introduce a constructor syntax, i.e. facility to define constructor and facility to use constructor.
