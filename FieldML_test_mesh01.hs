@@ -35,10 +35,10 @@ localNode = GeneralVariable "localNode" localNodeFSet
 
 
 mesh_SansConnectivity = 
-  DisjointUnion 
-    elementIdLabels
-    (CartesianProduct [Labels elementIdLabels, FieldML.Library01.unitSquare])    
-    (DomainMapConstant FieldML.Library01.unitSquare) 
+  CartesianProduct [
+    elementIdFSet,
+    FieldML.Library01.unitSquare
+  ]
 
 xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
 

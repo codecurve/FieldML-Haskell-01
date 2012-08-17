@@ -14,7 +14,7 @@ where
 import FieldML.Core
 
 import Data.List ( delete, nub, (\\) )
-import qualified Data.Set as Set
+import Data.Set (size, member)
 
 -- Focus here is on *processing* the FieldML data structures.  
 
@@ -245,30 +245,31 @@ codomain (DistributionFromRealisations _) = Reals
 codomain x = error ("codomain not implemented yet for this constructor. Args:" ++ show x)
 
 
+
+
 -- | True if expression passes a limited set of tests.  Note: this is under construction, so sometimes an expression is reported as valid, even if it is not valid.
 validExpression :: Expression -> Bool
 
 validExpression UnitElement = True
 validExpression (BooleanConstant _) = True
 validExpression (RealConstant _ ) = True
-validExpression (LabelValue (StringLabel  x  (StringLabels xs) )) = x `elem` (Set.toList xs)
-validExpression (LabelValue (IntegerLabel x (IntegerRange a b) )) = a <= x && x <= b
-validExpression (LabelValue (IntegerLabel _ Integers )) = True
-validExpression (LabelValue (IntegerLabel x (DiscreteSetUnion n1 n2))) = 
-  validExpression (LabelValue (IntegerLabel x n1))  ||
-  validExpression (LabelValue (IntegerLabel x n2))
-validExpression (LabelValue (IntegerLabel x (Intersection n1 n2))) = 
-  validExpression (LabelValue (IntegerLabel x n1))  &&
-  validExpression (LabelValue (IntegerLabel x n2))
+validExpression x@(LabelValue _) = x `inLabelSet` m
+  where 
+    m = case x of 
+      LabelValue (StringLabel  _ m') -> m'  
+      LabelValue (IntegerLabel _ m') -> m'
 
 validExpression (GeneralVariable _ _) = True -- Todo: Could validate the name of the variable according to some rules for identifier names.
 validExpression (Unspecified _) = True
-validExpression (Cast x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
-validExpression (Cast x (DisjointUnion s m f)) = canonicalSuperset (codomain x) == m
-validExpression x1@(Cast x m1) = 
-  case (codomain x) of 
-    DisjointUnion _ m2 _ -> m2 == m1
-    _                    -> error ("validExpression not implemented yet for Cast of this form. Args:" ++ show x1)
+-- validExpression (Cast x (SignatureSpace m n)) = validExpression x -- Todo: Major omission here: a lot of work is probably required to validate all possibilities.
+validExpression (Cast (Tuple (x:xs)) d@(DisjointUnion _ _)) = (simplifyFSet (codomain (Tuple xs))) == simplifyFSet (getPart d x)
+validExpression (Cast x (SimpleSubset f)) = 
+  domain f == codomain x &&
+  validExpression x &&
+  validExpression f
+-- Todo: Can't tell though whether f is true when evaluated at f
+
+validExpression x1@(Cast _ _) = error ("validExpression not implemented yet for Cast of this form. Args:" ++ show x1)
 
 validExpression (Tuple xs) = all validExpression xs
 validExpression (Project n x) = 
@@ -468,13 +469,32 @@ factorCount (CartesianProduct ms) = length ms
 factorCount _ = 1
 
 
+-- | Given the index of an DisjointUnion, returns the part of the disjoint union at that index, without the index as a factor.
+getPart :: FSet -> Expression -> FSet
+getPart (DisjointUnion m1 dm) x = getPart' dm
+  where
+    getPart' (DomainMapConstant m) = m
+    getPart' (DomainMapIf mtest dmt dmf) = 
+      if (x `inLabelSet` mtest) then (getPart' dmt) else (getPart' dmf)
+
+
+-- | inLabelSet m x is true if x is in m, otherwise false.
+inLabelSet :: Expression -> SetOfLabels -> Bool
+inLabelSet (LabelValue (StringLabel  x _)) (StringLabels sset)     = x `member` sset
+inLabelSet (LabelValue (IntegerLabel x _)) (IntegerRange min max)  = x >= min && x <= max
+inLabelSet (LabelValue (IntegerLabel x _)) Integers                = True
+inLabelSet x (DiscreteSetUnion m1 m2) = (x `inLabelSet` m1) || (x `inLabelSet` m2)
+inLabelSet x (Intersection     m1 m2) = (x `inLabelSet` m1) && (x `inLabelSet` m2)
+inLabelSet x y = error ("inLabelSet not implemented for this expression form. Args: " ++ show x ++ ", " ++ show y)
+
+
 -- | Cardinality of discrete space. Zero if can't be easily determined, or has continuous components.
 
 -- Todo: only some cases have been covered, i.e. only the bare minimum as required by existing unit tests.
 cardinality :: FSet -> Int
 cardinality UnitSpace = 1
 cardinality (Labels (IntegerRange a b) ) = b - a + 1
-cardinality (Labels (StringLabels a)) = Set.size a
+cardinality (Labels (StringLabels a)) = size a
 cardinality (CartesianProduct fs) = product (map cardinality fs)
 cardinality x = error ("cardinality not implemented this constructor. Args: " ++ show x)
 

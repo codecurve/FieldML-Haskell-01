@@ -96,30 +96,45 @@ prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVari
 labels1to10 = IntegerRange 1 10
 labels1to5 = IntegerRange 1 5
 
-d1 = DisjointUnion
+d1 = DisjointUnion labels1to10 (DomainMapConstant Reals)
+
+prop_test_Cast_TupleToDisjointUnion1 = (validExpression (Cast (Tuple [LabelValue (IntegerLabel 1 labels1to10), RealConstant 1]) d1))
+
+d2 = DisjointUnion
   labels1to10
-  (CartesianProduct [Labels labels1to10, FieldML.Library01.unitSquare])
   (DomainMapConstant FieldML.Library01.unitSquare)
 
-d2 = 
+d3 = 
   DisjointUnion 
     (IntegerRange 1 10) 
-    (CartesianProduct [Labels labels1to10, FieldML.Library01.unitSquare])    
     (DomainMapIf 
       (IntegerRange 1 5) 
       (DomainMapConstant FieldML.Library01.unitSquare) 
       (DomainMapConstant FieldML.Library01.simplex2d)
     )
 
-d3 = 
+prop_test_Cast_TupleToDisjointUnion2 = 
+  validExpression 
+    (Cast 
+      (Tuple [
+        LabelValue (IntegerLabel 6 labels1to10), 
+        Cast 
+          (Tuple [RealConstant 1, RealConstant 0]) 
+          FieldML.Library01.simplex2d
+      ])
+      d3
+    )
+    
+
+d4 = 
   DisjointUnion 
     (IntegerRange 1 10)
-    (CartesianProduct [Labels labels1to10, FieldML.Library01.unitSquare])
     (DomainMapIf 
       (IntegerRange 1 5) 
       (DomainMapConstant FieldML.Library01.unitSquare) 
-      (DomainMapConstant d2)
+      (DomainMapConstant d3)
     )
+
 
 -- Partial application
 -- Todo: place in library
@@ -368,7 +383,7 @@ unitSquareXiToLocalEdgeId =
   (Unspecified localEdgeFSet)
   ))))
 
-equivalenceInducer1 = 
+equivalenceInducer1 =
   (Lambda
     (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
     (Apply 
@@ -380,20 +395,14 @@ equivalenceInducer1 =
     ( (GeneralVariable "elementId" FieldML_test_mesh01.elementIdFSet) 
       `Equal` 
       (Project 1
-        (Cast
-          (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
-          (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, FieldML.Library01.unitSquare ])
-        )
+        (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
       )
     ),
     
     ( xi                                          
       `Equal` 
       (Project 2 
-        (Cast
-          (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
-          (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, FieldML.Library01.unitSquare ])
-        )
+        (GeneralVariable "mesh_SansConnectivity_location" FieldML_test_mesh01.mesh_SansConnectivity)
       )
     )
   ]
