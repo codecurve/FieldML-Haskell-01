@@ -165,7 +165,7 @@ prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == R
 circleConnectionMap =
   Restriction
   FieldML.Library01.unitLineSegment
-  (Lambdify (Modulus (GeneralVariable "theta" Reals) Pi ))
+  (Lambdify (Modulus (GeneralVariable "theta" Reals) (RealConstant 1.0) ))
 
 prop_test_RestrictionForCircle = (validExpression circleConnectionMap)
 
