@@ -48,7 +48,12 @@ unitLinePredicate =  Lambda x
 
 unitLineSegment = SimpleSubset unitLinePredicate
 
+unitCube = CartesianProduct [unitLineSegment, unitLineSegment, unitLineSegment]
+
 xi1 = GeneralVariable "ξ1" unitLineSegment
+
+
+-- Linear Lagrange basis functions
 
 phi1 = (RealConstant 1) `Minus` xi1
 
@@ -87,7 +92,6 @@ basis2dLinearLagrange = Lambda
     basis1dLinearLagrange_xi1
   ])
 
-unitCube = CartesianProduct [unitLineSegment, unitLineSegment, unitLineSegment]
 
 basis3dLinearLagrange = Lambda
   (Tuple [
@@ -99,4 +103,64 @@ basis3dLinearLagrange = Lambda
     basis1dLinearLagrange_xi3,
     basis1dLinearLagrange_xi2,
     basis1dLinearLagrange_xi1
+  ])
+
+
+
+-- Cubic Hermite basis functions
+
+-- | ψ01 basis function: field value at node 1
+psi01 = 
+  (RealConstant 1.0)
+  `Minus`
+  ((RealConstant 3.0) `Times` (xi1 `Power` (RealConstant 2.0)))
+  `Plus` 
+  ((RealConstant 2.0) `Times` (xi1 `Power` (RealConstant 3.0)))
+
+-- | ψ02 basis function: field value at node 2
+psi02 = 
+  ((RealConstant 3.0) `Times` (xi1 `Power` (RealConstant 2.0)))
+  `Minus`
+  ((RealConstant 2.0) `Times` (xi1 `Power` (RealConstant 3.0)))
+
+
+-- | ψ11 basis function: derivative value at node 1
+
+-- Todo: would be nicer if the fact that this was for the derivative value was intrinsically described by the FieldML somehow. Same for ψ11.
+psi11 = 
+  xi1 `Times` ((xi1 `Minus` (RealConstant 1.0)) `Power` (RealConstant 2.0))
+   
+-- | ψ12 basis function: derivative value at node 2
+psi12 = 
+  (xi1 `Minus` (RealConstant 1.0)) `Times` (xi1 `Power` (RealConstant 2.0))
+
+
+basis1dCubicHermite = Lambda xi1 (Tuple [psi01, psi11, psi02, psi12])
+
+basis1dCubicHermite_xi1 = Apply basis1dCubicHermite (GeneralVariable "ξ1" unitLineSegment)
+basis1dCubicHermite_xi2 = Apply basis1dCubicHermite (GeneralVariable "ξ2" unitLineSegment)
+basis1dCubicHermite_xi3 = Apply basis1dCubicHermite (GeneralVariable "ξ3" unitLineSegment)
+
+
+basis2dCubicHermite = Lambda 
+  (Tuple [
+    (GeneralVariable "ξ1" unitLineSegment), 
+    (GeneralVariable "ξ2" unitLineSegment)
+  ]) 
+  (KroneckerProduct [
+    basis1dCubicHermite_xi2,
+    basis1dCubicHermite_xi1
+  ])
+
+
+basis3dCubicHermite = Lambda 
+  (Tuple [
+    (GeneralVariable "ξ1" unitLineSegment), 
+    (GeneralVariable "ξ2" unitLineSegment),
+    (GeneralVariable "ξ3" unitLineSegment)
+  ]) 
+  (KroneckerProduct [
+    basis1dCubicHermite_xi3,
+    basis1dCubicHermite_xi2,
+    basis1dCubicHermite_xi1
   ])
