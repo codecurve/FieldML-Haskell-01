@@ -98,3 +98,15 @@
 *** Failed! Falsifiable (after 1 test):  
 === prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare2 on FieldML_test1.hs:458 ===
 +++ OK, passed 100 tests.
+=== prop_test_LinearLagrange1_valid on FieldML_test1.hs:467 ===
++++ OK, passed 100 tests.
+=== prop_test_LinearLagrange2_valid on FieldML_test1.hs:468 ===
++++ OK, passed 100 tests.
+=== prop_test_LinearLagrange3_valid on FieldML_test1.hs:469 ===
++++ OK, passed 100 tests.
+=== prop_test_CubicHermite1_valid on FieldML_test1.hs:471 ===
++++ OK, passed 100 tests.
+=== prop_test_CubicHermite2_valid on FieldML_test1.hs:472 ===
++++ OK, passed 100 tests.
+=== prop_test_CubicHermite3_valid on FieldML_test1.hs:473 ===
++++ OK, passed 100 tests.

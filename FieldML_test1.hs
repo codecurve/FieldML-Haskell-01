@@ -464,3 +464,10 @@ prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare2 =
   )
 
 
+prop_test_LinearLagrange1_valid = ( validExpression FieldML.Library01.basis1dLinearLagrange )
+prop_test_LinearLagrange2_valid = ( validExpression FieldML.Library01.basis2dLinearLagrange )
+prop_test_LinearLagrange3_valid = ( validExpression FieldML.Library01.basis3dLinearLagrange )
+
+prop_test_CubicHermite1_valid = ( validExpression FieldML.Library01.basis1dCubicHermite )
+prop_test_CubicHermite2_valid = ( validExpression FieldML.Library01.basis2dCubicHermite )
+prop_test_CubicHermite3_valid = ( validExpression FieldML.Library01.basis3dCubicHermite )

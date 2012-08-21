@@ -13,8 +13,12 @@ module FieldML.Library01 (
   
   basis1dLinearLagrange,
   basis2dLinearLagrange,
-  basis3dLinearLagrange
+  basis3dLinearLagrange,
 
+  basis1dCubicHermite,
+  basis2dCubicHermite,
+  basis3dCubicHermite
+  
 ) where
 
 import FieldML.Core
