@@ -110,3 +110,5 @@
 +++ OK, passed 100 tests.
 === prop_test_CubicHermite3_valid on FieldML_test1.hs:473 ===
 +++ OK, passed 100 tests.
+=== prop_test_CustomMixedBasis_valid on FieldML_test1.hs:475 ===
++++ OK, passed 100 tests.

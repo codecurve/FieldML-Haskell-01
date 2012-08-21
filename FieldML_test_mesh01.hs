@@ -15,7 +15,10 @@ module FieldML_test_mesh01
     pressureViaTemplate,
     
     coordinatesAtNodes,
-    geometricFieldExpression    
+    geometricFieldExpression,
+
+   basis3d_CubicHermite_BiLinearLagrange
+
   )
 where
 
@@ -151,3 +154,21 @@ geometricFieldExpression =
     )
     (Tuple [elementId, xi])
   )
+
+
+-- | Demonstration of arbitrary tensor product.
+basis1dCubicHermite_xi1   = Apply FieldML.Library01.basis1dCubicHermite   (GeneralVariable "ξ1" FieldML.Library01.unitLineSegment)
+basis1dLinearLagrange_xi2 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "ξ2" FieldML.Library01.unitLineSegment)
+basis1dLinearLagrange_xi3 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "ξ3" FieldML.Library01.unitLineSegment)
+
+basis3d_CubicHermite_BiLinearLagrange = Lambda 
+  (Tuple [
+    (GeneralVariable "ξ1" FieldML.Library01.unitLineSegment), 
+    (GeneralVariable "ξ2" FieldML.Library01.unitLineSegment),
+    (GeneralVariable "ξ3" FieldML.Library01.unitLineSegment)
+  ]) 
+  (KroneckerProduct [
+    basis1dLinearLagrange_xi3,
+    basis1dLinearLagrange_xi2,
+    basis1dCubicHermite_xi1
+  ])

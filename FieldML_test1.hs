@@ -471,3 +471,5 @@ prop_test_LinearLagrange3_valid = ( validExpression FieldML.Library01.basis3dLin
 prop_test_CubicHermite1_valid = ( validExpression FieldML.Library01.basis1dCubicHermite )
 prop_test_CubicHermite2_valid = ( validExpression FieldML.Library01.basis2dCubicHermite )
 prop_test_CubicHermite3_valid = ( validExpression FieldML.Library01.basis3dCubicHermite )
+
+prop_test_CustomMixedBasis_valid = ( validExpression FieldML_test_mesh01.basis3d_CubicHermite_BiLinearLagrange )
