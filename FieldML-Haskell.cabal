@@ -41,6 +41,5 @@ Test-suite tests
                      test-framework >= 0.3.3,
                      test-framework-hunit,
                      HUnit,
-                     QuickCheck >= 2.6,
                      random == 1.0.*,
                      text >= 0.11.0.5
