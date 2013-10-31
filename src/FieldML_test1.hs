@@ -1,59 +1,132 @@
-{-# LANGUAGE CPP, TemplateHaskell #-}
+module Main where
 
-module FieldML_test1
-where
+
+
+{- main::IO() main = putStrLn "Hello"
+-}
 
 import FieldML.Core
-import FieldML.Utility.ExpressionTree
+import FieldML.Utility01
 import qualified FieldML.Library01
 import qualified FieldML.Library02
-import FieldML.Utility01
 
 import qualified FieldML_test_mesh01
 
+import Test.HUnit
 
-import Control.Monad (unless)
-import Data.List (stripPrefix)
-import qualified Data.Set as Set
-import System.Exit (exitFailure)
-import Test.QuickCheck.All (quickCheckAll)
+main :: IO Counts
+main = {-forever $ -} runTestTT tests
+-- main = testMain
 
-main = testMain
+tests :: Test
+tests = test[
+  testBooleanExpression1a,
+  testBooleanExpression1b,
+  testBooleanExpression1c,
+  testBooleanExpression1d,
+  testBooleanExpression1e,
+  testSubset1a,
+  testmatch1a,
+  test2dTupleMapDomain1a,
+  test2dTupleMapDomain1b,
+  test2dTupleMapDomain1c,
+  test2dTupleMapDomain1d,
+  testLambdaTuple_domain,
+  testLambdaTuple_codomain,
+  testLambdaTuple_freeVariables,
+  testLambdaTuple_valid,
+  testTuple_freeVariables,
+  testSimplex2dPredicate,
+  testValidate_lambdaRhs_noCommonVars,
+  testCast_TupleToDisjointUnion1,
+  testCast_TupleToDisjointUnion2,
+  testDomainPolarToCartesian,
+  testDomain_PartialApplication,
+  testRestrictionForCircle,
+  testResult8,
+  testIntParam_01a,
+  testIntParam_01b,
+  testIntParam_01c,
+  testIntParam_01d,
+  testPredicate2b,
+  testPartialApplication,
+  testKroneckerProduct2d,
+  testKroneckerProduct3d,
+  testExists1a,
+  testExists1b,
+  testExists1c,
+  testExists1d,
+  testExists1e,
+  testExists1f,
+  testExists1g1,
+  testExists1g2,
+  testnormallyDistributedVariable1,
+  testWhere,
+  testTuples_And_DisjointUnionValue,
+  testProject_NonTuple,
+  testSimpleContraction,
+  testpressureFieldViaTemplate2,
+  testgeometricFieldViaTemplate,
+  testSubset_CommutesWith_CartesianProduct_Case,
+  testLibrary_basis2dLinearLagrange_Apply_In_unitSquare1,
+  testLibrary_basis2dLinearLagrange_Apply_In_unitSquare2,
+  testLinearLagrange1_valid,
+  testLinearLagrange2_valid,
+  testLinearLagrange3_valid,
+  testCubicHermite1_valid,
+  testCubicHermite2_valid,
+  testCubicHermite3_valid,
+  testCustomMixedBasis_valid
+  ]
 
-testMain = do
-    allPass <- $quickCheckAll -- Run QuickCheck on all prop_ functions
-    unless allPass exitFailure
 
 
 -- Tests
-x = GeneralVariable "x" Reals
-  
-SimpleSubset expression1 = FieldML.Library01.unitLineSegment
 
--- Todo: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
+--TODO: get a chart for a topological space, and name the coordinates in the chart so that they can be mapped to the free variables of a real expression.
 -- But perhaps the chart is just the tuple that represents a value in the topological space (Tuples can consist of named variables).
 
--- Todo: This is an abuse of QuickCheck, it is being used in the style of JUnit/XUnit testing.  It is also painful to use because each test is simply repeated.
--- Todo: separate validation of library items from general validation.
-prop_test_BooleanExpression1a = (validExpression expression1)
-prop_test_BooleanExpression1b = (freeVariables expression1 == [])
+--TODO: separate validation of library items from general validation.
 
+x :: Expression
+x = GeneralVariable "x" Reals
+
+expression1 :: Expression
+SimpleSubset expression1 = FieldML.Library01.unitLineSegment
+
+testBooleanExpression1a :: Test
+testBooleanExpression1a = TestCase $ assertBool "valid expression 1a" (validExpression expression1)
+
+testBooleanExpression1b :: Test
+testBooleanExpression1b = TestCase $ assertEqual "valid expression 1b" (freeVariables expression1) []
+
+
+expression1_lambdaRhs :: Expression
 Lambda _ expression1_lambdaRhs = expression1
-prop_test_BooleanExpression1c = (freeVariables expression1_lambdaRhs == [GeneralVariable "x" Reals])
 
-prop_test_BooleanExpression1d = (domain expression1 == Reals)
-prop_test_BooleanExpression1e = (codomain expression1 == Booleans)
+testBooleanExpression1c :: Test
+testBooleanExpression1c = TestCase $ assertEqual "valid expression 1c" (freeVariables expression1_lambdaRhs) [GeneralVariable "x" Reals]
 
-prop_test_Subset1a = (canonicalSuperset FieldML.Library01.unitLineSegment == Reals)
+testBooleanExpression1d :: Test
+testBooleanExpression1d = TestCase $ assertEqual "unit line predicate's domain is Reals" (domain expression1) Reals
+
+testBooleanExpression1e :: Test
+testBooleanExpression1e = TestCase $ assertEqual "unit predicate's codomain is Booleans" (codomain expression1) Booleans
+
+
+testSubset1a :: Test
+testSubset1a = TestCase $ assertEqual "message" (canonicalSuperset FieldML.Library01.unitLineSegment) Reals
 
 -- As above, but more inline:
+unitLineSegment' :: FSet
 unitLineSegment' = 
   SimpleSubset (
     Lambda x ((x `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` x))
   )
+testmatch1a :: Test
+testmatch1a = TestCase $ assertEqual "message" (FieldML.Library01.unitLineSegment) (unitLineSegment')
 
-prop_test_match1a = (FieldML.Library01.unitLineSegment == unitLineSegment')
-
+xy :: Expression
 xy = Tuple [GeneralVariable "x" Reals, GeneralVariable "y" Reals]
   
 expression2 :: Expression
@@ -64,32 +137,34 @@ expression2 = Lambda xy
     ((Project 2 xy) `LessThan` (RealConstant 1))  `And` ( (RealConstant 0) `LessThan` (Project 2 xy))
   )  
 
-prop_test_2dTupleMapDomain1a = (domain expression2 == CartesianProduct [Reals,Reals] )
-prop_test_2dTupleMapDomain1b = (freeVariables expression2 == [] )
+test2dTupleMapDomain1a :: Test
+test2dTupleMapDomain1a = TestCase $ assertEqual "message" (domain expression2) (CartesianProduct [Reals,Reals] )
+
+test2dTupleMapDomain1b = TestCase $ assertEqual "message" (freeVariables expression2) ([] )
 
 Lambda _ expression2_lambdaRhs = expression2
-prop_test_2dTupleMapDomain1c = (freeVariables expression2_lambdaRhs == [GeneralVariable "x" Reals,GeneralVariable "y" Reals] )
+test2dTupleMapDomain1c = TestCase $ assertEqual "message" (freeVariables expression2_lambdaRhs) ([GeneralVariable "x" Reals,GeneralVariable "y" Reals] )
   
-prop_test_2dTupleMapDomain1d = (validExpression expression2)
+test2dTupleMapDomain1d = TestCase $ assertBool "message" (validExpression expression2)
 
-xi1 = GeneralVariable "ξ1" FieldML.Library01.unitLineSegment  
+xi1 = GeneralVariable "��1" FieldML.Library01.unitLineSegment  
 
-prop_test_LambdaTuple_domain = ( domain FieldML.Library01.basis1dLinearLagrange == FieldML.Library01.unitLineSegment )
-prop_test_LambdaTuple_codomain = ( canonicalSuperset (codomain FieldML.Library01.basis1dLinearLagrange) == FieldML.Library01.real2 )
-prop_test_LambdaTuple_freeVariables = ( freeVariables FieldML.Library01.basis1dLinearLagrange == [] )
-prop_test_LambdaTuple_valid = ( validExpression FieldML.Library01.basis1dLinearLagrange )
+testLambdaTuple_domain = TestCase $ assertEqual "message" ( domain FieldML.Library01.basis1dLinearLagrange) (FieldML.Library01.unitLineSegment )
+testLambdaTuple_codomain = TestCase $ assertEqual "message" ( canonicalSuperset (codomain FieldML.Library01.basis1dLinearLagrange)) (FieldML.Library01.real2 )
+testLambdaTuple_freeVariables = TestCase $ assertEqual "message" ( freeVariables FieldML.Library01.basis1dLinearLagrange) ([] )
+testLambdaTuple_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis1dLinearLagrange )
 
 expression3c = FieldML.Library01.basis1dLinearLagrange
 
 Lambda _ expression3c_lambdaRhs = expression3c
-prop_test_Tuple_freeVariables = ( freeVariables expression3c_lambdaRhs == [ xi1 ] )
+testTuple_freeVariables = TestCase $ assertEqual "message" ( freeVariables expression3c_lambdaRhs) ([ xi1 ] )
 
 SimpleSubset expression4 = FieldML.Library01.simplex2d
 
-prop_test_Simplex2dPredicate = (domain expression4 == CartesianProduct[Reals, Reals])
+testSimplex2dPredicate = TestCase $ assertEqual "message" (domain expression4) (CartesianProduct[Reals, Reals])
   
 -- Validate that lambda's do not need the RHS to contain the bound variables
-prop_testValidate_lambdaRhs_noCommonVars = (validExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
+testValidate_lambdaRhs_noCommonVars = TestCase $ assertBool "message" (validExpression (Lambda (GeneralVariable "x" Reals) (RealConstant 1)) )
     
 
 -- Disjoint union
@@ -98,7 +173,7 @@ labels1to5 = IntegerRange 1 5
 
 d1 = DisjointUnion labels1to10 (DomainMapConstant Reals)
 
-prop_test_Cast_TupleToDisjointUnion1 = (validExpression (Cast (Tuple [LabelValue (IntegerLabel 1 labels1to10), RealConstant 1]) d1))
+testCast_TupleToDisjointUnion1 = TestCase $ assertBool "message" (validExpression (Cast (Tuple [LabelValue (IntegerLabel 1 labels1to10), RealConstant 1]) d1))
 
 d2 = DisjointUnion
   labels1to10
@@ -113,8 +188,8 @@ d3 =
       (DomainMapConstant FieldML.Library01.simplex2d)
     )
 
-prop_test_Cast_TupleToDisjointUnion2 = 
-  validExpression 
+testCast_TupleToDisjointUnion2 = 
+  TestCase $ assertBool "message" (validExpression 
     (Cast 
       (Tuple [
         LabelValue (IntegerLabel 6 labels1to10), 
@@ -124,6 +199,7 @@ prop_test_Cast_TupleToDisjointUnion2 =
       ])
       d3
     )
+  )
     
 
 d4 = 
@@ -139,25 +215,25 @@ d4 =
 -- Partial application
 -- Todo: place in library
 polarToCartesian = 
-  Lambda (Tuple [GeneralVariable "radius" Reals, GeneralVariable "θ" Reals]) (
+  Lambda (Tuple [GeneralVariable "radius" Reals, GeneralVariable "��" Reals]) (
     Tuple
       [
-        (Cos (GeneralVariable "θ" Reals))
+        (Cos (GeneralVariable "��" Reals))
         `Times`
         (GeneralVariable "radius" Reals)
         ,
-        (Sin (GeneralVariable "θ" Reals))
+        (Sin (GeneralVariable "��" Reals))
         `Times`        
         (GeneralVariable "radius" Reals)
       ]
     )
 
-prop_test_DomainPolarToCartesian = (domain polarToCartesian == CartesianProduct [Reals, Reals])
+testDomainPolarToCartesian = TestCase $ assertEqual "message" (domain polarToCartesian) (CartesianProduct [Reals, Reals])
 
 polarToCartesianFixedRadius = 
   PartialApplication (polarToCartesian) 2 (RealConstant 1)
 
-prop_test_Domain_PartialApplication = ((domain polarToCartesianFixedRadius) == Reals )
+testDomain_PartialApplication = TestCase $ assertEqual "message" ((domain polarToCartesianFixedRadius)) (Reals )
   
 
 -- Topology, connectivity using Quotient: Circle topology from unit line    
@@ -167,17 +243,17 @@ circleConnectionMap =
   FieldML.Library01.unitLineSegment
   (Lambdify (Modulus (GeneralVariable "theta" Reals) (RealConstant 1.0) ))
 
-prop_test_RestrictionForCircle = (validExpression circleConnectionMap)
+testRestrictionForCircle = TestCase $ assertBool "message" (validExpression circleConnectionMap)
 
 circle = Quotient circleConnectionMap
 
 
 -- Some simplification
-prop_testResult8 = ( simplifyFSet (Factor 3 (CartesianProduct  [Reals, Booleans, Reals] )) == Reals  )
+testResult8 = TestCase $ assertEqual "message" ( simplifyFSet (Factor 3 (CartesianProduct  [Reals, Booleans, Reals] ))) (Reals  )
 
-prop_test_IntParam_01a = (domain FieldML_test_mesh01.localToGlobalNodes == CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
+testIntParam_01a = TestCase $ assertEqual "message" (domain FieldML_test_mesh01.localToGlobalNodes) (CartesianProduct [ Labels (IntegerRange 1 2), Labels (IntegerRange 1 4) ] )
 
-prop_test_IntParam_01b = (validExpression FieldML_test_mesh01.localToGlobalNodes)
+testIntParam_01b = TestCase $ assertBool "message" (validExpression FieldML_test_mesh01.localToGlobalNodes)
 
 brokenParamTest = MultiDimArray
   (IntegerParameterVector  
@@ -186,9 +262,9 @@ brokenParamTest = MultiDimArray
   )  
   (CartesianProduct [ FieldML_test_mesh01.elementIdFSet, FieldML_test_mesh01.localNodeFSet ])
 
-prop_test_IntParam_01c = ( not (validExpression brokenParamTest))
+testIntParam_01c = TestCase $ assertBool "message" ( not (validExpression brokenParamTest))
 
-prop_test_IntParam_01d = ( validExpression FieldML_test_mesh01.pressureAtGlobalNodes )
+testIntParam_01d = TestCase $ assertBool "message" ( validExpression FieldML_test_mesh01.pressureAtGlobalNodes )
 
 -- Demonstrating equations.  For now, this is just a Map to Boolean, but an extra construct could be added that means that this is asserted to be true.
 xy1 = GeneralVariable "xy" (CartesianProduct [Reals, Reals])
@@ -212,20 +288,20 @@ predicate2a = Lambda y ( y `Equal` f2 )
 
 predicate2b = Lambda x (Apply predicate2a (RealConstant 1.0))
 
-prop_test_Predicate2b = (validExpression predicate2b)
+testPredicate2b = TestCase $ assertBool "message" (validExpression predicate2b)
 
 levelSet1 = SimpleSubset predicate2b
 
 
 -- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
 
-basis1dLinearLagrange_xi1 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "ξ1" FieldML.Library01.unitLineSegment)
+basis1dLinearLagrange_xi1 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "��1" FieldML.Library01.unitLineSegment)
 
-prop_test_PartialApplication = (validExpression basis1dLinearLagrange_xi1)
+testPartialApplication = TestCase $ assertBool "message" (validExpression basis1dLinearLagrange_xi1)
 
-prop_test_KroneckerProduct2d = (validExpression FieldML.Library01.basis2dLinearLagrange)
+testKroneckerProduct2d = TestCase $ assertBool "message" (validExpression FieldML.Library01.basis2dLinearLagrange)
 
-prop_test_KroneckerProduct3d = (validExpression FieldML.Library01.basis3dLinearLagrange)
+testKroneckerProduct3d = TestCase $ assertBool "message" (validExpression FieldML.Library01.basis3dLinearLagrange)
 
 
 -- Interior. Todo: Use FEM to describe boundary mesh.
@@ -276,25 +352,25 @@ l1SpaceXY' = SimpleSubset ( Lambda xy1
 
 SimpleSubset p1a = l1SpaceXY'
 
-prop_test_Exists1a = (validExpression p1a)
+testExists1a = TestCase $ assertBool "message" (validExpression p1a)
 
-prop_test_Exists1b = (freeVariables p1a == [] )
+testExists1b = TestCase $ assertEqual "message" (freeVariables p1a) ([] )
 
-prop_test_Exists1c = (domain p1a == CartesianProduct[Reals, Reals])
+testExists1c = TestCase $ assertEqual "message" (domain p1a) (CartesianProduct[Reals, Reals])
 
 Lambda _ p1b = p1a
 
-prop_test_Exists1d = (freeVariables p1b == [GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
+testExists1d = TestCase $ assertEqual "message" (freeVariables p1b) ([GeneralVariable "xy" (CartesianProduct [Reals,Reals])] )
 
-prop_test_Exists1e = (canonicalSuperset (domain p1b) == UnitSpace )
+testExists1e = TestCase $ assertEqual "message" (canonicalSuperset (domain p1b)) (UnitSpace )
 
 -- Todo: validation is too strict, and not correct. Currently validation of Equal requires that both operands have the same codomain, whereas what should be checked is that there is a conversion that allows values from one to be compared with the other, even if the codomains are not identical.
-prop_test_Exists1f = (validExpression p1b)
+testExists1f = TestCase $ assertBool "message" (validExpression p1b)
 
 Exists p1c1 p1c2 = p1b
 
-prop_test_Exists1g1 = (validExpression p1c1)
-prop_test_Exists1g2 = (validExpression p1c2)
+testExists1g1 = TestCase $ assertBool "message" (validExpression p1c1)
+testExists1g2 = TestCase $ assertBool "message" (validExpression p1c2)
 
 mean1 = RealConstant 1.3
 variance1 = RealConstant 0.2
@@ -304,7 +380,7 @@ statement1 =
   `DistributedAccordingTo` 
   (Apply FieldML.Library02.normalDistribution (Tuple [mean1, variance1]))
 
-prop_test_normallyDistributedVariable1 = (validExpression statement1)
+testnormallyDistributedVariable1 = TestCase $ assertBool "message" (validExpression statement1)
 
 
 
@@ -353,23 +429,23 @@ localToGlobalEdges = MultiDimArray
 
 loc1 = (GeneralVariable "loc1" FieldML_test_mesh01.mesh_SansConnectivity)
 
-xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
+xi = (GeneralVariable "��" FieldML.Library01.unitSquare) 
    
 edge2Predicate = Lambda
   xi
-  ((Project 1 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
+  ((Project 1 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
 
 edge3Predicate = Lambda
   xi
-  ((Project 1 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
+  ((Project 1 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
 
 edge1Predicate = Lambda
   xi
-  ((Project 2 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
+  ((Project 2 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
 
 edge4Predicate = Lambda
   xi
-  ((Project 2 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
+  ((Project 2 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
 
 -- Todo: This belongs in the library.
 -- Todo: This has an problem: each corner is mapped to only one of the two edges.
@@ -407,7 +483,7 @@ equivalenceInducer1 =
     )
   ]
   
-prop_test_Where = ((freeVariables equivalenceInducer1) == [])
+testWhere = TestCase $ assertEqual "message" ((freeVariables equivalenceInducer1)) ([])
 
 mesh_WithConnectivity = Quotient equivalenceInducer1
 
@@ -417,9 +493,9 @@ Equal x2a x2b = x1a
 Equal x3a x3b = x1b
 Project n x4a = x3b
 
-prop_test_Tuples_And_DisjointUnionValue = (validExpression x3b)
+testTuples_And_DisjointUnionValue = TestCase $ assertBool "message" (validExpression x3b)
 
-prop_test_Project_NonTuple = (validExpression equivalenceInducer1)
+testProject_NonTuple = TestCase $ assertBool "message" (validExpression equivalenceInducer1)
 
 
 -- Simple contraction
@@ -428,15 +504,15 @@ v1 = GeneralVariable "v1" FieldML.Library01.real2'
 v2 = GeneralVariable "v2" FieldML.Library01.real2'
 simpleContraction = Contraction v1 1 v2 1
 
-prop_test_SimpleContraction = (validExpression simpleContraction)
+testSimpleContraction = TestCase $ assertBool "message" (validExpression simpleContraction)
     
 
 -- Template for scalar field
 
-prop_test_pressureFieldViaTemplate2 = (validExpression FieldML_test_mesh01.pressureViaTemplate)
+testpressureFieldViaTemplate2 = TestCase $ assertBool "message" (validExpression FieldML_test_mesh01.pressureViaTemplate)
 
 -- Simple-ish geometric field.
-prop_test_geometricFieldViaTemplate = (validExpression FieldML_test_mesh01.geometricFieldExpression)
+testgeometricFieldViaTemplate = TestCase $ assertBool "message" (validExpression FieldML_test_mesh01.geometricFieldExpression)
 
 -- This might be useful for debugging this complicated expressions.
 -- putStrLn (Data.Tree.drawTree (fmap (\x -> show (validExpression x, x)) (expressionTree FieldML_test_mesh01.fieldTemplate)))
@@ -451,25 +527,24 @@ unitSquarePredicate' =
 
 unitSquare' = SimpleSubset unitSquarePredicate' -- Todo: need to somehow have symbolic analysis that can deduce that unitSquare' is equivalent to unitSquare?
 
-prop_test_Subset_CommutesWith_CartesianProduct_Case = (unitSquare' == FieldML.Library01.unitSquare)
+testSubset_CommutesWith_CartesianProduct_Case = TestCase $ assertEqual "message" (unitSquare') (FieldML.Library01.unitSquare)
 
-prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare1 = (validExpression (Apply FieldML.Library01.basis2dLinearLagrange (Tuple [xi,xi])))
+testLibrary_basis2dLinearLagrange_Apply_In_unitSquare1 = TestCase $ assertBool "message" (validExpression (Apply FieldML.Library01.basis2dLinearLagrange (Tuple [xi,xi])))
 
-prop_test_Library_basis2dLinearLagrange_Apply_In_unitSquare2 = 
-  (validExpression 
+testLibrary_basis2dLinearLagrange_Apply_In_unitSquare2 = TestCase $ assertBool "message" (validExpression 
     (Apply 
       FieldML.Library01.basis2dLinearLagrange 
-      (GeneralVariable "ξ" FieldML.Library01.unitSquare)
+      (GeneralVariable "��" FieldML.Library01.unitSquare)
     )
   )
 
 
-prop_test_LinearLagrange1_valid = ( validExpression FieldML.Library01.basis1dLinearLagrange )
-prop_test_LinearLagrange2_valid = ( validExpression FieldML.Library01.basis2dLinearLagrange )
-prop_test_LinearLagrange3_valid = ( validExpression FieldML.Library01.basis3dLinearLagrange )
+testLinearLagrange1_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis1dLinearLagrange )
+testLinearLagrange2_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis2dLinearLagrange )
+testLinearLagrange3_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis3dLinearLagrange )
 
-prop_test_CubicHermite1_valid = ( validExpression FieldML.Library01.basis1dCubicHermite )
-prop_test_CubicHermite2_valid = ( validExpression FieldML.Library01.basis2dCubicHermite )
-prop_test_CubicHermite3_valid = ( validExpression FieldML.Library01.basis3dCubicHermite )
+testCubicHermite1_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis1dCubicHermite )
+testCubicHermite2_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis2dCubicHermite )
+testCubicHermite3_valid = TestCase $ assertBool "message" ( validExpression FieldML.Library01.basis3dCubicHermite )
 
-prop_test_CustomMixedBasis_valid = ( validExpression FieldML_test_mesh01.basis3d_CubicHermite_BiLinearLagrange )
+testCustomMixedBasis_valid = TestCase $ assertBool "message" ( validExpression FieldML_test_mesh01.basis3d_CubicHermite_BiLinearLagrange )
