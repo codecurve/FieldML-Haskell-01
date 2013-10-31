@@ -10,9 +10,8 @@ In the past, others have also contributed to these discussions, notably Caton Li
  * The unit tests can be run using "runhaskell FieldML_test1.hs".
  * Recent results of the unit tests are in "test-log.txt". 
 
-Travis Continuous Integration status:
-.. image:: https://travis-ci.org/codecurve/FieldML-Haskell-01.png?branch=master
-   :target: https://travis-ci.org/codecurve/FieldML-Haskell-01
+Travis CI status:
+[![Build Status](https://travis-ci.org/codecurve/FieldML-Haskell-01.png)](https://travis-ci.org/codecurve/FieldML-Haskell-01)
 
 Comparison with ModML
 ---------------------
