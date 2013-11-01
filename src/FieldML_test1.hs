@@ -33,7 +33,7 @@ tests = [ testGroup "Sorting Group 1" [
   testCase "testLambdaTuple_codomain" testLambdaTuple_codomain,
   testCase "testLambdaTuple_freeVariables" testLambdaTuple_freeVariables,
   testCase "testLambdaTuple_valid" testLambdaTuple_valid,
---  testCase "testTuple_freeVariables" testTuple_freeVariables,
+  testCase "testTuple_freeVariables" testTuple_freeVariables,
   testCase "testSimplex2dPredicate" testSimplex2dPredicate,
   testCase "testValidate_lambdaRhs_noCommonVars" testValidate_lambdaRhs_noCommonVars,
   testCase "testCast_TupleToDisjointUnion1" testCast_TupleToDisjointUnion1,
@@ -138,7 +138,7 @@ test2dTupleMapDomain1c =  assertEqual "message" (freeVariables expression2_lambd
   
 test2dTupleMapDomain1d =  assertBool "message" (validExpression expression2)
 
-xi1 = GeneralVariable "��1" FieldML.Library01.unitLineSegment  
+xi1 = GeneralVariable "ξ1" FieldML.Library01.unitLineSegment  
 
 testLambdaTuple_domain =  assertEqual "message" ( domain FieldML.Library01.basis1dLinearLagrange) (FieldML.Library01.unitLineSegment )
 testLambdaTuple_codomain =  assertEqual "message" ( canonicalSuperset (codomain FieldML.Library01.basis1dLinearLagrange)) (FieldML.Library01.real2 )
@@ -206,14 +206,14 @@ d4 =
 -- Partial application
 -- Todo: place in library
 polarToCartesian = 
-  Lambda (Tuple [GeneralVariable "radius" Reals, GeneralVariable "��" Reals]) (
+  Lambda (Tuple [GeneralVariable "radius" Reals, GeneralVariable "θ" Reals]) (
     Tuple
       [
-        (Cos (GeneralVariable "��" Reals))
+        (Cos (GeneralVariable "θ" Reals))
         `Times`
         (GeneralVariable "radius" Reals)
         ,
-        (Sin (GeneralVariable "��" Reals))
+        (Sin (GeneralVariable "θ" Reals))
         `Times`        
         (GeneralVariable "radius" Reals)
       ]
@@ -286,7 +286,7 @@ levelSet1 = SimpleSubset predicate2b
 
 -- Tensor like product (i.e. Kronecker product to get what is commonly misleadingly called "Tensor product basis functions")
 
-basis1dLinearLagrange_xi1 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "��1" FieldML.Library01.unitLineSegment)
+basis1dLinearLagrange_xi1 = Apply FieldML.Library01.basis1dLinearLagrange (GeneralVariable "ξ1" FieldML.Library01.unitLineSegment)
 
 testPartialApplication =  assertBool "message" (validExpression basis1dLinearLagrange_xi1)
 
@@ -420,23 +420,23 @@ localToGlobalEdges = MultiDimArray
 
 loc1 = (GeneralVariable "loc1" FieldML_test_mesh01.mesh_SansConnectivity)
 
-xi = (GeneralVariable "��" FieldML.Library01.unitSquare) 
+xi = (GeneralVariable "ξ" FieldML.Library01.unitSquare) 
    
 edge2Predicate = Lambda
   xi
-  ((Project 1 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
+  ((Project 1 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
 
 edge3Predicate = Lambda
   xi
-  ((Project 1 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
+  ((Project 1 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
 
 edge1Predicate = Lambda
   xi
-  ((Project 2 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
+  ((Project 2 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 0.0))
 
 edge4Predicate = Lambda
   xi
-  ((Project 2 (GeneralVariable "��" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
+  ((Project 2 (GeneralVariable "ξ" FieldML.Library01.unitSquare)) `Equal` (RealConstant 1.0))
 
 -- Todo: This belongs in the library.
 -- Todo: This has an problem: each corner is mapped to only one of the two edges.
@@ -525,7 +525,7 @@ testLibrary_basis2dLinearLagrange_Apply_In_unitSquare1 =  assertBool "message" (
 testLibrary_basis2dLinearLagrange_Apply_In_unitSquare2 =  assertBool "message" (validExpression 
     (Apply 
       FieldML.Library01.basis2dLinearLagrange 
-      (GeneralVariable "��" FieldML.Library01.unitSquare)
+      (GeneralVariable "ξ" FieldML.Library01.unitSquare)
     )
   )
 
