@@ -11,43 +11,42 @@ license:        BSD3
 license-file:   LICENSE
 
 source-repository head
-  type:     git
-  location: https://github.com/codecurve/FieldML-Haskell-01
-
+  type:      git
+  location:  https://github.com/codecurve/FieldML-Haskell-01
 
 executable FieldML-Haskell
-  hs-source-dirs:  src
-  main-is:         FieldML_test1.hs
-  build-depends:   
+  hs-source-dirs:    src
+  main-is:           FieldML_test1.hs
+  build-depends:     
                    base >= 4 && < 5.0,
                    HUnit >=1.2.5 && <1.3,
                    containers >=0.5.0 && <0.6,
                    test-framework >=0.8.0 && <0.9,
                    test-framework-hunit >=0.3.0 && <0.4
-  ghc-options:     -Wall
-  other-modules:   
+  ghc-options:       -Wall
+  other-modules:     
                    FieldML.Core,
                    FieldML.Library01,
                    FieldML.Library02,
                    FieldML.Utility.ExpressionTree,
                    FieldML.Utility01,
                    FieldML_test_mesh01
-  default-language: Haskell2010
+  default-language:  Haskell2010
 
 Test-suite tests
-  Type: exitcode-stdio-1.0
-  Hs-source-dirs: 
-                  src, 
-                  src/FieldML, 
+  Type:              exitcode-stdio-1.0
+  Hs-source-dirs:    
+                  src,
+                  src/FieldML,
                   src/FieldML/Utility
-  Main-is: FieldML_test1.hs
-  Other-modules: 
+  Main-is:           FieldML_test1.hs
+  Other-modules:     
                  FieldML.Core,
                  FieldML.Library01,
                  FieldML.Library02,
                  FieldML.Utility01,
                  FieldML_test_mesh01
-  Build-depends: 
+  Build-depends:     
                      base >= 4.0 && < 5.0,
                      bytestring,
                      ghc-prim,
@@ -58,4 +57,24 @@ Test-suite tests
                      HUnit,
                      random == 1.0.*,
                      text >= 0.11.0.5
-  default-language: Haskell2010
+  default-language:  Haskell2010
+
+test-suite FieldML-Haskell-test
+  type:            exitcode-stdio-1.0
+  main-is:         FieldML-Haskell-test.hs
+  ghc-options:     -Wall -rtsopts
+  build-depends:   
+                   base >= 4,
+                   HTF > 0.9,
+                   containers >=0.5.0 && <0.6
+  other-modules:   
+                  FieldML.Core,
+                  FieldML.CoreTest,
+                  FieldML.Library01,
+                  FieldML.Library02,
+                  FieldML.Utility01,
+                  FieldML_test_mesh01
+  hs-source-dirs:  
+                  test,
+                  src
+
