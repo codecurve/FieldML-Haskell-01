@@ -12,6 +12,10 @@ env:
  - GHCVER=7.8.1
  - HPVER=2013.2.0.0
  - HPVER=2012.4.0.0
+ 
+matrix:
+  allow_failures:
+    - env: GHCVER=7.8.1
 
 # Note: the distinction between `before_install` and `install` is not
 # important.
@@ -46,6 +50,8 @@ before_install:
  - sudo apt-get update
  - sudo apt-get install cabal-install-1.18 ghc-$GHCVER happy
  - export PATH=/opt/ghc/$GHCVER/bin:$PATH
+ - cabal-1.18 update
+ - cabal-1.18 install happy # haskell-src-exts implicit dependency workaround
 
 # Update happy when building with GHC head
  - |
